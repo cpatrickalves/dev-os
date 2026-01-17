@@ -1,5 +1,5 @@
 defaults:
-  profile: python
+  profile: default
   claude_code_commands: true
   use_claude_code_subagents: false
   agent_os_commands: true
