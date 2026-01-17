@@ -26,6 +26,14 @@ agent-os/
 3. Add custom commands in the `commands/` directory
 4. Define workflows in the `workflows/` directory
 
+# Updating Agent OS
+
+To update Agent OS, run the following command:
+
+```bash
+curl -sSL "https://raw.githubusercontent.com/buildermethods/agent-os/main/scripts/base-install.sh" | bash
+```
+
 ## License
 
 See the original [agent-os](https://github.com/buildermethods/agent-os) project for licensing information.
