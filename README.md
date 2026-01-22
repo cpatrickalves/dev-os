@@ -2,38 +2,36 @@
 
 A lightweight operating system for AI agents, based on [buildermethods/agent-os](https://github.com/buildermethods/agent-os). Here I added my own customizations to the original project.
 
-## Overview
+## Agents that build the way you would
 
-Agent OS provides a structured framework for managing AI agent configurations, commands, and workflows through a profile-based system.
+[Agent OS](https://buildermethods.com/agent-os) helps you shape better specs, keeps agents aligned in a lightweight system that fits how you already build.
 
-## Structure
+Works alongside Claude Code, Cursor, Antigravity, and other AI tools. Any language, any framework.
 
-```text
-agent-os/
-├── profiles/          # Agent profiles and configurations
-│   └── default/       # Default profile
-│       ├── agents/    # Agent definitions
-│       ├── commands/  # Custom commands
-│       ├── standards/ # Coding standards and guidelines
-│       └── workflows/ # Workflow definitions
-└── scripts/           # Utility scripts
+**Core capabilities:**
+
+- **Discover Standards** — Extract patterns and conventions from your codebase into documented standards
+- **Deploy Standards** — Intelligently inject relevant standards based on what you're building
+- **Shape Spec** — Create better plans that lead to better builds
+- **Index Standards** — Keep your standards organized and discoverable
+
+---
+
+# Setup
+
+Install a project with a specific profile:
+
+```
+~/agent-os/scripts/project-install.sh --profile python
 ```
 
-## Getting Started
+---
+### Documentation & Installation
 
-1. Clone this repository
-2. Navigate to `profiles/default/` to configure your agents
-3. Add custom commands in the `commands/` directory
-4. Define workflows in the `workflows/` directory
+Docs, installation, usage, & best practices 👉 [It's all here](https://buildermethods.com/agent-os)
 
-# Updating Agent OS
+### Follow updates & releases
 
-To update Agent OS, run the following command:
+Read the [changelog](CHANGELOG.md)
 
-```bash
-curl -sSL "https://raw.githubusercontent.com/buildermethods/agent-os/main/scripts/base-install.sh" | bash
-```
-
-## License
-
-See the original [agent-os](https://github.com/buildermethods/agent-os) project for licensing information.
+[Subscribe to be notified of major new releases of Agent OS](https://buildermethods.com/agent-os)
