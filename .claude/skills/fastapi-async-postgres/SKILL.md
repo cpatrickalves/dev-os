@@ -1,32 +1,31 @@
 ---
 name: fastapi-async-postgres
-description: This skill should be used when setting up asynchronous PostgreSQL with SQLAlchemy. Use it when creating new projects that need async database access, adding PostgreSQL to existing applications, or when the user asks about async database patterns.
+description: Sets up asynchronous PostgreSQL with SQLAlchemy for FastAPI applications. Use when creating new projects that need async database access, adding PostgreSQL to existing applications, or when the user asks about async database patterns, asyncpg, or SQLAlchemy async sessions.
 ---
 
 # Async PostgreSQL with SQLAlchemy
 
-## Overview
-
-This skill provides the correct pattern for setting up asynchronous PostgreSQL with SQLAlchemy. It ensures non-blocking database operations for scalable APIs. The examples are based on FastAPI, but the patterns can be applied to any Python application.
-
-## Quick Start
-
-### Required Dependencies
+## Dependencies
 
 ```bash
 pip install sqlalchemy asyncpg
 ```
 
-### Workflow Decision
+## Setup Workflow
 
-1. **New FastAPI project** → Copy templates from `assets/` and customize
-2. **Existing FastAPI project** → Adapt templates to existing structure
+Copy this checklist and track progress:
 
-## Setup Steps
+```
+Setup Progress:
+- [ ] Step 1: Create database configuration
+- [ ] Step 2: Create models
+- [ ] Step 3: Integrate with FastAPI lifespan
+- [ ] Step 4: Verify connection
+```
 
 ### Step 1: Create Database Configuration
 
-Copy `assets/database.py` to the project's database module location (typically `app/database.py` or `src/database.py`).
+Copy `assets/database.py` to the project (typically `app/database.py`).
 
 Customize:
 - `DATABASE_URL`: Update with actual connection credentials
@@ -36,11 +35,6 @@ Customize:
 ### Step 2: Create Models
 
 Copy `assets/models.py` and replace `ExampleModel` with actual models.
-
-Key patterns:
-- Inherit all models from `Base`
-- Use SQLAlchemy 2.0 `Mapped` type annotations
-- Include timestamp fields for audit trails
 
 ### Step 3: Integrate with FastAPI
 
@@ -67,17 +61,10 @@ async def get_items(db: AsyncSession = Depends(get_db)):
 
 ### Step 4: Verify Setup
 
-Test the connection by running the application and hitting an endpoint that uses the database.
+Run the application and hit an endpoint that uses the database.
 
 ## Resources
 
-### assets/
-
-- `database.py` - Complete async database configuration template
-- `models.py` - Example model demonstrating SQLAlchemy 2.0 patterns
-
-### references/
-
-- `async_postgres_guide.md` - Detailed reference with query patterns, best practices, and common mistakes to avoid
-
-For advanced patterns (complex queries, relationships, transactions), consult `references/async_postgres_guide.md`.
+- `assets/database.py` - Async database configuration template
+- `assets/models.py` - Example model with SQLAlchemy 2.0 patterns
+- `references/async_postgres_guide.md` - Query patterns, best practices, common mistakes
