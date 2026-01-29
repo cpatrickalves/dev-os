@@ -1,5 +1,5 @@
 ---
-name: fastapi-async-postgres
+name: setting-up-async-postgres
 description: Sets up asynchronous PostgreSQL with SQLAlchemy for FastAPI applications. Use when creating new projects that need async database access, adding PostgreSQL to existing applications, or when the user asks about async database patterns, asyncpg, or SQLAlchemy async sessions.
 ---
 
