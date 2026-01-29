@@ -18,6 +18,7 @@ git diff main...HEAD --stat
 
 2. Generate summary with:
 
+- A PR title
 - Brief description of what changed
 - List of files modified
 - Breaking changes (if any)
@@ -26,7 +27,8 @@ git diff main...HEAD --stat
 3. Format as PR body:
 
 ```markdown
-## Summary
+# Title
+
 [1-3 bullet points describing the changes]
 
 ## Changes
