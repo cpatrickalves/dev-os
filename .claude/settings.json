@@ -1,6 +1,20 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(python3:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs",
+      "Bash(tree:*)",
+      "Bash(chmod:*)",
+      "Bash(bash:*)",
+      "Bash(echo:*)"
+    ]
+  },
   "enabledPlugins": {
     "feature-dev@claude-plugins-official": true,
-    "pr-review-toolkit@claude-plugins-official": true
+    "claude-md-management@claude-plugins-official": true,
+    "pr-review-toolkit@claude-plugins-official": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true
   }
 }
