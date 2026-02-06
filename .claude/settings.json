@@ -17,5 +17,5 @@
     "pyright-lsp@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true
   },
-  "plansDirectory": "./plans"
+  "plansDirectory": "./.plans"
 }

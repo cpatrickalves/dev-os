@@ -3,13 +3,14 @@
 Detailed code patterns for production FastAPI projects. Read the relevant section based on the task.
 
 ## Contents
-- Application setup (main.py, config, database)
-- SQLAlchemy models (Mapped + mapped_column)
+- Application setup (main.py, config)
 - CRUD Repository pattern
 - Service layer
 - API endpoints with dependencies
 - Authentication and authorization
 - Testing setup
+
+> **Database & models are owned by the `setting-up-async-postgres` skill.** This file covers FastAPI layers only. All database modules live in `app/database/`, not `app/core/`.
 
 ## Application Setup
 
@@ -20,11 +21,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
+from app.database.session import init_db, close_db
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await database.connect()
+    await init_db()
     yield
-    await database.disconnect()
+    await close_db()
 
 app = FastAPI(
     title="API Template",
@@ -63,55 +66,14 @@ def get_settings() -> Settings:
     return Settings()
 ```
 
-### core/database.py
+### Database Setup
 
+> **Owned by the `setting-up-async-postgres` skill.** Copy its `assets/database.py` to `app/database/session.py` and `assets/models.py` to `app/database/models.py`. Do NOT place database modules in `app/core/`.
+
+Imports used by other layers:
 ```python
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker, AsyncAttrs
-from sqlalchemy.orm import DeclarativeBase
-from app.core.config import get_settings
-
-settings = get_settings()
-
-engine = create_async_engine(settings.DATABASE_URL, echo=True)
-
-AsyncSessionLocal = async_sessionmaker(
-    engine,
-    class_=AsyncSession,
-    expire_on_commit=False
-)
-
-class Base(AsyncAttrs, DeclarativeBase):
-    pass
-
-async def get_db() -> AsyncSession:
-    async with AsyncSessionLocal() as session:
-        try:
-            yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
-```
-
-## SQLAlchemy Models (mapped_column style)
-
-### models/user.py
-
-```python
-from datetime import datetime, timezone
-from sqlalchemy import String, func
-from sqlalchemy.orm import Mapped, mapped_column
-from app.core.database import Base
-
-class User(Base):
-    __tablename__ = "users"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
-    hashed_password: Mapped[str] = mapped_column(String(255))
-    name: Mapped[str] = mapped_column(String(100))
-    is_active: Mapped[bool] = mapped_column(default=True)
-    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+from app.database.session import get_db, init_db, close_db, Base
+from app.database.models import User  # Your models
 ```
 
 ## CRUD Repository Pattern
@@ -178,7 +140,7 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.base_repository import BaseRepository
-from app.models.user import User
+from app.database.models import User
 from app.schemas.user import UserCreate, UserUpdate
 
 class UserRepository(BaseRepository[User, UserCreate, UserUpdate]):
@@ -236,7 +198,7 @@ from typing import Annotated, Sequence
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
+from app.database.session import get_db
 from app.schemas.user import User, UserCreate, UserUpdate
 from app.services.user_service import user_service
 from app.api.dependencies import get_current_user
@@ -310,7 +272,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
+from app.database.session import get_db
 from app.core.security import ALGORITHM
 from app.core.config import get_settings
 from app.repositories.user_repository import user_repository
@@ -345,39 +307,12 @@ async def get_current_user(
 
 ### tests/conftest.py
 
-```python
-import pytest
-from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+> **See the `setting-up-async-postgres` skill** — `references/testing_guide.md` for the
+> complete database test fixture pattern.
 
-from app.main import app
-from app.core.database import get_db, Base
-
-TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
-
-@pytest.fixture
-async def db_session():
-    engine = create_async_engine(TEST_DATABASE_URL, echo=True)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    session_factory = async_sessionmaker(
-        engine, class_=AsyncSession, expire_on_commit=False
-    )
-
-    async with session_factory() as session:
-        yield session
-
-@pytest.fixture
-async def client(db_session):
-    async def override_get_db():
-        yield db_session
-
-    app.dependency_overrides[get_db] = override_get_db
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        yield client
-```
+Fixtures provided:
+- `db_session` — In-memory SQLite async session with fresh schema per test
+- `client` — `httpx.AsyncClient` with `get_db` dependency overridden to use `db_session`
 
 ### tests/test_users.py
 

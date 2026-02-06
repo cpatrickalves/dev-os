@@ -33,14 +33,17 @@ app/
 │   └── dependencies.py    # Shared dependencies (auth, etc.)
 ├── core/
 │   ├── config.py          # Pydantic Settings + .env
-│   ├── security.py        # JWT + password hashing
-│   └── database.py        # Async engine + session
-├── models/                # SQLAlchemy models
+│   └── security.py        # JWT + password hashing
+├── database/              # All DB modules here (see setting-up-async-postgres skill)
+│   ├── session.py         # Async engine, session factory, get_db, init_db, close_db
+│   └── models.py          # SQLAlchemy ORM models
 ├── schemas/               # Pydantic request/response schemas
 ├── services/              # Business logic
 ├── repositories/          # Data access (generic CRUD base)
 └── main.py                # App entry with lifespan
 ```
+
+> **Database modules belong in `app/database/`, not `app/core/`.** The `setting-up-async-postgres` skill owns all database configuration. This skill focuses on the FastAPI layers above the database.
 
 ## Architecture Rules
 
@@ -48,21 +51,19 @@ app/
 2. **Async all the way**: Use `async def` for routes, DB operations, and external calls. Never mix sync DB drivers with async handlers.
 3. **Dependency injection**: Use `Annotated[Type, Depends()]` for DB sessions, auth, and shared logic.
 4. **Pydantic schemas**: Separate `Create`, `Update`, and `Read` schemas. Never expose ORM models directly.
-5. **Session management**: Use async context manager in `get_db()` with commit/rollback/close.
 
 ## Key Dependencies
 
 ```
 fastapi
 uvicorn[standard]
-sqlalchemy[asyncio]
-asyncpg              # PostgreSQL async driver
+sqlalchemy[asyncio]      # See setting-up-async-postgres skill for database setup
+asyncpg                  # PostgreSQL async driver
 pydantic-settings
 python-jose[cryptography]
 passlib[bcrypt]
-httpx                # For async test client
+httpx                    # For async test client
 pytest-asyncio
-aiosqlite            # For test DB
 ```
 
 ## Quick Reference
@@ -84,38 +85,28 @@ def get_settings() -> Settings:
     return Settings()
 ```
 
-### Async Database Session
+### Database Configuration
 
+Use the `setting-up-async-postgres` skill for all database setup (engine, sessions, models, migrations, testing). It provides everything needed in `app/database/`.
+
+Imports used by other layers in this project:
 ```python
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker, AsyncAttrs
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
-engine = create_async_engine(settings.DATABASE_URL)
-AsyncSessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-
-class Base(AsyncAttrs, DeclarativeBase):
-    pass
-
-async def get_db() -> AsyncSession:
-    async with AsyncSessionLocal() as session:
-        try:
-            yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
+from app.database.session import get_db, init_db, close_db  # Session/lifecycle
+from app.database.session import Base, AsyncSessionLocal     # Rarely needed directly
+from app.database.models import User                         # ORM models
 ```
 
 ### Lifespan Pattern
 
 ```python
 from contextlib import asynccontextmanager
+from app.database.session import init_db, close_db
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await database.connect()
+    await init_db()
     yield
-    await database.disconnect()
+    await close_db()
 
 app = FastAPI(title="API", version="1.0.0", lifespan=lifespan)
 ```
@@ -124,22 +115,18 @@ app = FastAPI(title="API", version="1.0.0", lifespan=lifespan)
 
 For complete code examples of each layer, see [references/implementation-patterns.md](references/implementation-patterns.md):
 
-- **Application setup** — main.py, config, database engine
-- **SQLAlchemy models** — `Mapped` + `mapped_column` style (SQLAlchemy 2.0)
+- **Application setup** — main.py, config
 - **CRUD Repository** — Generic base with get/create/update/delete
 - **Service layer** — Business logic with password hashing, validation
 - **API endpoints** — RESTful routes with dependency injection
 - **Authentication** — JWT tokens, OAuth2 bearer, current_user dependency
-- **Testing** — pytest fixtures, async client, in-memory SQLite
+- **Testing** — pytest fixtures (database test fixtures via `setting-up-async-postgres` skill)
 
 ## Common Pitfalls
 
-- Using `declarative_base()` — deprecated; use `class Base(AsyncAttrs, DeclarativeBase)` instead
-- Using `Column(Type)` — deprecated; use `Mapped[type] = mapped_column()` instead
-- Missing `AsyncAttrs` mixin — required on Base for async lazy-load access of relationships
+- Database configuration pitfalls (deprecated patterns, async setup) — see the `setting-up-async-postgres` skill
 - Using `.dict()` on Pydantic models — deprecated; use `.model_dump()` instead
 - Using `datetime.utcnow()` — deprecated; use `datetime.now(timezone.utc)` instead
-- Using `sessionmaker` for async — use `async_sessionmaker` instead
 - Using `= Depends(dep)` — prefer `Annotated[Type, Depends(dep)]` for reusable dependencies
 - Using inner `class Config` in BaseSettings — use `model_config = SettingsConfigDict(...)` instead
 - Blocking calls in async handlers — use `run_in_executor()` or async libraries
