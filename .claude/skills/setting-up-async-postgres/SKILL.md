@@ -1,6 +1,6 @@
 ---
 name: setting-up-async-postgres
-description: Sets up asynchronous PostgreSQL with SQLAlchemy for FastAPI applications. Use when creating new projects that need async database access, adding PostgreSQL to existing applications, setting up database test fixtures, or when the user asks about async database patterns, asyncpg, SQLAlchemy async sessions, or database testing with aiosqlite.
+description: Sets up asynchronous PostgreSQL with SQLAlchemy for FastAPI applications. Use when creating new projects that need async database access, adding PostgreSQL to existing applications, setting up database test fixtures, configuring database migrations, or when the user asks about async database patterns, asyncpg, SQLAlchemy async sessions, Alembic, or database testing with aiosqlite.
 ---
 
 # Async PostgreSQL with SQLAlchemy
@@ -27,7 +27,7 @@ Setup Progress:
 
 ### Step 1: Create Database Configuration
 
-Copy `assets/database.py` to the project (typically `app/database.py`).
+Copy `assets/database.py` to the project (typically `app/database/session.py`).
 
 Customize:
 - `DATABASE_URL`: Update with actual connection credentials
@@ -40,7 +40,7 @@ Customize:
 
 ### Step 2: Create Models
 
-Copy `assets/models.py` and replace `ExampleModel` with actual models.
+Copy `assets/models.py` to `app/database/models.py` and replace `ExampleModel` with actual models.
 
 ### Step 3: Integrate with FastAPI
 
@@ -51,7 +51,7 @@ from typing import Annotated
 from fastapi import FastAPI, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import get_db, init_db, close_db
+from app.database.session import get_db, init_db, close_db
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -61,17 +61,20 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# Reusable type alias for route dependencies
 DbSession = Annotated[AsyncSession, Depends(get_db)]
-
-@app.get("/items")
-async def get_items(db: DbSession):
-    # Use db session here
-    pass
 ```
+
+See [references/async_postgres_guide.md](references/async_postgres_guide.md) for route implementation examples using `DbSession`.
 
 ### Step 4: Verify Setup
 
-Run the application and hit an endpoint that uses the database.
+```
+Verification Checklist:
+- [ ] App starts without connection errors (check for OperationalError)
+- [ ] GET endpoint returns data (empty list OK for fresh DB)
+- [ ] SQL echo shows queries in console (echo=True in engine)
+```
 
 ### Step 5: Set Up Test Database (Optional)
 

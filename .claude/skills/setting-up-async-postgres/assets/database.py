@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import MetaData
+from sqlalchemy.exc import OperationalError
 
 # TODO: Update with your database connection string
 # Format: postgresql+asyncpg://user:password@host:port/database
@@ -28,6 +29,9 @@ class Base(AsyncAttrs, DeclarativeBase):
 engine = create_async_engine(
     DATABASE_URL,
     echo=True,  # Set to False in production
+    pool_pre_ping=True,  # Verify connections before use
+    pool_size=5,
+    max_overflow=10,
 )
 
 AsyncSessionLocal = async_sessionmaker(
@@ -49,9 +53,18 @@ async def get_db() -> AsyncSession:
 
 
 async def init_db() -> None:
-    """Initialize database tables. Call during app startup."""
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    """Initialize database tables. Call during app startup.
+
+    Remove create_all once Alembic manages your schema migrations.
+    """
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    except OperationalError as e:
+        raise RuntimeError(
+            f"Failed to connect to database. Verify DATABASE_URL and that "
+            f"PostgreSQL is running: {e}"
+        ) from e
 
 
 async def close_db() -> None:

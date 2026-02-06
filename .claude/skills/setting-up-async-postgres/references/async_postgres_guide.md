@@ -4,7 +4,8 @@
 - Route implementation patterns
 - SQLAlchemy 2.0 query patterns (select, insert, update, delete)
 - Relationship patterns
-- Application lifecycle
+- Alembic migrations
+- Error handling patterns
 - Common mistakes
 - Best practices checklist
 
@@ -17,8 +18,8 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from database import get_db
-from models import ExampleModel
+from app.database.session import get_db
+from app.database.models import ExampleModel
 
 DbSession = Annotated[AsyncSession, Depends(get_db)]
 
@@ -94,7 +95,9 @@ class Author(Base):
     __tablename__ = "authors"
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(255))
-    books: Mapped[list["Book"]] = relationship(back_populates="author")
+    books: Mapped[list["Book"]] = relationship(
+        back_populates="author", cascade="all, delete-orphan"
+    )
 
 class Book(Base):
     __tablename__ = "books"
@@ -103,6 +106,8 @@ class Book(Base):
     author_id: Mapped[int] = mapped_column(ForeignKey("authors.id"))
     author: Mapped["Author"] = relationship(back_populates="books")
 ```
+
+> **Cascade options**: `"all, delete-orphan"` auto-deletes children when parent is deleted or child is removed from collection. Other common values: `"save-update, merge"` (default — propagate adds only), `"delete"` (delete children with parent, but keep orphans).
 
 Async eager loading (avoids lazy-load issues):
 
@@ -116,18 +121,60 @@ authors = result.scalars().all()
 # authors[0].books is already loaded — no lazy-load error
 ```
 
-## Application Lifecycle
+> **Other loading strategies**: Use `joinedload()` for one-to-one or many-to-one (single JOIN). Use `subqueryload()` as an alternative to `selectinload` for very large collections. All are imported from `sqlalchemy.orm`.
+
+## Alembic Migrations
+
+Initialize async Alembic:
+
+```bash
+pip install alembic
+alembic init -t async migrations
+```
+
+Configure `migrations/env.py`:
 
 ```python
-from contextlib import asynccontextmanager
+from app.database.session import Base, DATABASE_URL
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    await init_db()   # Startup
-    yield
-    await close_db()  # Shutdown
+config.set_main_option("sqlalchemy.url", DATABASE_URL)
+target_metadata = Base.metadata
+```
 
-app = FastAPI(lifespan=lifespan)
+Common commands:
+
+```bash
+alembic revision --autogenerate -m "add users table"
+alembic upgrade head
+alembic downgrade -1
+```
+
+> Once Alembic manages your schema, remove `create_all` from `init_db()` — Alembic owns the schema lifecycle.
+
+## Error Handling Patterns
+
+```python
+from fastapi import HTTPException
+from sqlalchemy.exc import IntegrityError
+
+# Duplicate / constraint violation → 409
+async def create_item(data: ItemCreate, db: DbSession):
+    item = Item(**data.model_dump())
+    db.add(item)
+    try:
+        await db.flush()
+    except IntegrityError:
+        raise HTTPException(status_code=409, detail="Item already exists")
+    await db.refresh(item)
+    return item
+
+# Not found → 404
+async def get_item(item_id: int, db: DbSession):
+    result = await db.execute(select(Item).where(Item.id == item_id))
+    item = result.scalar_one_or_none()
+    if item is None:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return item
 ```
 
 ## Common Mistakes
