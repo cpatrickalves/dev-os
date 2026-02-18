@@ -7,3 +7,8 @@ claude plugin install pyright-lsp@claude-plugins-official --scope project
 
 # Typescript
 claude plugin install typescript-lsp@claude-plugins-official --scope project
+
+# Compound Engineer
+claude plugin marketplace add https://github.com/EveryInc/compound-engineering-plugin
+claude plugin install compound-engineering --scope project
+
