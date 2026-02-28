@@ -1,88 +1,105 @@
-# Agent OS
+# Dev-OS
 
-A lightweight operating system for AI agents, based on [buildermethods/agent-os](https://github.com/buildermethods/agent-os). Here I added my own customizations to the original project.
+My personal development operating system — a curated repository of configurations, skills, commands, sub-agents, and plugins that power my daily software development workflow with [Claude Code](https://docs.anthropic.com/en/docs/claude-code).
 
-## Agents that build the way you would
-
-[Agent OS](https://buildermethods.com/agent-os) helps you shape better specs, keeps agents aligned in a lightweight system that fits how you already build.
-
-Works alongside Claude Code, Cursor, Antigravity, and other AI tools. Any language, any framework.
-
-**Core capabilities:**
-
-- **Discover Standards** — Extract patterns and conventions from your codebase into documented standards
-- **Deploy Standards** — Intelligently inject relevant standards based on what you're building
-- **Shape Spec** — Create better plans that lead to better builds
-- **Index Standards** — Keep your standards organized and discoverable
+This is where I document and evolve my **Vibe Coding** process.
 
 ---
 
-# Setup
+## What's Inside
 
-Install a project with a specific profile:
+### Skills
 
-```
-~/agent-os/scripts/project-install.sh --profile python
-```
+Reusable skill modules that extend Claude Code with specialized knowledge and workflows.
 
----
-### Documentation & Installation
+| Skill | Category | Description |
+|-------|----------|-------------|
+| `skill-creator` | Development | Guide for creating effective Claude Code skills |
+| `skill-reviewer` | Development | Review and improve skills against best practices |
+| `solid-checker` | Development | Analyze and fix SOLID principle violations |
+| `setting-up-fastapi-projects` | Python | Create production-ready FastAPI projects with async SQLAlchemy |
+| `setting-up-async-postgres` | Python | Set up async PostgreSQL with SQLAlchemy and test fixtures |
+| `fastapi-api-key-auth` | Python | Add X-API-Key header authentication to FastAPI apps |
+| `pytest-testing` | Python | Generate pytest suites with fixtures, parametrization, and mocking |
+| `python-cashews-cache` | Python | Async caching with cashews library and diskcache backend |
+| `frontend-design` | Frontend | Create distinctive, production-grade frontend interfaces |
+| `copywriting` | Frontend | Write and improve marketing copy for web pages |
+| `vercel-react-best-practices` | Frontend | React/Next.js performance optimization (57 rules across 8 categories) |
+| `sop-creator` | Operations | Create runbooks, playbooks, and technical documentation |
+| `competitors-analysis` | Operations | Evidence-based competitor analysis from actual cloned code |
+| `azure-devops-cli` | Operations | Azure DevOps resource management via CLI |
+| `planecli` | Operations | Plane.so project management via CLI |
+| `improving-skills-from-sessions` | Productivity | Analyze sessions to propose skill improvements |
+| `macos-cleaner` | Productivity | Analyze and reclaim macOS disk space |
 
-Docs, installation, usage, & best practices 👉 [It's all here](https://buildermethods.com/agent-os)
+### Commands
 
-# For Claude Code 
-
-## Plugins 
-
-This repo enables the following plugins:
-
-| Name | Description | Contents |
-|------|-------------|----------|
-| [feature-dev](https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev) | Comprehensive feature development workflow with a structured 7-phase approach | **Command:** `/feature-dev` - Guided feature development workflow<br>**Agents:** `code-explorer`, `code-architect`, `code-reviewer` - For codebase analysis, architecture design, and quality review |
-| [pr-review-toolkit](https://github.com/anthropics/claude-code/tree/main/plugins/pr-review-toolkit) | Comprehensive PR review agents specializing in comments, tests, error handling, type design, code quality, and code simplification | **Command:** `/pr-review-toolkit:review-pr` - Run with optional review aspects (comments, tests, errors, types, code, simplify, all)<br>**Agents:** `comment-analyzer`, `pr-test-analyzer`, `silent-failure-hunter`, `type-design-analyzer`, `code-reviewer`, `code-simplifier` |
-
-## Skills
-
-| Name | Description |
-|------|-------------|
-| `claude-md-progressive-disclosurer` | Optimize CLAUDE.md files using progressive disclosure for LLM efficiency |
-| `competitors-analysis` | Analyze competitor repositories with evidence-based approach using actual cloned code |
-| `copywriting` | Write, rewrite, or improve marketing copy for pages (homepage, landing, pricing, features, etc.) |
-| `fastapi-api-key-auth` | Add API key authentication (X-API-Key header) to FastAPI applications |
-| `frontend-design` | Create distinctive, production-grade frontend interfaces with high design quality |
-| `improving-skills-from-sessions` | Analyze conversations to propose skill improvements based on what worked and edge cases |
-| `macos-cleaner` | Analyze and reclaim macOS disk space through intelligent cleanup recommendations |
-| `pytest-testing` | Generate pytest test suites with fixtures, parametrization, async support, and mocking |
-| `setting-up-async-postgres` | Set up asynchronous PostgreSQL with SQLAlchemy for FastAPI applications |
-| `setting-up-fastapi-projects` | Create production-ready FastAPI projects with async SQLAlchemy and layered architecture |
-| `skill-creator` | Guide for creating effective skills that extend Claude's capabilities |
-| `skill-reviewer` | Review and improve Claude Code skills against official best practices |
-| `vercel-react-best-practices` | React and Next.js performance optimization guidelines from Vercel Engineering |
-
-## Commands
-
-### Agent OS Core Commands
-
-Installed to projects via `project-install.sh`. Located in `commands/agent-os/`.
+Custom slash commands available in Claude Code.
 
 | Command | Description |
 |---------|-------------|
-| `/discover-standards` | Extract tribal knowledge from the codebase into documented standards |
-| `/inject-standards` | Inject relevant standards into context (auto-suggest or explicit mode) |
-| `/index-standards` | Rebuild and maintain the standards index file (`index.yml`) |
-| `/shape-spec` | Gather context and structure planning for significant work in plan mode |
-| `/plan-product` | Establish foundational product documentation (mission, roadmap, tech stack) |
-
-### Project Commands
-
-Located in `.claude/commands/`.
-
-| Command | Description |
-|---------|-------------|
-| `/create-simple-feature-prd` | Create a detailed Product Requirements Document for a single feature |
-| `/create-simple-feature-tasks` | Create a step-by-step task list from user requirements |
-| `/create-update-changelog` | Create or update a changelog following semantic versioning |
-| `/create-update-readme` | Create or update the README.md file |
-| `/end-session` | Generate a concise session log with summary, changes, and next steps |
-| `/fix-bug` | Explore a module and its dependencies to understand data flow and propose fixes |
+| `/create-simple-feature-prd` | Create a detailed Product Requirements Document |
+| `/create-simple-feature-tasks` | Generate a step-by-step task list from requirements |
+| `/create-update-changelog` | Create or update a changelog with semantic versioning |
+| `/create-update-readme` | Create or update the project README |
+| `/create-update-makefile` | Create or update a Makefile for automation |
 | `/pr-summary` | Generate a pull request summary for the current branch |
+| `/end-session` | Generate a session log with summary, changes, and next steps |
+| `/improve-specs` | Refine specification documents through detailed interview |
+| `/blitzy-create-product-description` | Create a marketing product description |
+| `/blitzy-create-codebase-docs` | Generate comprehensive codebase documentation |
+| `/blitzy-create-comprehensive-documentation` | Generate full project documentation |
+
+### Plugins
+
+Official Claude Code plugins enabled in this workspace.
+
+| Plugin | Description |
+|--------|-------------|
+| [feature-dev](https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev) | 7-phase feature development workflow with `code-explorer`, `code-architect`, and `code-reviewer` agents |
+| [pr-review-toolkit](https://github.com/anthropics/claude-code/tree/main/plugins/pr-review-toolkit) | PR review with specialized agents for comments, tests, error handling, types, code quality, and simplification |
+| pyright-lsp | Python type checking |
+| typescript-lsp | TypeScript type checking |
+| claude-md-management | Markdown management tools |
+
+### Standards & Profiles
+
+Pre-configured development profiles with tech stack standards.
+
+- **Default profile** — React 18, TypeScript, Tailwind CSS, Vite, Node.js, Express, PostgreSQL
+- **Python profile** — FastAPI, Python (uv), Next.js, Tailwind CSS, PostgreSQL, SQLAlchemy, Redis, pytest, Ruff
+
+---
+
+## Project Structure
+
+```
+dev-os/
+├── .claude/
+│   ├── commands/          # Custom slash commands
+│   ├── skills/            # 17 reusable skill modules
+│   └── settings.json      # Plugin and permission config
+├── commands/
+│   └── agent-os/          # Standards management commands
+├── profiles/
+│   ├── default/           # Default tech stack profile
+│   └── python/            # Python tech stack profile
+├── scripts/               # Helper scripts
+└── config.yml             # Main configuration
+```
+
+---
+
+## How I Use This
+
+This repo is my single source of truth for development configurations. I clone it, and Claude Code picks up all the skills, commands, and plugins automatically. When I learn a new pattern or refine a workflow, I update it here so every future session benefits.
+
+The skills cover the full stack I work with daily — from FastAPI backends and React frontends to project management, documentation, and code quality. The commands automate repetitive tasks like writing PRDs, changelogs, and PR summaries.
+
+---
+
+## Getting Started
+
+1. Clone the repo
+2. Open it with Claude Code — skills, commands, and plugins load automatically from `.claude/`
+3. Use `/create-simple-feature-tasks` to break down a feature, `/pr-summary` to summarize changes, or any other command
