@@ -1,8 +1,5 @@
 # Changelog
 
-Get notified of major releases by subscribing here:
-https://buildermethods.com/agent-os
-
 ## [3.0] - 2026-01-20
 
 Agent OS v3 is a major release that refocuses the framework on what it does best—establishing and injecting standards—while deferring to modern AI tools for the parts they now handle better.
