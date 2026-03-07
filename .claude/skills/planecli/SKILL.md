@@ -1,6 +1,6 @@
 ---
 name: planecli
-description: "Manages Plane.so project management resources via the planecli CLI. Use when listing/creating/updating work items, projects, cycles, modules, labels, states, docs, or comments. Triggers on Plane.so mentions, sprint management, or identifiers like ABC-123."
+description: "This skill manages Plane.so project management resources via the planecli CLI. It should be used when listing/creating/updating work items, projects, cycles, modules, labels, states, docs, or comments. Triggers on Plane.so mentions, sprint management, or identifiers like ABC-123."
 allowed-tools: Bash(planecli *)
 ---
 
@@ -11,10 +11,10 @@ CLI for [Plane.so](https://plane.so) project management. Installed as `planecli`
 ## Key Concepts
 
 - **Fuzzy resolution**: All resource arguments (projects, states, labels, users, work items) accept names, identifiers (e.g. `ABC-123`), or UUIDs. Fuzzy matching with 60% threshold finds close matches.
-- **"me" shortcut**: Use `me` as assignee value to reference the authenticated user.
-- **Output**: Always use `--json` flag to get structured JSON output. JSON is the preferred output format.
-- **Caching**: Responses are cached on disk. Use `--no-cache` to bypass or `planecli cache clear` to reset.
-- **Project scoping**: Most commands need `-p PROJECT`. Work items with identifier format (ABC-123) auto-resolve across projects.
+- **"me" shortcut**: Pass `me` as the assignee value to reference the authenticated user.
+- **Output**: Always pass `--json` to get structured JSON output. JSON is the preferred output format.
+- **Caching**: Responses are cached on disk. Pass `--no-cache` to bypass or run `planecli cache clear` to reset.
+- **Project scoping**: Most commands require `-p PROJECT`. Work items with identifier format (ABC-123) auto-resolve across projects.
 
 ## Quick Reference
 
