@@ -2,6 +2,9 @@
 name: planecli
 description: "Manage Plane.so project management via the planecli CLI — list, create, update, and search work items, projects, cycles/sprints, modules, labels, states, documents, and comments. ALWAYS use this skill when the user mentions Plane, Plane.so, planecli, or references work item identifiers like ABC-123, FE-234, MOB-45. Also invoke when the user asks to manage tasks, issues, sprints, backlogs, or project boards AND either explicitly mentions Plane or the project context indicates Plane is the tool in use. Do NOT use for other project management tools (Jira, Linear, Asana, Trello, Azure DevOps Boards)."
 allowed-tools: Bash(planecli *)
+metadata:
+  author: Patrick Alves
+  version: "1.0"
 ---
 
 # PlaneCLI
