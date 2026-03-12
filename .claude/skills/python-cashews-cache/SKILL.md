@@ -1,5 +1,5 @@
 ---
-name: cashews-cache
+name: python-cashews-cache
 description: "Adds caching to Python functions using the cashews library with disk cache (diskcache) as default backend. Use when the user asks to add cache, optimize with caching, or configure cashews. Triggers on 'add cache', 'cache this function', 'setup cashews', 'add disk cache', or 'optimize with cache'."
 metadata:
   author: Patrick Alves
