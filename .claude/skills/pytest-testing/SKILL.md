@@ -1,17 +1,17 @@
 ---
 name: pytest-testing
-description: Generates pytest test suites with fixtures, parametrization, async support, and mocking. Use when the user asks to write tests, add test coverage, or create unit/integration tests for Python code. Triggers on "write tests", "add pytest tests", "create unit tests", "test this module", or "add test coverage".
+description: This skill generates pytest test suites with fixtures, parametrization, async support, and mocking. This skill should be used when writing tests, adding test coverage, or creating unit/integration tests for Python code. Triggers on "write tests", "add pytest tests", "create unit tests", "test this module", or "add test coverage".
 ---
 
 # Pytest Testing
 
-Generate well-structured pytest code following Arrange-Act-Assert, proper fixtures, parametrization, and mocking strategies.
+To generate well-structured pytest code, follow Arrange-Act-Assert, apply proper fixtures, parametrization, and mocking strategies.
 
 ## Workflow
 
-Copy this checklist when writing tests:
+To write tests, copy and follow this checklist:
 
-```
+```markdown
 Test Writing Progress:
 - [ ] Read the source code to understand inputs, outputs, and edge cases
 - [ ] Check for `if __name__ == "__main__":` blocks — run them to understand behavior
@@ -24,16 +24,18 @@ Test Writing Progress:
 
 ## Core Rules
 
-- Use **only pytest and pytest plugins** — never unittest for test structure
+- Only use **pytest and pytest plugins** — never unittest for test structure
 - Follow **Arrange-Act-Assert** in all tests
-- All test functions must have **type annotations** on return (`-> None`)
-- Tests must be **independent** and runnable in any order
+- Annotate all test functions with **return type** (`-> None`)
+- Keep tests **independent** and runnable in any order
 - Patch where the object is **used**, not where it's **defined**
 - Include `conftest.py` content when shared fixtures are needed
 
 ## Mocking Decision Tree
 
-```
+To select the appropriate mocking approach:
+
+```text
 Need to substitute something?
 │
 ├─► Environment variable or simple config?
@@ -49,7 +51,7 @@ Need to substitute something?
     └─► Use pytest-mock (most complete)
 ```
 
-### monkeypatch — Environment and Config
+### monkeypatch — For Environment and Config
 
 ```python
 def test_api_uses_correct_key(monkeypatch) -> None:
@@ -90,7 +92,7 @@ def test_handles_connection_error(mocker) -> None:
 
 ## Async Testing with pytest-asyncio
 
-Configure in `pyproject.toml`:
+To enable async testing, configure `pyproject.toml`:
 
 ```toml
 [tool.pytest.ini_options]
@@ -98,7 +100,7 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 ```
 
-Use `auto` mode (no markers needed). Use `strict` mode only for multi-async-library projects.
+Prefer `auto` mode (no markers needed). Reserve `strict` mode for multi-async-library projects.
 
 ### Async Fixtures
 
@@ -130,7 +132,7 @@ async def test_async_api_call(mocker) -> None:
 
 ### Event Loop Scopes
 
-Use `loop_scope` to share event loops across tests for performance:
+To share event loops across tests for performance, set `loop_scope`:
 
 ```python
 # Module-level: all tests share one event loop
@@ -153,13 +155,45 @@ def test_env(monkeypatch) -> None:
     monkeypatch.setenv("DATABASE_URL", "sqlite:///:memory:")
 ```
 
-## Anti-Patterns
+## Parametrization
 
-1. **Over-mocking** — if everything is mocked, nothing real is tested
-2. **Missing call verification** — always verify mocks were called as expected
+```python
+@pytest.mark.parametrize("input_val,expected", [
+    (1, 2),
+    (0, 0),
+    (-1, -2),
+])
+def test_double(input_val: int, expected: int) -> None:
+    assert double(input_val) == expected
+
+
+@pytest.mark.parametrize("invalid_input", [None, "", -1, 999])
+def test_rejects_invalid(invalid_input) -> None:
+    with pytest.raises(ValueError):
+        process(invalid_input)
+```
+
+## Exception Testing
+
+```python
+def test_raises_on_invalid_input() -> None:
+    with pytest.raises(ValueError, match="must be positive"):
+        process(-1)
+
+
+def test_raises_custom_exception() -> None:
+    with pytest.raises(NotFoundError) as exc_info:
+        fetch_user(999)
+    assert exc_info.value.status_code == 404
+```
+
+## Anti-Patterns to Avoid
+
+1. **Over-mocking** — mocking everything means nothing real is tested
+2. **Missing call verification** — verify mocks were called as expected
 3. **Wrong patch location** — patch where the object is used, not where defined
-4. **Using unittest module** — always use pytest-native constructs
+4. **Using unittest module** — prefer pytest-native constructs
 
 ## Resources
 
-For advanced mocking patterns (datetime, files, classes, context managers, async iterators, httpx/aiohttp, autospec), decision checklists, and recommended project configuration, see `references/mocking_guide.md`.
+For advanced mocking patterns (datetime, files, classes, context managers, async iterators, httpx/aiohttp, autospec), decision checklists, and recommended project configuration, consult `references/mocking_guide.md`.

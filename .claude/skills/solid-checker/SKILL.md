@@ -1,6 +1,9 @@
 ---
 name: solid-checker
 description: Analyze and fix SOLID principle violations in software projects. Use when the user asks to check code quality, review architecture, find design smells, refactor for maintainability, or explicitly mentions SOLID, single responsibility, open-closed, Liskov, interface segregation, or dependency inversion. Triggers on "check SOLID", "review code design", "find code smells", "improve architecture", "refactor for maintainability", or any request about clean code principles.
+metadata:
+  author: Patrick Alves
+  version: "1.0"
 ---
 
 # SOLID Checker

@@ -1,7 +1,10 @@
 ---
 name: planecli
-description: "Manages Plane.so project management resources via the planecli CLI. Use when listing/creating/updating work items, projects, cycles, modules, labels, states, docs, or comments. Triggers on Plane.so mentions, sprint management, or identifiers like ABC-123."
+description: "Manage Plane.so project management via the planecli CLI — list, create, update, and search work items, projects, cycles/sprints, modules, labels, states, documents, and comments. ALWAYS use this skill when the user mentions Plane, Plane.so, planecli, or references work item identifiers like ABC-123, FE-234, MOB-45. Also invoke when the user asks to manage tasks, issues, sprints, backlogs, or project boards AND either explicitly mentions Plane or the project context indicates Plane is the tool in use. Do NOT use for other project management tools (Jira, Linear, Asana, Trello, Azure DevOps Boards)."
 allowed-tools: Bash(planecli *)
+metadata:
+  author: Patrick Alves
+  version: "1.0"
 ---
 
 # PlaneCLI
@@ -11,10 +14,10 @@ CLI for [Plane.so](https://plane.so) project management. Installed as `planecli`
 ## Key Concepts
 
 - **Fuzzy resolution**: All resource arguments (projects, states, labels, users, work items) accept names, identifiers (e.g. `ABC-123`), or UUIDs. Fuzzy matching with 60% threshold finds close matches.
-- **"me" shortcut**: Use `me` as assignee value to reference the authenticated user.
-- **Output**: Always use `--json` flag to get structured JSON output. JSON is the preferred output format.
-- **Caching**: Responses are cached on disk. Use `--no-cache` to bypass or `planecli cache clear` to reset.
-- **Project scoping**: Most commands need `-p PROJECT`. Work items with identifier format (ABC-123) auto-resolve across projects.
+- **"me" shortcut**: Pass `me` as the assignee value to reference the authenticated user.
+- **Output**: Always pass `--json` to get structured JSON output. JSON is the preferred output format.
+- **Caching**: Responses are cached on disk. Pass `--no-cache` to bypass or run `planecli cache clear` to reset.
+- **Project scoping**: Most commands require `-p PROJECT`. Work items with identifier format (ABC-123) auto-resolve across projects.
 
 ## Quick Reference
 
