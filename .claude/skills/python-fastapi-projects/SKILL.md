@@ -1,5 +1,5 @@
 ---
-name: setting-up-fastapi-projects
+name: python-fastapi-projects
 description: Creates production-ready FastAPI projects with async SQLAlchemy, dependency injection, and layered architecture. Use when building new FastAPI applications, setting up backend API projects, implementing async REST APIs, or creating microservices with Python.
 ---
 
@@ -87,7 +87,7 @@ def get_settings() -> Settings:
 
 ### Database Configuration
 
-Use the `setting-up-async-postgres` skill for all database setup (engine, sessions, models, migrations, testing). It provides everything needed in `app/database/`.
+Use the `python-async-postgres` skill for all database setup (engine, sessions, models, migrations, testing). It provides everything needed in `app/database/`.
 
 Imports used by other layers in this project:
 ```python

@@ -1,5 +1,5 @@
 ---
-name: pytest-testing
+name: python-testing
 description: This skill generates pytest test suites with fixtures, parametrization, async support, and mocking. This skill should be used when writing tests, adding test coverage, or creating unit/integration tests for Python code. Triggers on "write tests", "add pytest tests", "create unit tests", "test this module", or "add test coverage".
 ---
 
