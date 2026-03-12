@@ -13,3 +13,6 @@ claude plugin install typescript-lsp@claude-plugins-official --scope project
 claude plugin marketplace add https://github.com/EveryInc/compound-engineering-plugin
 claude plugin install compound-engineering --scope project
 
+## Update 
+claude plugin marketplace update every-marketplace
+claude plugin update compound-engineering@every-marketplace
