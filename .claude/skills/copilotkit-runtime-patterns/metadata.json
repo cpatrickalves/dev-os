@@ -1,0 +1,11 @@
+{
+  "version": "2.0.0",
+  "organization": "CopilotKit",
+  "date": "March 2026",
+  "abstract": "Server-side runtime configuration patterns for CopilotKit. Contains 15 rules covering Express/Hono/Next.js endpoint setup, agent registration (LangGraphAgent, HttpAgent, AG-UI), middleware hooks, security configuration, and performance optimization.",
+  "references": [
+    "https://docs.copilotkit.ai",
+    "https://github.com/CopilotKit/CopilotKit",
+    "https://docs.copilotkit.ai/reference/runtime"
+  ]
+}

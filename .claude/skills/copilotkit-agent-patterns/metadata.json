@@ -1,0 +1,12 @@
+{
+  "version": "3.0.0",
+  "organization": "CopilotKit",
+  "date": "March 2026",
+  "abstract": "Architecture and implementation patterns for building AI agents that integrate with CopilotKit via the AG-UI protocol. Contains 23 rules covering agent design with BuiltInAgent (@copilotkitnext/agent), useAgent hook, hook migration (useFrontendTool, useHumanInTheLoop, useRenderToolCall), multi-framework AG-UI adapters (Pydantic AI, LlamaIndex, MS Agent Framework), event streaming, state synchronization, human-in-the-loop checkpoints, and generative UI emission.",
+  "references": [
+    "https://docs.copilotkit.ai",
+    "https://github.com/CopilotKit/CopilotKit",
+    "https://docs.ag-ui.com",
+    "https://github.com/ag-ui-protocol/ag-ui"
+  ]
+}

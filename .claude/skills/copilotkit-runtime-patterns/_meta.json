@@ -1,0 +1,11 @@
+{
+  "owner": "generaljerel",
+  "slug": "copilotkit-runtime-patterns",
+  "displayName": "CopilotKit-Runtime-Patterns",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1771814153543,
+    "commit": "https://github.com/openclaw/skills/commit/ca7eed2856ca63f49238d0bb3192de9bed0b11c9"
+  },
+  "history": []
+}
