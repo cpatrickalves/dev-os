@@ -1,5 +1,7 @@
 # Rule Catalog — Business Logic
 
+> **Note:** The rules below are project-specific examples (originally from the Dify codebase). Adapt or replace them with rules relevant to your project. The pattern they illustrate — avoiding tight coupling between components and specific store implementations — is universally applicable.
+
 ## Can't use workflowStore in Node components
 
 IsUrgent: True

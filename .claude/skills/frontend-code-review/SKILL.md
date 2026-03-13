@@ -1,13 +1,13 @@
 ---
 name: frontend-code-review
-description: "Trigger when the user requests a review of frontend files (e.g., `.tsx`, `.ts`, `.js`). Support both pending-change reviews and focused file reviews while applying the checklist rules."
+description: "Reviews frontend files (`.tsx`, `.ts`, `.js`) for code quality, performance, and business logic issues. Use when the user requests a code review of frontend files, when reviewing staged changes before commit, or when checking specific components for best-practice violations."
 source: https://github.com/langgenius/dify/tree/main/.agents/skills/frontend-code-review
 ---
 
 # Frontend Code Review
 
 ## Intent
-Use this skill whenever the user asks to review frontend code (especially `.tsx`, `.ts`, or `.js` files). Support two review modes:
+Review frontend code (especially `.tsx`, `.ts`, or `.js` files). Support two review modes:
 
 1. **Pending-change review** – inspect staged/working-tree files slated for commit and flag checklist violations before submission.
 2. **File-targeted review** – review the specific file(s) the user names and report the relevant checklist findings.
@@ -20,8 +20,24 @@ See [references/code-quality.md](references/code-quality.md), [references/perfor
 Flag each rule violation with urgency metadata so future reviewers can prioritize fixes.
 
 ## Review Process
-1. Open the relevant component/module. Gather lines that relate to class names, React Flow hooks, prop memoization, and styling.
-2. For each rule in the review point, note where the code deviates and capture a representative snippet.
+
+Copy this checklist to track progress:
+
+```
+Review Progress:
+- [ ] Identify target files (staged changes or user-specified)
+- [ ] Read each target file
+- [ ] Check Code Quality rules (references/code-quality.md)
+- [ ] Check Performance rules (references/performance.md)
+- [ ] Check Business Logic rules (references/business-logic.md)
+- [ ] Compose findings using Template A or B
+- [ ] Offer to apply fixes if issues found
+```
+
+Steps:
+
+1. Open the relevant component/module. Gather lines that relate to class names, hooks, prop memoization, and styling.
+2. For each rule in the checklist, note where the code deviates and capture a representative snippet.
 3. Compose the review section per the template below. Group violations first by **Urgent** flag, then by category order (Code Quality, Performance, Business Logic).
 
 ## Required output
