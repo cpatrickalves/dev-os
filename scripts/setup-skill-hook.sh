@@ -13,7 +13,7 @@ cat > ~/.claude/hooks/log-skill.sh << 'HOOK'
 
 payload=$(cat)
 skill=$(jq -r '.tool_input.skill' <<< "$payload")
-args=$(jq -r '.tool_input.args // ""' <<< "$payload")
+args=$(jq -r '.tool_input.args // ""' <<< "$payload" | cut -c1-100)
 
 project_dir=$(jq -r '.cwd // "."' <<< "$payload")
 mkdir -p "$project_dir/.claude"
