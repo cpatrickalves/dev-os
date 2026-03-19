@@ -207,6 +207,42 @@ async with cache.disabling("get", "set"):
     result = await get_user(123)
 ```
 
+## Middleware de Logging
+
+### Middleware com Cache HIT/MISS
+
+Middleware que loga todas as operações e detecta cache hits/misses no `GET`:
+
+```python
+from cashews import Command, cache
+from your_app.logger import logger
+
+async def cache_logging_middleware(call, cmd, backend, *args, **kwargs):
+    key = args[0] if args else kwargs.get("key", kwargs.get("pattern", ""))
+    logger.info(f"Cache {cmd.value}: key={key}")
+    result = await call(*args, **kwargs)
+    if cmd == Command.GET:
+        # cashews retorna object() como sentinela de miss, não None
+        is_hit = type(result) is not object and result is not None
+        status = "HIT" if is_hit else "MISS"
+        logger.info(f"Cache {status}: key={key}")
+    return result
+
+# Registrar apenas fora de testes para não poluir output
+if settings.ENVIRONMENT != "testing":
+    cache.add_middleware(cache_logging_middleware)
+```
+
+Produz logs como:
+```
+INFO | Cache get: key=tcepa_search:competências:10:False
+INFO | Cache HIT: key=tcepa_search:competências:10:False
+```
+
+> **IMPORTANTE:**
+> - Use `Command.GET` (enum) ao invés de `cmd.value == "GET"`. Os valores do enum são **minúsculos** (`"get"`, `"set"`, `"delete"`), então comparar com maiúsculo é um bug silencioso.
+> - Cache miss retorna `object()` (sentinela), **não** `None`. Checar `result is not None` reporta falsos positivos. Use `type(result) is not object` para detectar hits corretamente.
+
 ## Anti-Patterns
 
 1. **Caching functions with side-effects** — only cache pure functions (read-only)
