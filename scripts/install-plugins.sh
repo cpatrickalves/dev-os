@@ -16,3 +16,7 @@ claude plugin install compound-engineering --scope project
 ## Update 
 claude plugin marketplace update every-marketplace
 claude plugin update compound-engineering@every-marketplace
+
+# Skills
+npx skills add langchain-ai/langchain-skills --agent claude-code --skill '*' --yes --project
+npx skills add shadcn/ui --agent claude-code --skill '*' --yes --project
