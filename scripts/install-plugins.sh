@@ -19,4 +19,6 @@ claude plugin update compound-engineering@every-marketplace
 
 # Skills
 npx skills add langchain-ai/langchain-skills --agent claude-code --skill '*' --yes --project
+
+### https://ui.shadcn.com/docs/skills
 npx skills add shadcn/ui --agent claude-code --skill '*' --yes --project
