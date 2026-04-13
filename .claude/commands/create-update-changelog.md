@@ -44,8 +44,10 @@ Next, consider these guidelines when creating your changelog entries:
 Consider these versioning guidelines when updating your changelog entries:
 
 <versioning_guidelines>
-- Siga o Versionamento Semântico
+- Seguir o Versionamento Semântico
 - A versão (x.x.x) deve ser a mesma do `pyproject.toml` (Python) ou `packages.json` (Javascript)
+- Documentar não só o que mudou, mas também por que mudou (se houver uma razão específica para a mudança, documentar a razão ou perguntar para o usuário);
+;
 </versioning_guidelines>
 
 To help manage versions and releases, use Git tags. Here's a guide on how to use Git tags effectively:
