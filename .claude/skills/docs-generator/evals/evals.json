@@ -1,0 +1,23 @@
+{
+  "skill_name": "docs-generator",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Acabei de clonar o repo do chatcontas-api e não tem quase nenhuma doc. Gera a documentação inicial do projeto pra mim. O projeto é um backend FastAPI com LangGraph que roda no TCE-PA.",
+      "expected_output": "Should analyze the codebase, detect standard tier (Dockerfile + docker-compose), and generate: updated README.md, AGENTS.md, docs/getting-started.md, docs/architecture.md, docs/adr/template.md, CONTRIBUTING.md, docs/guides/, docs/reference/, docs/runbook.md. All content should be based on actual project files (pyproject.toml, Makefile, .env.example, Dockerfile).",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Roda uma auditoria na documentação do meu projeto pra ver o que tá faltando. O projeto tá em /path/to/project.",
+      "expected_output": "Should run the docs_audit.py script against the project, present the gap analysis report showing score, missing files, stale files, and offer to generate the missing documents.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Preciso criar o AGENTS.md e o CLAUDE.md pro meu projeto TypeScript/React. O projeto usa Vite, React 19, Vike pra SSR, e TailwindCSS. Os comandos são npm run dev, npm test, npm run build.",
+      "expected_output": "Should generate AGENTS.md with the correct tech stack, commands, directory structure, and conventions for a Vite+React+Vike project. Should also generate CLAUDE.md with @import directives pointing to docs/ files. Both files should be under 200 lines and contain only information that AI agents need.",
+      "files": []
+    }
+  ]
+}
