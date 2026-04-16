@@ -14,6 +14,7 @@ Se alguma destas informações estiver ausente, **pergunte antes de gerar** (má
 | Setor | Público (órgão/tribunal) ou privado | ❌ Não — afeta cláusulas |
 | Objetivo de negócio principal | Outcome mensurável que o cliente quer | ⚠️ Parcial — aceita descrição qualitativa com placeholder para métrica |
 | Prazo-alvo aproximado | Janela de entrega em semanas ou meses | ⚠️ Parcial — default: 3 meses |
+| Status da stack (se mencionada) | Homologada (restrição) ou sugerida (hipótese) | ❌ Não — mudança radical no SOW. Ver SKILL.md §"Tratamento de stack tecnológica" |
 
 ## 2. Lacunas não-críticas (use defaults)
 
@@ -103,16 +104,19 @@ React, Next.js, Vue, Svelte, Vite, FastAPI, Flask, Django, Node, Express, Flutte
 Antes de chamar `create_file`, confirme que o documento tem:
 
 - [ ] Front-matter YAML completo
-- [ ] Sumário executivo em 1 parágrafo
-- [ ] Pelo menos 1 OKR de negócio + pelo menos 2 NFRs globais
+- [ ] Sumário executivo em 1 parágrafo, **sem siglas técnicas não expandidas**
+- [ ] Pelo menos 1 OKR de negócio + pelo menos 2 Requisitos técnicos globais
 - [ ] Fase 0 (Discovery) presente
 - [ ] 4-6 fases no total (ajustar se briefing justificar outra quantidade)
-- [ ] Cada fase com 2-5 capabilities
-- [ ] Cada capability com critério de aceite objetivo e instrumento
+- [ ] Cada fase com 2-5 capacidades
+- [ ] Cada capacidade com critério de aceite objetivo e instrumento de verificação
 - [ ] "Escopo NÃO incluído" com pelo menos 3 itens
 - [ ] Premissas, restrições, dependências, riscos preenchidos
-- [ ] RACI presente
-- [ ] SLA de decisão do cliente (2 dias úteis, com cláusula de suspensão de prazo)
-- [ ] Gestão de mudanças (§12) com processo de CR escrito
-- [ ] Deemed acceptance (§13) com prazo de 10 dias úteis
+- [ ] Matriz de responsabilidades presente **com legenda R/A/C/I expandida logo abaixo da tabela**
+- [ ] Tempo de resposta para decisões (SLA de 2 dias úteis, com cláusula de suspensão de prazo)
+- [ ] Gestão de mudanças (§12) com processo de Solicitação de Mudança (Change Request — CR) escrito
+- [ ] Aceitação automática (§13) com prazo de 10 dias úteis
 - [ ] Nome do arquivo no padrão `SOW-{cliente-slug}-{projeto-slug}-v1.0.0.md`
+- [ ] **Quadro de terminologia contratual** (TAP, TAD, CR, ADR) presente no início da §4, antes da Fase 0
+- [ ] **Siglas técnicas expandidas na primeira menção** conforme SKILL.md §"Estilo de redação e tratamento de siglas"
+- [ ] **Métricas técnicas explicadas entre parênteses na primeira menção** (p95, Lighthouse, WCAG, F1, Faithfulness, etc.)
