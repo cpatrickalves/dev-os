@@ -6,38 +6,94 @@ Starting-point templates for each document in the standard. Adapt to the project
 
 ## README.md
 
+The README is the project's storefront — substantial enough to be useful on its own, short enough to read end-to-end. Drop sections that genuinely don't apply (e.g., "Notes & Constraints" if there are none; "License" for internal projects). Section names below are in English; when generating for a PT-BR project, translate them: Overview→Visão Geral, Features→Funcionalidades, Project Structure→Estrutura do Projeto, Prerequisites→Pré-requisitos, Tech Stack→Stack principal, Installation→Instalação, Usage→Como usar, Notes & Constraints→Observações e Restrições, Documentation→Documentação, Maintainers→Responsáveis, License→Licença.
+
 ```markdown
 # {project-name}
 
-{one-line description}
+{Optional one-line tagline — what it does in 10 words or less.}
 
-## Tech Stack
+## Overview
 
-{tech stack summary — e.g., "FastAPI · PostgreSQL · React · Docker"}
+{1-3 paragraphs. Explain what the project is, what problem it solves, who it's for, and the operational context if relevant — e.g., "runs as a daily cron job on Prefect", "deployed via docker compose to internal infrastructure", "consumed by the X frontend". Concrete is better than abstract.}
+
+## Features
+
+* **{Feature name}**: {one-line description of what it does}
+* **{Feature name}**: {one-line description}
+* **{Feature name}**: {one-line description}
+
+## Project Structure
+
+\```bash
+{Run `tree -L 2 -I '*.pyc|__pycache__|node_modules|.git'` and paste the output, then add brief inline comments per important file/dir.}
+
+├── Dockerfile               # Container build
+├── pyproject.toml           # Dependencies and project metadata
+├── src/                     # Application code
+│   ├── api/                 # HTTP route handlers
+│   └── services/            # Business logic
+└── tests/                   # Test suite
+\```
 
 ## Prerequisites
 
-- {runtime} {version}+
-- {tool} (for {purpose})
-- {optional dependencies}
+- `{runtime}` `{version}+` — {why it's needed, if not obvious}
+- `{tool}`: {what it's for}
+- {Access requirements: VPN, credentials, accounts}
 
-## Quick Start
+## Tech Stack
+
+* `{framework}`: {one-line role in the project — e.g., "HTTP server"}
+* `{framework}`: {one-line role}
+* `{framework}`: {one-line role}
+
+## Installation
+
+1. Clone the repository:
+   \```bash
+   git clone {repo-url}
+   cd {project-name}
+   \```
+
+2. Configure environment variables — copy `.env.example` to `.env` and fill the required values:
+   \```bash
+   cp .env.example .env
+   \```
+
+3. Install dependencies:
+   \```bash
+   {install-command}     # e.g., uv sync / poetry install / npm install
+   \```
+
+### Usage
 
 \```bash
-git clone {repo-url}
-cd {project-name}
-{setup-command}       # e.g., uv sync / npm install
-{run-command}         # e.g., make dev / npm run dev
+{run-command}            # e.g., docker compose up -d / make dev / poetry run python ...
 \```
 
 The application will be available at `http://localhost:{port}`.
 
+## Notes & Constraints
+
+{Optional. Include only if there are real operational restrictions or non-obvious behaviors.}
+
+* {Constraint — e.g., "Only runs on weekdays."}
+* {Constraint — e.g., "Requires VPN access to the internal network."}
+
 ## Documentation
 
-- [Getting Started](docs/getting-started.md) — Full setup guide
-- [Architecture](docs/architecture.md) — System overview
-- [Contributing](CONTRIBUTING.md) — How to contribute
-- [ADRs](docs/adr/) — Architecture decisions
+For deeper detail, see the [docs/](docs/) folder:
+
+- [Getting Started](docs/getting-started.md) — Full local setup
+- [Architecture](docs/architecture.md) — System overview and key decisions
+- [Contributing](CONTRIBUTING.md) — How to contribute *(Standard tier only)*
+- [ADRs](docs/adr/) — Architecture decisions *(Standard tier only)*
+
+## Maintainers
+
+- **{Name}** — {email or contact channel}
+- **{Name}** — {email or contact channel}
 
 ## License
 

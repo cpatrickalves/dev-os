@@ -57,21 +57,33 @@ project-root/
 ## Content guidelines per document
 
 ### README.md
-**Purpose:** The storefront. A new developer or AI agent reads this first.
-**Target length:** 40-80 lines (applications) / 40-200 lines (published libraries — extra room for badges, install matrix, usage examples, compatibility tables)
-**Must contain:**
-- Project name and one-line description
-- Tech stack badges or summary
-- Prerequisites
-- Quick start (3-5 commands to run the project)
-- Link to docs/ for detailed documentation
-- License (if applicable)
+**Purpose:** The storefront and entry point. A new developer or AI agent reads this first. It should answer "what is this, what problem does it solve, how do I run it, who maintains it?" without forcing the reader into `docs/`.
+**Target length:** 60-200 lines (applications) / 40-200 lines (published libraries — extra room for badges, install matrix, usage examples, compatibility tables)
+**Must contain (in this order):**
+- Project name (and optional one-line tagline)
+- **Overview** — 1-3 paragraphs explaining what the project is, the problem it solves, the main benefits, and any operational context (e.g., "runs as a cron job on Prefect", "deployed via docker compose"). This replaces the old single-line description.
+- **Features** — bulleted list of the main capabilities, each one line
+- **Project Structure** — output of `tree -L 2 -I '*.pyc|__pycache__'` (or stack-appropriate equivalent) with brief inline comments per important file/directory. Skip for tiny projects (<5 files).
+- **Prerequisites** — runtime versions and required system tools, each with a version pin
+- **Tech Stack** — main frameworks/services the project is built with, each with a one-line role (different from Prerequisites — these are technologies, not dependencies you install)
+- **Installation** — clone + env config + install commands
+- **Usage** — at least one practical command showing how to run the project
+- **Notes & Constraints** *(optional)* — operational restrictions, scheduling, known limits. Include only if there are real ones.
+- **Documentation** — links to `docs/getting-started.md`, `docs/architecture.md`, `CONTRIBUTING.md`, `docs/adr/` (Standard tier)
+- **Maintainers** — names and contact for project owners
+- **License** *(if applicable)*
 
 **Must NOT contain:**
 - Detailed architecture (link to docs/architecture.md)
 - Full API reference (link to docs/reference/api.md)
-- Contribution guidelines (link to CONTRIBUTING.md)
+- Detailed contribution guidelines (link to CONTRIBUTING.md)
+- Step-by-step deployment runbook (link to docs/guides/deployment.md)
 - Extensive badges/shields that push content below the fold
+
+**How to fill the Maintainers section:** extract from project metadata first; only fall back to git contributors when metadata is missing.
+1. **Project metadata** (preferred): `pyproject.toml` `[project.authors]` / `[tool.poetry.authors]`, `package.json` `author`/`contributors`, `Cargo.toml` `[package] authors`, `setup.cfg` `[metadata] author`, `pom.xml` `<developers>`, `go.mod` module owner, `composer.json` `authors`.
+2. **Git fallback**: `git log --format="%an <%ae>" | sort | uniq -c | sort -rn | head -5` — top 5 committers in the project's history.
+3. If neither is available, leave a `TODO` marker rather than inventing names.
 
 ### AGENTS.md
 **Purpose:** Universal AI coding agent configuration. Single source of truth for project context consumed by Claude Code, Cursor, Copilot, Windsurf, and 20+ other tools.

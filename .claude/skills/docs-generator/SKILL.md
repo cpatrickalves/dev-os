@@ -51,10 +51,21 @@ Scan the repository to understand what exists. Do this systematically:
    - Package name, version, description
    - Dependencies (to understand the tech landscape)
    - Scripts/commands (dev, test, build, lint, deploy)
+   - **Maintainers / authors** — for the README's Maintainers section:
+     - Python: `pyproject.toml` `[project.authors]` or `[tool.poetry.authors]`, `setup.cfg` `[metadata] author`
+     - Node: `package.json` `author` / `contributors`
+     - Rust: `Cargo.toml` `[package] authors`
+     - Java: `pom.xml` `<developers>`
+     - Go: `go.mod` module owner / `AUTHORS` file
+     - Fallback when metadata is missing: `git log --format="%an <%ae>" | sort | uniq -c | sort -rn | head -5`
+     - If still nothing, leave a TODO marker — never invent names
 5. Identify the project type:
    - API backend, web frontend, CLI tool, library, full-stack app, monorepo
 6. Check for existing CI/CD:
    - .github/workflows/, Dockerfile, docker-compose.yml, Makefile
+7. Capture the directory tree for the README's "Project Structure" section:
+   - Run `tree -L 2 -I '*.pyc|__pycache__|node_modules|.git|dist|build|.venv'` (or stack-equivalent ignore patterns)
+   - Trim further if the result exceeds ~30 lines
 ```
 
 Capture findings in a mental model before generating anything. The analysis determines what documentation tier to recommend and what content to generate.
@@ -82,7 +93,7 @@ For each document, follow this process:
 3. **Write in the language defined by AGENTS.md.** Check the project's AGENTS.md or CLAUDE.md for a language directive. If none exists, check the language of the existing README or codebase comments. If still ambiguous, ask the user. Templates are provided in English as a neutral baseline — translate to the target language when generating.
 
 4. **Keep documents short.** Target lengths (heuristics, not dogma):
-   - README.md: 40-80 lines (applications) / 40-200 lines (published libraries)
+   - README.md: 60-200 lines (applications) / 40-200 lines (published libraries) — the full spec includes Overview, Features, Project Structure, Prerequisites, Tech Stack, Installation, Usage, Documentation links, and Maintainers
    - getting-started.md: 50-100 lines
    - architecture.md: 60-120 lines
    - Individual guides: 30-80 lines (deployment.md may go up to 100 when it includes Logs + Escalation)
