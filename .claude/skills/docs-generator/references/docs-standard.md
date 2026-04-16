@@ -19,10 +19,10 @@ project-root/
 ├── AGENTS.md                        # AI agent context (universal)
 ├── docs/
 │   ├── getting-started.md           # Environment setup + first run
-│   ├── architecture.md              # System overview, component map
-│   └── adr/
-│       └── template.md              # ADR template for future decisions
+│   └── architecture.md              # System overview, component map (with inline "Key Decisions")
 ```
+
+Essential tier intentionally omits a formal `adr/` directory — for solo projects and POCs, ADR ceremony is overhead. Capture decisions as a "Key Decisions" bullet list inside `architecture.md`. Promote to formal ADRs only when you reach Standard tier or when a single decision needs more than 3 lines of justification.
 
 **When to use:** Solo projects, small utilities, scripts, POCs, internal tools with 1-2 developers that are not consumed by other teams or systems.
 
@@ -58,7 +58,7 @@ project-root/
 
 ### README.md
 **Purpose:** The storefront. A new developer or AI agent reads this first.
-**Target length:** 40-80 lines
+**Target length:** 40-80 lines (applications) / 40-200 lines (published libraries — extra room for badges, install matrix, usage examples, compatibility tables)
 **Must contain:**
 - Project name and one-line description
 - Tech stack badges or summary
@@ -75,7 +75,7 @@ project-root/
 
 ### AGENTS.md
 **Purpose:** Universal AI coding agent configuration. Single source of truth for project context consumed by Claude Code, Cursor, Copilot, Windsurf, and 20+ other tools.
-**Target length:** 50-150 lines (hard max: 200 lines)
+**Target length:** 50-200 lines (heuristic, not hard limit). The official AGENTS.md spec has no required fields or size cap — but every line is read on every AI session, so trim ruthlessly. Above ~200 lines, ask whether the content earns its token cost.
 **Must contain:**
 - One-line project description
 - Tech stack with specific versions
@@ -99,9 +99,9 @@ project-root/
 - Every line costs context window tokens on every AI session — be ruthless
 
 ### docs/getting-started.md
-**Purpose:** Get a new developer from zero to running the project — and, for Standard tier, the entry point for operating it in production.
-**Target length:** 50-100 lines (Essential) / 80-150 lines (Standard)
-**Must contain (always):**
+**Purpose:** Get a new developer from zero to running the project locally.
+**Target length:** 50-100 lines
+**Must contain:**
 - Prerequisites (runtime versions, system dependencies, tools)
 - Step-by-step environment setup
 - How to run the project locally
@@ -109,14 +109,9 @@ project-root/
 - How to verify everything works (expected output, health check URL, etc.)
 - Common setup problems and solutions (2-3 most frequent)
 
-**Must contain (Standard tier only — appended as an "Operations" section):**
-- How to view logs (local and production)
-- Rollback — link to `docs/guides/deployment.md#rollback`, do not duplicate the procedure
-- Escalation matrix (L1/L2 contacts and when to page each)
+**Scope discipline (Diátaxis):** This is a tutorial — onboarding-only. Do not mix in operational content (production logs, rollback, escalation). That belongs in `docs/guides/deployment.md`.
 
-**Do not duplicate:** Production incident playbooks live in `docs/guides/troubleshooting.md`. The Operations section here points to it instead of repeating incident steps. The deploy/rollback procedure lives in `docs/guides/deployment.md` and is linked, not copied.
-
-**Success metric:** A new developer should go from clone to running in < 30 minutes; an on-call engineer should find logs, rollback, and escalation contacts in under a minute.
+**Success metric:** A new developer should go from clone to running in < 30 minutes.
 
 ### docs/architecture.md
 **Purpose:** System overview for understanding component interactions.
@@ -127,7 +122,9 @@ project-root/
 - Key components and their responsibilities (brief)
 - Data flow for the primary use case
 - External dependencies and integrations
-- Technology choices summary (brief — ADRs have the detail)
+- **Key Decisions:**
+  - Essential tier: 5-10 bullets inline, each one decision + 1-line rationale. This replaces a separate `adr/` for small projects.
+  - Standard tier: brief summary + link to `docs/adr/` (ADRs have the detail).
 
 **Diagram guidance:**
 - Use Mermaid syntax for maintainability
@@ -142,13 +139,18 @@ project-root/
 ### docs/adr/NNNN-decision-title.md
 **Purpose:** Capture the why behind technical decisions.
 **Target length:** 20-50 lines
+**Format:** MADR 4.0 (Markdown Any Decision Records).
 **Must contain:**
-- Status (Proposed | Accepted | Deprecated | Superseded by NNNN)
-- Date
-- Context (what problem prompted this decision)
-- Decision (what was decided)
-- Alternatives considered (at least 2)
-- Consequences (positive, negative, neutral)
+- YAML front matter with `status` (proposed | accepted | deprecated | superseded by ADR-NNNN) and `date` (YYYY-MM-DD)
+- `# ADR-NNNN: {Title}` heading
+- **Context and Problem Statement** — what forces / constraints / pain point prompted this
+- **Considered Options** — at least 2, listed up front
+- **Decision Outcome** — which option was chosen and the main driver. Optionally followed by per-option "Pros and Cons of the Options"
+- **Consequences** — positive, negative, neutral
+
+**Optional but recommended:**
+- `decision-makers` field in YAML front matter (names or roles — for audit/traceability)
+- "Confirmation" section describing how the decision is validated (fitness function, ArchUnit test, code review checklist)
 
 **Numbering:** Sequential 4-digit: 0001, 0002, 0003...
 **Naming:** `NNNN-kebab-case-title.md`
@@ -165,7 +167,17 @@ project-root/
 
 ### docs/guides/ (Standard tier)
 
-**deployment.md** — How to deploy the application. Must document the actual deployment process, not an aspirational one.
+**deployment.md** — How to deploy and operate the application. Must document the actual deployment process, not an aspirational one. For typical Docker-based projects (the common case), this single file replaces a separate runbook.
+
+Required sections:
+- Environments (dev / staging / prod with URLs)
+- Deploy Process (the real commands — `docker compose up -d`, `kubectl apply`, etc.)
+- Pre-deploy Checklist
+- Logs (how to tail them locally and in production)
+- Rollback (the real procedure)
+- Escalation (L1/L2 contacts and paging criteria) — only if the project has on-call
+
+Link to `troubleshooting.md` for incident playbooks (symptoms → cause → resolution); do not duplicate.
 
 **configuration.md** — How to configure the application for different environments. Document all configuration mechanisms (env vars, config files, CLI flags). Link to docs/reference/environment-variables.md for the complete reference.
 
@@ -175,8 +187,9 @@ project-root/
 
 ### docs/reference/ (Standard tier)
 
-**api.md** — API contract documentation. For REST APIs, document endpoints, methods, request/response shapes. For libraries, document public interfaces. If the project auto-generates API docs (OpenAPI, Swagger), link to the generated docs rather than
-duplicating.
+**api.md** — API contract documentation.
+- **If the project serves auto-generated API docs (OpenAPI/Swagger UI, ReDoc, GraphQL playground), keep this file as a stub of <15 lines that links to them.** Do not duplicate endpoint shapes — manual docs rot the moment a route changes. The stub should list the URLs (e.g., `/docs`, `/redoc`, `/openapi.json`) and any non-obvious detail not covered by the generated docs (auth scheme, rate limits, deprecation policy).
+- **Only write the long form** when the project does NOT serve generated docs (libraries with public interfaces, REST APIs without OpenAPI). Then document endpoints, methods, request/response shapes manually.
 
 **environment-variables.md** — Complete reference of all environment variables. Format as a table organized by category (database, auth, external services, feature flags). Include: variable name, required/optional, default value, description.
 

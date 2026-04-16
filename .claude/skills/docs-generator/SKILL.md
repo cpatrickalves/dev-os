@@ -64,10 +64,10 @@ Capture findings in a mental model before generating anything. The analysis dete
 Based on the analysis, recommend one of two tiers. Present your recommendation to the user with a brief rationale before proceeding.
 
 **Essential tier** — Solo projects, small utilities, scripts, POCs, internal tools with 1-2 developers that are not consumed by other teams or systems.
-Produces: README.md, AGENTS.md, docs/getting-started.md, docs/architecture.md, docs/adr/template.md
+Produces: README.md, AGENTS.md, docs/getting-started.md, docs/architecture.md (with an inline "Key Decisions" bullet list — no formal ADR directory at this tier).
 
 **Standard tier** — Any project in production, with 2+ contributors, or consumed by other teams/systems. This includes APIs, services, platforms, and full-stack applications regardless of complexity. The criterion: *someone besides you needs to understand this project to work with it*.
-Adds: CONTRIBUTING.md, docs/guides/ (deployment, configuration, troubleshooting), docs/reference/ (API, environment variables), docs/adr/ with initial decision records. The Standard tier also expands `docs/getting-started.md` with an "Operations" section (logs, escalation, link to deploy/rollback) — there is no separate runbook file.
+Adds: CONTRIBUTING.md, docs/guides/ (deployment, configuration, troubleshooting), docs/reference/ (API, environment variables), docs/adr/ (template + initial decision records following MADR 4.0). Operational content (logs, rollback, escalation) lives in `docs/guides/deployment.md` — the file does double duty as deploy + operate doc, so there is no separate runbook. `docs/getting-started.md` stays scoped to onboarding only (Diátaxis: tutorials and how-to guides do not mix).
 
 The user can override the recommendation. Ask them before proceeding if they want a different tier or want to include/exclude specific documents.
 
@@ -81,13 +81,13 @@ For each document, follow this process:
 
 3. **Write in the language defined by AGENTS.md.** Check the project's AGENTS.md or CLAUDE.md for a language directive. If none exists, check the language of the existing README or codebase comments. If still ambiguous, ask the user. Templates are provided in English as a neutral baseline — translate to the target language when generating.
 
-4. **Keep documents short.** Target lengths:
-   - README.md: 40-80 lines
-   - getting-started.md: 50-100 lines (Essential) / 80-150 lines (Standard, with Operations section)
+4. **Keep documents short.** Target lengths (heuristics, not dogma):
+   - README.md: 40-80 lines (applications) / 40-200 lines (published libraries)
+   - getting-started.md: 50-100 lines
    - architecture.md: 60-120 lines
-   - Individual guides: 30-80 lines
-   - ADR entries: 20-50 lines
-   - AGENTS.md: 50-150 lines (hard limit: 200 lines)
+   - Individual guides: 30-80 lines (deployment.md may go up to 100 when it includes Logs + Escalation)
+   - ADR entries: 20-50 lines (MADR 4.0)
+   - AGENTS.md: 50-200 lines (no hard cap in the official AGENTS.md spec, but every line costs context tokens on every AI session — trim ruthlessly)
 
 5. **Link, don't duplicate.** If something is documented in one place, link to it from others. The README links to docs/. The getting-started guide links to reference docs. ADRs link to relevant architecture sections.
 

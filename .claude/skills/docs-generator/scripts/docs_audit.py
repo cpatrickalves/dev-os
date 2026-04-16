@@ -21,17 +21,17 @@ ESSENTIAL = [
     ("README.md", "Project card: what, why, quickstart"),
     ("AGENTS.md", "AI agent context (universal)"),
     ("docs/getting-started.md", "Environment setup + first run"),
-    ("docs/architecture.md", "System overview, component map"),
-    ("docs/adr/template.md", "ADR template for future decisions"),
+    ("docs/architecture.md", "System overview, component map (with inline Key Decisions)"),
 ]
 
 STANDARD_EXTRA = [
     ("CONTRIBUTING.md", "Dev workflow, code style, PR process"),
-    ("docs/guides/deployment.md", "Deployment guide"),
+    ("docs/guides/deployment.md", "Deploy + operate guide (logs, rollback, escalation)"),
     ("docs/guides/configuration.md", "Configuration guide"),
     ("docs/guides/troubleshooting.md", "Troubleshooting guide"),
     ("docs/reference/api.md", "API contract documentation"),
     ("docs/reference/environment-variables.md", "Environment variable reference"),
+    ("docs/adr/template.md", "ADR template (MADR 4.0) for new decisions"),
 ]
 
 # Alternative locations/names for common files
@@ -90,6 +90,7 @@ def check_file(project_path: Path, rel_path: str) -> dict:
         "stale": False,
         "has_todos": False,
         "todo_count": 0,
+        "code_fences": 0,
     }
 
     # Check primary location
@@ -107,7 +108,7 @@ def check_file(project_path: Path, rel_path: str) -> dict:
         )).days
         result["stale"] = age_days > STALE_THRESHOLD_DAYS
 
-        # Count lines and TODOs
+        # Count lines, TODOs, and code fences
         try:
             content = full_path.read_text(encoding="utf-8", errors="replace")
             result["lines"] = len(content.splitlines())
@@ -117,6 +118,10 @@ def check_file(project_path: Path, rel_path: str) -> dict:
             ]
             result["has_todos"] = len(todos) > 0
             result["todo_count"] = len(todos)
+            # Each fenced code block has 2 backtick markers (open + close).
+            # Used to flag AGENTS.md that lists conventions in prose without
+            # showing the actual commands an agent should run.
+            result["code_fences"] = content.count("```")
         except Exception:
             pass
 
@@ -137,6 +142,7 @@ def check_file(project_path: Path, rel_path: str) -> dict:
             try:
                 content = alt_path.read_text(encoding="utf-8", errors="replace")
                 result["lines"] = len(content.splitlines())
+                result["code_fences"] = content.count("```")
             except Exception:
                 pass
             return result
@@ -253,6 +259,12 @@ def print_report(report: dict) -> None:
         print(f"\n  📝 WITH TODOs ({len(todos)})")
         for f in todos:
             print(f"     {f['path']} ({f['todo_count']} TODO markers)")
+
+    # AGENTS.md content quality: no code blocks usually means no verified commands
+    agents = next((f for f in report["files"] if f["path"] == "AGENTS.md"), None)
+    if agents and agents["exists"] and agents.get("code_fences", 0) == 0:
+        print(f"\n  ⚠️  AGENTS.md has no code blocks — likely missing verified commands.")
+        print(f"     A useful AGENTS.md lists the actual `dev`, `test`, `lint`, `build` commands.")
 
     # Existing files
     existing = [f for f in report["files"] if f["exists"]]
