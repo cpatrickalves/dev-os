@@ -96,6 +96,8 @@ The application will be available at `http://localhost:{port}`.
 
 ## docs/getting-started.md
 
+The Operations section at the bottom is **Standard tier only** — drop it for Essential tier projects.
+
 ```markdown
 # Getting Started
 
@@ -135,10 +137,15 @@ The application will be available at `http://localhost:{port}`.
    {dev-command}
    \```
 
-6. Verify it works:
-   \```bash
-   {health-check-command-or-url}
-   \```
+## Verify It Works
+
+\```bash
+{health-check-command-or-url}
+\```
+
+Expected response: {expected}
+
+This same check works in production — point it at the deployed URL instead of localhost.
 
 ## Running Tests
 
@@ -153,6 +160,33 @@ The application will be available at `http://localhost:{port}`.
 
 **{Problem 2}**
 {Cause and solution}
+
+---
+
+## Operations
+
+### Logs
+
+\```bash
+{local-log-command}      # Local development
+{prod-log-command}       # Production (e.g., kubectl logs, docker logs, cloud console)
+\```
+
+Patterns worth watching:
+- `{pattern}` — indicates {meaning}
+
+### Rollback
+
+See [Deployment → Rollback](guides/deployment.md#rollback) for the deploy/rollback procedure. Do not duplicate steps here — they live with the deploy doc.
+
+### Escalation
+
+| Level | Contact | When to page |
+|-------|---------|--------------|
+| L1 | {team/person} | {criteria — e.g., "user-facing errors > 1%"} |
+| L2 | {team/person} | {criteria — e.g., "data loss or outage > 15min"} |
+
+For incident playbooks (symptoms → cause → resolution), see [Troubleshooting](guides/troubleshooting.md).
 ```
 
 ---
@@ -434,55 +468,3 @@ Base URL: `{base-url}`
 | `{VAR_NAME}` | `{default}` | {description} |
 ```
 
----
-
-## docs/runbook.md
-
-```markdown
-# Runbook
-
-## Health Check
-
-\```bash
-{health-check-command}
-\```
-
-Expected response: {expected}
-
-## Logs
-
-\```bash
-{log-access-command}
-\```
-
-Key log patterns to watch for:
-- `{pattern}` — indicates {meaning}
-
-## Common Incidents
-
-### {Incident type 1}
-**Symptoms:** {what you observe}
-**Cause:** {typical cause}
-**Resolution:**
-1. {step}
-2. {step}
-
-### {Incident type 2}
-**Symptoms:** {what you observe}
-**Cause:** {typical cause}
-**Resolution:**
-1. {step}
-
-## Rollback
-
-\```bash
-{rollback-command-or-procedure}
-\```
-
-## Escalation
-
-| Level | Contact | When |
-|-------|---------|------|
-| L1 | {team/person} | {criteria} |
-| L2 | {team/person} | {criteria} |
-```

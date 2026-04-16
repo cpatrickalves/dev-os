@@ -45,10 +45,9 @@ project-root/
 │   ├── reference/                   # Technical reference (Diátaxis)
 │   │   ├── api.md
 │   │   └── environment-variables.md
-│   ├── adr/
-│   │   ├── template.md
-│   │   └── 0001-initial-tech-choices.md
-│   └── runbook.md                   # Operational procedures
+│   └── adr/
+│       ├── template.md
+│       └── 0001-initial-tech-choices.md
 ```
 
 **When to use:** Any project in production, with 3+ contributors, or consumed by other teams/systems. This includes APIs, services, platforms, full-stack applications, and anything deployed to production — regardless of complexity.
@@ -100,9 +99,9 @@ project-root/
 - Every line costs context window tokens on every AI session — be ruthless
 
 ### docs/getting-started.md
-**Purpose:** Get a new developer from zero to running the project.
-**Target length:** 50-100 lines
-**Must contain:**
+**Purpose:** Get a new developer from zero to running the project — and, for Standard tier, the entry point for operating it in production.
+**Target length:** 50-100 lines (Essential) / 80-150 lines (Standard)
+**Must contain (always):**
 - Prerequisites (runtime versions, system dependencies, tools)
 - Step-by-step environment setup
 - How to run the project locally
@@ -110,7 +109,14 @@ project-root/
 - How to verify everything works (expected output, health check URL, etc.)
 - Common setup problems and solutions (2-3 most frequent)
 
-**Success metric:** A new developer should go from clone to running in < 30 minutes.
+**Must contain (Standard tier only — appended as an "Operations" section):**
+- How to view logs (local and production)
+- Rollback — link to `docs/guides/deployment.md#rollback`, do not duplicate the procedure
+- Escalation matrix (L1/L2 contacts and when to page each)
+
+**Do not duplicate:** Production incident playbooks live in `docs/guides/troubleshooting.md`. The Operations section here points to it instead of repeating incident steps. The deploy/rollback procedure lives in `docs/guides/deployment.md` and is linked, not copied.
+
+**Success metric:** A new developer should go from clone to running in < 30 minutes; an on-call engineer should find logs, rollback, and escalation contacts in under a minute.
 
 ### docs/architecture.md
 **Purpose:** System overview for understanding component interactions.
@@ -173,16 +179,6 @@ project-root/
 duplicating.
 
 **environment-variables.md** — Complete reference of all environment variables. Format as a table organized by category (database, auth, external services, feature flags). Include: variable name, required/optional, default value, description.
-
-### docs/runbook.md (Standard tier)
-**Purpose:** Operational procedures for production incidents.
-**Target length:** 40-100 lines
-**Must contain:**
-- How to check system health
-- How to view logs
-- Common failure modes and recovery steps
-- Rollback procedures
-- Contact/escalation information
 
 ## Language guidelines
 

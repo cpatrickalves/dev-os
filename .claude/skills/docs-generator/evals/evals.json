@@ -4,7 +4,7 @@
     {
       "id": 1,
       "prompt": "Acabei de clonar o repo do chatcontas-api e não tem quase nenhuma doc. Gera a documentação inicial do projeto pra mim. O projeto é um backend FastAPI com LangGraph que roda no TCE-PA.",
-      "expected_output": "Should analyze the codebase, detect standard tier (Dockerfile + docker-compose), and generate: updated README.md, AGENTS.md, docs/getting-started.md, docs/architecture.md, docs/adr/template.md, CONTRIBUTING.md, docs/guides/, docs/reference/, docs/runbook.md. All content should be based on actual project files (pyproject.toml, Makefile, .env.example, Dockerfile).",
+      "expected_output": "Should analyze the codebase, detect standard tier (Dockerfile + docker-compose), and generate: updated README.md, AGENTS.md, docs/getting-started.md (with the Operations section appended for Standard tier — logs, escalation, link to deployment.md#rollback), docs/architecture.md, docs/adr/template.md, CONTRIBUTING.md, docs/guides/, docs/reference/. Should NOT generate a separate docs/runbook.md. All content should be based on actual project files (pyproject.toml, Makefile, .env.example, Dockerfile).",
       "files": []
     },
     {

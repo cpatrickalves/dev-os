@@ -67,9 +67,7 @@ Based on the analysis, recommend one of two tiers. Present your recommendation t
 Produces: README.md, AGENTS.md, docs/getting-started.md, docs/architecture.md, docs/adr/template.md
 
 **Standard tier** — Any project in production, with 2+ contributors, or consumed by other teams/systems. This includes APIs, services, platforms, and full-stack applications regardless of complexity. The criterion: *someone besides you needs to understand this project to work with it*.
-Adds: CONTRIBUTING.md, docs/guides/ (deployment, configuration, troubleshooting),
-docs/reference/ (API, environment variables), docs/adr/ with initial decision records,
-docs/runbook.md
+Adds: CONTRIBUTING.md, docs/guides/ (deployment, configuration, troubleshooting), docs/reference/ (API, environment variables), docs/adr/ with initial decision records. The Standard tier also expands `docs/getting-started.md` with an "Operations" section (logs, escalation, link to deploy/rollback) — there is no separate runbook file.
 
 The user can override the recommendation. Ask them before proceeding if they want a different tier or want to include/exclude specific documents.
 
@@ -85,12 +83,11 @@ For each document, follow this process:
 
 4. **Keep documents short.** Target lengths:
    - README.md: 40-80 lines
-   - getting-started.md: 50-100 lines
+   - getting-started.md: 50-100 lines (Essential) / 80-150 lines (Standard, with Operations section)
    - architecture.md: 60-120 lines
    - Individual guides: 30-80 lines
    - ADR entries: 20-50 lines
    - AGENTS.md: 50-150 lines (hard limit: 200 lines)
-   - runbook.md: 40-100 lines
 
 5. **Link, don't duplicate.** If something is documented in one place, link to it from others. The README links to docs/. The getting-started guide links to reference docs. ADRs link to relevant architecture sections.
 

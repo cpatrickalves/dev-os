@@ -32,7 +32,6 @@ STANDARD_EXTRA = [
     ("docs/guides/troubleshooting.md", "Troubleshooting guide"),
     ("docs/reference/api.md", "API contract documentation"),
     ("docs/reference/environment-variables.md", "Environment variable reference"),
-    ("docs/runbook.md", "Operational procedures"),
 ]
 
 # Alternative locations/names for common files
