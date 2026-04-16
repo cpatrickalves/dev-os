@@ -7,9 +7,12 @@ description: >
   produce architecture docs, or audit documentation completeness for a repository. Also
   triggers when the user mentions "documentar o projeto", "docs do projeto", "criar docs",
   "atualizar documentação", "docs/ folder", "onboarding docs", "AGENTS.md", "CLAUDE.md",
-  or asks to prepare a codebase for new developers or AI coding agents. Works with any
-  tech stack — Python, TypeScript, Rust, Go, Java, etc. Even if the user just says
-  "document this repo" or "what docs are missing", use this skill.
+  or asks to prepare a codebase for new developers or AI coding agents. Also use after
+  shipping commits or before opening a PR — the skill can scope the update to a branch's
+  commits ("sync docs to this branch", "atualiza docs com o que mudou", "what docs need
+  updating before this PR", "after-ship docs") instead of scanning the whole codebase.
+  Works with any tech stack — Python, TypeScript, Rust, Go, Java, etc. Even if the user
+  just says "document this repo" or "what docs are missing", use this skill.
 ---
 
 # Docs Generator
@@ -178,6 +181,95 @@ When the user asks to update existing documentation (rather than create from scr
    factual information and adding missing pieces
 
 Never overwrite custom content the team has written. When updating, merge new information into existing documents rather than regenerating from scratch.
+
+## Commit-scoped update mode
+
+Use this mode when the user just shipped (or is about to ship) work and wants documentation synced to what *changed* — typically before opening a PR. It is faster and narrower than full Update mode: it only looks at commits within a scope (a branch, a time window, a commit range), not at the whole codebase.
+
+Triggers include "atualiza docs com o que mudou", "sync docs to this branch", "what docs need updating before this PR", "after-ship docs", or any update request issued from a feature branch.
+
+### Default scope
+
+When the user does not specify a scope, infer it from the current git state and **always show the user the scope you picked before scanning** so they can correct it.
+
+1. **On a feature branch** (current branch is not `main` / `master` / `dev`): use commits since the branch diverged from the default branch.
+   ```bash
+   DEFAULT_BRANCH=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's@^origin/@@')
+   BASE=$(git merge-base HEAD "origin/${DEFAULT_BRANCH:-main}")
+   git log --reverse "$BASE..HEAD"
+   ```
+2. **On `main` / `master` / `dev`**: fall back to the last 24 hours.
+   ```bash
+   git log --since="24 hours ago"
+   ```
+3. **User-specified** (always wins): respect explicit windows ("last 3 days", "since v1.2.0", "since commit abc123") or paths ("just look at api/").
+
+### Workflow
+
+Four steps: Scan → Approve → Update → Summary. Track progress as you go.
+
+#### Step 1 — Scan
+
+For each commit in scope, examine the diff and classify as doc-worthy or skip.
+
+**Update the docs when the commit introduces:**
+- New features or capabilities visible to users / API consumers
+- API changes (endpoints, parameters, request/response shapes, breaking changes)
+- New configuration options or environment variables
+- New CLI commands or flags
+- Changes to user-facing behavior or defaults
+- New dependencies that change Prerequisites or Tech Stack
+
+**Skip when the commit is:**
+- Internal refactoring with no behavior change
+- Test-only changes
+- Minor bug fixes that don't change documented behavior
+- Typo corrections in code
+- Performance optimizations without user-visible impact
+- Build / CI / lint config changes
+
+Be conservative — when in doubt, skip. A missed update is fixable; noisy doc churn erodes trust. If nothing significant is found, report this to the user and stop. Do not proceed to Step 2.
+
+#### Step 2 — Approve
+
+Present findings as a structured summary, grouped by commit, naming the affected files and the proposed change. Then ask the user how to act on them:
+
+```
+Found N doc-worthy changes in scope (BASE..HEAD on branch <name>):
+
+1. [abc123] Added /v2/users endpoint
+   → docs/reference/api.md (Mode 1 stub: verify Swagger link still resolves)
+   → AGENTS.md (no change needed — endpoint is auto-discovered)
+
+2. [def456] New env var STRIPE_WEBHOOK_SECRET
+   → docs/reference/environment-variables.md (add row)
+   → README.md Prerequisites (mention webhook setup)
+
+Which updates should I apply?
+- all   — apply everything above
+- pick  — let me choose specific items
+- none  — stop here, I just wanted the audit
+```
+
+Wait for the user's response. If they pick specific items, confirm the list before proceeding.
+
+#### Step 3 — Update
+
+For each approved update:
+- Read the **full** target file (not just the section being changed) so you have context for tone and structure
+- Read the source files referenced by the commit so the update is grounded in real code, not the commit message
+- Apply the change surgically — additive when possible; preserve the team's voice and existing accurate content
+- Match existing verbosity — don't expand a terse doc into a long one
+
+Spawn writer subagents in parallel for independent files when there are several to update. If one fails, report the error for that file and continue with the others.
+
+#### Step 4 — Summary
+
+Report file-by-file:
+- File path
+- What was changed (one line)
+- What was left alone (one line, only if interesting — e.g., "kept the team's prose in Overview untouched")
+- Anything ambiguous the user should sanity-check before merging
 
 ## Audit mode
 
