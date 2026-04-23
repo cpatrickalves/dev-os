@@ -47,9 +47,15 @@ Scan the repository to understand what exists. Do this systematically:
    - Multi-stack: check for monorepo patterns
 3. Read existing documentation:
    - README.md (if exists)
-   - docs/ folder (if exists)
+   - docs/ folder (if exists) — also look for PT-BR filenames: `primeiros-passos.md`, `arquitetura.md`, `guias/`, `referencia/`
    - AGENTS.md, CLAUDE.md, .cursorrules (if exist)
    - CONTRIBUTING.md, CHANGELOG.md (if exist)
+
+   **Determine the documentation language** from the signals you just read:
+   - Primary: explicit directive in AGENTS.md / CLAUDE.md (e.g., "All docs and comments in PT-BR")
+   - Secondary: language of existing README / docs/ content
+   - If still ambiguous: ask the user before generating any file
+   - The detected language controls both doc *content* **and** *filenames* — see the "Filename localization" mapping in `references/docs-standard.md`
 4. Read key config files for project metadata:
    - Package name, version, description
    - Dependencies (to understand the tech landscape)
@@ -93,7 +99,7 @@ For each document, follow this process:
 
 2. **Use the templates from `references/templates.md`** as starting points, but adapt them to the project's reality. Remove template sections that don't apply. Add sections that the project needs but the template doesn't cover.
 
-3. **Write in the language defined by AGENTS.md.** Check the project's AGENTS.md or CLAUDE.md for a language directive. If none exists, check the language of the existing README or codebase comments. If still ambiguous, ask the user. Templates are provided in English as a neutral baseline — translate to the target language when generating.
+3. **Write in the language defined by AGENTS.md — content AND filenames.** Check the project's AGENTS.md or CLAUDE.md for a language directive. If none exists, check the language of the existing README or codebase comments. If still ambiguous, ask the user. Templates are provided in English as a neutral baseline — translate to the target language when generating. When generating for a **PT-BR** project, also translate filenames using the canonical mapping in `references/docs-standard.md` → "Filename localization" (e.g., `docs/primeiros-passos.md` instead of `docs/getting-started.md`, `docs/arquitetura.md` instead of `docs/architecture.md`, `docs/guias/deploy.md` instead of `docs/guides/deployment.md`). Files whose names are fixed by convention — README.md, AGENTS.md, CLAUDE.md, CONTRIBUTING.md, LICENSE, CHANGELOG.md — stay in English regardless of content language.
 
 4. **Keep documents short.** Target lengths (heuristics, not dogma):
    - README.md: 60-200 lines (applications) / 40-200 lines (published libraries) — the full spec includes Overview, Features, Project Structure, Prerequisites, Tech Stack, Installation, Usage, Documentation links, and Maintainers

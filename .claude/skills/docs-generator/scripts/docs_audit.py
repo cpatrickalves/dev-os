@@ -34,11 +34,21 @@ STANDARD_EXTRA = [
     ("docs/adr/template.md", "ADR template (MADR 4.0) for new decisions"),
 ]
 
-# Alternative locations/names for common files
+# Alternative locations/names for common files.
+# PT-BR variants follow the canonical mapping in references/docs-standard.md:
+# ASCII-only, hyphen-lowercase, no accents or cedilla.
 ALTERNATIVES = {
     "AGENTS.md": ["CLAUDE.md", ".cursor/rules/project.mdc"],
     "CONTRIBUTING.md": ["docs/contributing.md", ".github/CONTRIBUTING.md"],
     "README.md": ["readme.md", "README.rst", "README.txt"],
+    # PT-BR filename variants
+    "docs/getting-started.md": ["docs/primeiros-passos.md"],
+    "docs/architecture.md": ["docs/arquitetura.md"],
+    "docs/guides/deployment.md": ["docs/guias/deploy.md", "docs/guias/implantacao.md"],
+    "docs/guides/configuration.md": ["docs/guias/configuracao.md"],
+    "docs/guides/troubleshooting.md": ["docs/guias/solucao-de-problemas.md"],
+    "docs/reference/api.md": ["docs/referencia/api.md"],
+    "docs/reference/environment-variables.md": ["docs/referencia/variaveis-de-ambiente.md"],
 }
 
 STALE_THRESHOLD_DAYS = 180  # 6 months

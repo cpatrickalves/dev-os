@@ -1,6 +1,8 @@
 # Document Templates
 
-Starting-point templates for each document in the standard. Adapt to the project's reality — remove sections that don't apply, add sections that are needed. Templates are in English as a neutral baseline; translate to the project's language when generating.
+Starting-point templates for each document in the standard. Adapt to the project's reality — remove sections that don't apply, add sections that are needed. Templates are in English as a neutral baseline; translate **content and filenames** to the project's language when generating.
+
+For PT-BR projects, translate filenames using the canonical mapping in `docs-standard.md` → "Filename localization" (e.g., `getting-started.md` → `primeiros-passos.md`, `architecture.md` → `arquitetura.md`, `guides/` → `guias/`, `reference/` → `referencia/`). README.md, AGENTS.md, CLAUDE.md, CONTRIBUTING.md, LICENSE, and CHANGELOG.md keep English filenames regardless. When the template contains cross-links (e.g., in the README "Documentation" section), update the links to match the generated filenames.
 
 ---
 

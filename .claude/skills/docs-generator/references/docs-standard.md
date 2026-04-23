@@ -207,8 +207,47 @@ Link to `troubleshooting.md` for incident playbooks (symptoms → cause → reso
 
 ## Language guidelines
 
-- Documentation language is defined by the project's AGENTS.md or CLAUDE.md
-- Templates are provided in English as a neutral baseline — translate when generating
+### Content language
+
+- Documentation language is defined by the project's AGENTS.md or CLAUDE.md (explicit directive like "All docs and comments in PT-BR"). If none exists, infer from the existing README or codebase comments; when still ambiguous, ask the user before generating anything.
+- Templates are provided in English as a neutral baseline — translate when generating.
+- Technical terms in English are acceptable and preferred when they are the industry standard (API, endpoint, middleware, deploy, commit, merge, branch).
+- Keep sentences short. One idea per sentence.
+- Use active voice.
+
+### Filename localization
+
+The detected documentation language **also controls file names** inside `docs/`. When the project is PT-BR, use the canonical mapping below; when English (or ambiguous), keep the English names.
+
+**Filenames that NEVER translate** (fixed by tooling / community convention):
+
+- `README.md` — GitHub renders this at the repo root
+- `AGENTS.md`, `CLAUDE.md` — AI agent tooling expects these exact names
+- `CONTRIBUTING.md` — GitHub renders this in the "Contributing" tab
+- `LICENSE` — license scanners and build tooling
+- `CHANGELOG.md` — keepachangelog.com and release-tooling convention
+
+**Filenames that translate to PT-BR** (ASCII-only, hyphen-lowercase — strip accents and cedilla):
+
+| English | PT-BR canonical |
+|---------|-----------------|
+| `docs/getting-started.md` | `docs/primeiros-passos.md` |
+| `docs/architecture.md` | `docs/arquitetura.md` |
+| `docs/guides/` | `docs/guias/` |
+| `docs/guides/deployment.md` | `docs/guias/deploy.md` |
+| `docs/guides/configuration.md` | `docs/guias/configuracao.md` |
+| `docs/guides/troubleshooting.md` | `docs/guias/solucao-de-problemas.md` |
+| `docs/reference/` | `docs/referencia/` |
+| `docs/reference/api.md` | `docs/referencia/api.md` |
+| `docs/reference/environment-variables.md` | `docs/referencia/variaveis-de-ambiente.md` |
+| `docs/adr/` | `docs/adr/` *(ADR is a universal acronym — keep as is)* |
+
+**Why ASCII-only for PT-BR filenames:** the doc *content* uses proper accents and cedilla (`configuração`, `variáveis`, `solução`), but the filename strips them (`configuracao.md`, `variaveis-de-ambiente.md`, `solucao-de-problemas.md`) for cross-platform portability. Some legacy tooling, URL encoders, CI runners on Windows, and older file systems still struggle with non-ASCII filenames. This convention is widely used in established Brazilian open source.
+
+**Respect what exists.** If the project already has a `docs/` folder with its own naming — including hybrid mixes like English filenames holding PT-BR content — adapt to what's there rather than forcing a rename. Apply the canonical mapping only when creating new files.
+
+### Style
+
 - Technical terms in English are acceptable and preferred when they are the industry standard (API, endpoint, middleware, deploy, commit, merge, branch)
 - Keep sentences short. One idea per sentence.
 - Use active voice
