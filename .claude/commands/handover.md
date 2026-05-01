@@ -98,14 +98,26 @@ The filename pattern is `handover-YYYY-MM-DD-HHMMSS.md`, so handovers sort chron
 
 After the Bash command runs, tell the user the absolute path of the file that was written, plus a one-line size hint (N words / M sections) so they know what they are about to open. Do not re-print the full handover after the Bash call — it is already visible in your response above the tool call and saved to disk. Keep the confirmation line short, e.g.:
 
-> Handover saved to `/abs/path/.claude/handovers/handover-2026-05-01-142355.md` (1240 words, 8 sections). Open it and paste into a fresh Claude session.
+> Handover saved to `/abs/path/.claude/handovers/handover-2026-05-01-142355.md` (1240 words, 8 sections).
+
+### Ready-to-paste prompt for the next session
+
+Right after the confirmation line, output a fenced code block containing a copy-paste-ready prompt the user can drop into a fresh Claude session. The prompt must reference the **absolute path** of the saved handover, instruct the new session to read it first, and tell it to execute the "First action recommended for the next session" section without re-planning. Example:
+
+````
+```
+Read the handover at /abs/path/.claude/handovers/handover-2026-05-01-142355.md in full, then execute the "First action recommended for the next session" section. Do not re-plan work that was already decided — the handover is the source of truth. Ask only if something in the handover is ambiguous or contradicted by the current repo state.
+```
+````
+
+Use the real absolute path (not a placeholder). Keep the prompt as a single short paragraph inside one code block so it round-trips cleanly through copy and paste. Do not add commentary inside the code block — only the prompt text.
 
 ## Example outcome
 
 A good handover enables this exchange in the fresh session:
 
-> User: [pastes handover] continue
+> User: [pastes the ready-to-paste prompt referencing the saved handover path]
 >
-> Claude: [reads the handover, runs the first concrete action from the plan section without asking any clarifying questions]
+> Claude: [reads the handover file, runs the first concrete action from the plan section without asking any clarifying questions]
 
 If the fresh session has to ask "what were you working on?" or "which file?" or "did you already try X?", the handover failed. Iterate on the template or add more detail next time.
