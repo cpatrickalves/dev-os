@@ -22,3 +22,8 @@ npx skills add langchain-ai/langchain-skills --agent claude-code --skill '*' --y
 
 ### https://ui.shadcn.com/docs/skills
 npx skills add shadcn/ui --agent claude-code --skill '*' --yes --project
+
+# karpathy-guidelines
+claude plugin marketplace add forrestchang/andrej-karpathy-skills
+claude plugin install andrej-karpathy-skills@karpathy-skills
+
