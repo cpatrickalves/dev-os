@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # =============================================================================
-# Agent OS Import Skills Script
-# Import Claude skills from Agent OS to the current project
+# Dev-OS Import Skills Script
+# Import Claude skills from Dev-OS to the current project
 # =============================================================================
 
 set -e
@@ -23,7 +23,7 @@ VERBOSE="false"
 IMPORT_ALL="false"
 OVERWRITE="false"
 
-SKILLS_SOURCE="$HOME/agent-os/.claude/skills"
+SKILLS_SOURCE="$HOME/dev-os/.claude/skills"
 SKILLS_DEST="$PROJECT_DIR/.claude/skills"
 
 # Arrays for skill handling
@@ -40,7 +40,7 @@ show_help() {
     cat << EOF
 Usage: $0 [OPTIONS]
 
-Import Claude skills from Agent OS to the current project.
+Import Claude skills from Dev-OS to the current project.
 
 Options:
     --all              Import all available skills (skip selection)
@@ -379,7 +379,7 @@ execute_import() {
 # -----------------------------------------------------------------------------
 
 main() {
-    print_section "Agent OS Import Skills"
+    print_section "Dev-OS Import Skills"
 
     # Parse arguments
     parse_arguments "$@"

@@ -74,12 +74,12 @@ If references are provided, read and analyze them to inform the plan.
 
 ### Step 4: Check Product Context
 
-Check if `agent-os/product/` exists and contains files.
+Check if `dev-os/product/` exists and contains files.
 
 If it exists, read key files (like `mission.md`, `roadmap.md`, `tech-stack.md`) and use AskUserQuestion:
 
 ```
-I found product context in agent-os/product/. Should this feature align with any specific product goals or constraints?
+I found product context in dev-os/product/. Should this feature align with any specific product goals or constraints?
 
 Key points from your product docs:
 - [summarize relevant points]
@@ -91,7 +91,7 @@ If no product folder exists, skip this step.
 
 ### Step 5: Surface Relevant Standards
 
-Read `agent-os/standards/index.yml` to identify relevant standards based on the feature being built.
+Read `dev-os/standards/index.yml` to identify relevant standards based on the feature being built.
 
 Use AskUserQuestion to confirm:
 
@@ -120,7 +120,7 @@ Where:
 
 Example: `2026-01-15-1430-user-comment-system/`
 
-**Note:** If `agent-os/specs/` doesn't exist, create it when saving the spec folder.
+**Note:** If `dev-os/specs/` doesn't exist, create it when saving the spec folder.
 
 ### Step 7: Structure the Plan
 
@@ -135,7 +135,7 @@ Here's the plan structure. Task 1 saves all our shaping work before implementati
 
 ## Task 1: Save Spec Documentation
 
-Create `agent-os/specs/{folder-name}/` with:
+Create `dev-os/specs/{folder-name}/` with:
 
 - **plan.md** — This full plan
 - **shape.md** — Shaping notes (scope, decisions, context from our conversation)
@@ -183,7 +183,7 @@ Ready to start? (approve / adjust)
 The spec folder will contain:
 
 ```
-agent-os/specs/{YYYY-MM-DD-HHMM-feature-slug}/
+dev-os/specs/{YYYY-MM-DD-HHMM-feature-slug}/
 ├── plan.md           # The full plan
 ├── shape.md          # Shaping decisions and context
 ├── standards.md      # Which standards apply and key points

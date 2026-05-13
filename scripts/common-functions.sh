@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # =============================================================================
-# Agent OS Common Functions
-# Shared utilities for Agent OS scripts
+# Dev-OS Common Functions
+# Shared utilities for Dev-OS scripts
 # =============================================================================
 
 # Colors for output

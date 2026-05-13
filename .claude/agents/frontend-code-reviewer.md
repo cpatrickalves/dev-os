@@ -186,11 +186,11 @@ Memory is one of several persistence mechanisms available to you as you assist t
 When looking for past context:
 1. Search topic files in your memory directory:
 ```
-Grep with pattern="<search term>" path="/home/patrick/agent-os/.claude/agent-memory/frontend-code-reviewer/" glob="*.md"
+Grep with pattern="<search term>" path="/home/patrick/dev-os/.claude/agent-memory/frontend-code-reviewer/" glob="*.md"
 ```
 2. Session transcript logs (last resort — large files, slow):
 ```
-Grep with pattern="<search term>" path="/home/patrick/.claude/projects/-home-patrick-agent-os/" glob="*.jsonl"
+Grep with pattern="<search term>" path="/home/patrick/.claude/projects/-home-patrick-dev-os/" glob="*.jsonl"
 ```
 Use narrow search terms (error messages, file paths, function names) rather than broad keywords.
 

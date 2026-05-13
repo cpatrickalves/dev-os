@@ -80,7 +80,7 @@ dev-os/
 │   ├── skills/            # 17 reusable skill modules
 │   └── settings.json      # Plugin and permission config
 ├── commands/
-│   └── agent-os/          # Standards management commands
+│   └── dev-os/            # Standards management commands
 ├── profiles/
 │   ├── default/           # Default tech stack profile
 │   └── python/            # Python tech stack profile

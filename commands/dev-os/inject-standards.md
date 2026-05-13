@@ -22,7 +22,7 @@ Analyzes context and suggests relevant standards.
 ```
 Directly injects specified standards without suggestions.
 
-**Note:** `root` is a reserved keyword — it refers to `.md` files directly in `agent-os/standards/` (not in a subfolder).
+**Note:** `root` is a reserved keyword — it refers to `.md` files directly in `dev-os/standards/` (not in a subfolder).
 
 ## Process
 
@@ -58,7 +58,7 @@ Always ask when uncertain — don't assume conversation by default.
 
 ### Step 2: Read the Index (Auto-Suggest Mode)
 
-Read `agent-os/standards/index.yml` to get the list of available standards and their descriptions.
+Read `dev-os/standards/index.yml` to get the list of available standards and their descriptions.
 
 If index.yml doesn't exist or is empty:
 ```
@@ -139,9 +139,9 @@ Which approach? (1 or 2)
 ```
 Be sure to include references to the following standards files in the appropriate location in the file(s) that make up this skill:
 
-@agent-os/standards/api/response-format.md
-@agent-os/standards/api/error-handling.md
-@agent-os/standards/global/naming.md
+@dev-os/standards/api/response-format.md
+@dev-os/standards/api/error-handling.md
+@dev-os/standards/global/naming.md
 
 These standards cover:
 - API response envelope structure, status codes
@@ -192,9 +192,9 @@ Which approach? (1 or 2)
 ```
 Be sure to include references to the following standards files in the appropriate location in the plan we're building:
 
-@agent-os/standards/api/response-format.md
-@agent-os/standards/api/error-handling.md
-@agent-os/standards/global/naming.md
+@dev-os/standards/api/response-format.md
+@dev-os/standards/api/error-handling.md
+@dev-os/standards/global/naming.md
 
 These standards cover:
 - API response envelope structure, status codes
@@ -251,10 +251,10 @@ Same as auto-suggest mode.
 ### Step 2: Parse Arguments
 
 Arguments can be:
-- **Folder name** — `api` → inject all `.md` files in `agent-os/standards/api/`
-- **Folder/file** — `api/response-format` → inject `agent-os/standards/api/response-format.md`
-- **Root folder** — `root` → inject all `.md` files directly in `agent-os/standards/` (not in subfolders)
-- **Root file** — `root/naming` → inject `agent-os/standards/naming.md`
+- **Folder name** — `api` → inject all `.md` files in `dev-os/standards/api/`
+- **Folder/file** — `api/response-format` → inject `dev-os/standards/api/response-format.md`
+- **Root folder** — `root` → inject all `.md` files directly in `dev-os/standards/` (not in subfolders)
+- **Root file** — `root/naming` → inject `dev-os/standards/naming.md`
 
 Multiple arguments inject multiple standards.
 

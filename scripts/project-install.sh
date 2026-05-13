@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # =============================================================================
-# Agent OS Project Installation Script
-# Installs Agent OS into a project's codebase
+# Dev-OS Project Installation Script
+# Installs Dev-OS into a project's codebase
 # =============================================================================
 
 set -e
@@ -31,7 +31,7 @@ show_help() {
     cat << EOF
 Usage: $0 [OPTIONS]
 
-Install Agent OS into the current project directory.
+Install Dev-OS into the current project directory.
 
 Options:
     --profile <name>     Use specified profile (default: from config.yml)
@@ -84,7 +84,7 @@ parse_arguments() {
 
 validate_base_installation() {
     if [[ ! -d "$BASE_DIR" ]]; then
-        print_error "Agent OS base installation not found"
+        print_error "Dev-OS base installation not found"
         exit 1
     fi
 
@@ -96,7 +96,7 @@ validate_base_installation() {
 
 validate_not_in_base() {
     if [[ "$PROJECT_DIR" == "$BASE_DIR" ]]; then
-        print_error "Cannot install Agent OS in the base installation directory"
+        print_error "Cannot install Dev-OS in the base installation directory"
         echo ""
         echo "Navigate to your project directory first:"
         echo "  cd /path/to/your/project"
@@ -166,7 +166,7 @@ confirm_standards_overwrite() {
         return 0
     fi
 
-    local existing_standards="$PROJECT_DIR/agent-os/standards"
+    local existing_standards="$PROJECT_DIR/dev-os/standards"
 
     if [[ -d "$existing_standards" ]]; then
         echo ""
@@ -195,10 +195,10 @@ confirm_standards_overwrite() {
 create_project_structure() {
     print_status "Creating project structure..."
 
-    ensure_dir "$PROJECT_DIR/agent-os"
-    ensure_dir "$PROJECT_DIR/agent-os/standards"
+    ensure_dir "$PROJECT_DIR/dev-os"
+    ensure_dir "$PROJECT_DIR/dev-os/standards"
 
-    print_success "Created agent-os/ directory structure"
+    print_success "Created dev-os/ directory structure"
 }
 
 install_standards() {
@@ -210,7 +210,7 @@ install_standards() {
     echo ""
     print_status "Installing standards..."
 
-    local project_standards="$PROJECT_DIR/agent-os/standards"
+    local project_standards="$PROJECT_DIR/dev-os/standards"
     local profiles_used=0
 
     # Temp file to track file sources (format: relative_path|profile_name)
@@ -279,7 +279,7 @@ create_index() {
     echo ""
     print_status "Updating standards index..."
 
-    local standards_dir="$PROJECT_DIR/agent-os/standards"
+    local standards_dir="$PROJECT_DIR/dev-os/standards"
     local index_file="$standards_dir/index.yml"
     local temp_file="$standards_dir/.index_temp.yml"
     local old_index=""
@@ -293,7 +293,7 @@ create_index() {
     local new_count=0
 
     # Start fresh
-    echo "# Agent OS Standards Index" > "$temp_file"
+    echo "# Dev-OS Standards Index" > "$temp_file"
     echo "" >> "$temp_file"
 
     # Helper to get existing description from old index
@@ -385,8 +385,8 @@ install_commands() {
     echo ""
     print_status "Installing commands..."
 
-    local commands_source="$BASE_DIR/commands/agent-os"
-    local commands_dest="$PROJECT_DIR/.claude/commands/agent-os"
+    local commands_source="$BASE_DIR/commands/dev-os"
+    local commands_dest="$PROJECT_DIR/.claude/commands/dev-os"
 
     if [[ ! -d "$commands_source" ]]; then
         print_warning "No commands found in base installation"
@@ -404,7 +404,7 @@ install_commands() {
     done
 
     if [[ "$count" -gt 0 ]]; then
-        print_success "Installed $count commands to .claude/commands/agent-os/"
+        print_success "Installed $count commands to .claude/commands/dev-os/"
     else
         print_warning "No command files found"
     fi
@@ -415,7 +415,7 @@ install_commands() {
 # -----------------------------------------------------------------------------
 
 main() {
-    print_section "Agent OS Project Installation"
+    print_section "Dev-OS Project Installation"
 
     # Parse arguments
     parse_arguments "$@"
@@ -465,7 +465,7 @@ main() {
     install_commands
 
     echo ""
-    print_success "Agent OS installed successfully!"
+    print_success "Dev-OS installed successfully!"
     echo ""
     echo "Next steps:"
     echo "  1. Run /discover-standards to extract patterns from your codebase"

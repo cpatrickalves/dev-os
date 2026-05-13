@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # =============================================================================
-# Agent OS Import Agents Script
-# Import Claude agents from Agent OS to the current project
+# Dev-OS Import Agents Script
+# Import Claude agents from Dev-OS to the current project
 # =============================================================================
 
 set -e
@@ -23,7 +23,7 @@ VERBOSE="false"
 IMPORT_ALL="false"
 OVERWRITE="false"
 
-AGENTS_SOURCE="$HOME/agent-os/.claude/agents"
+AGENTS_SOURCE="$HOME/dev-os/.claude/agents"
 AGENTS_DEST="$PROJECT_DIR/.claude/agents"
 
 # Arrays for agent handling
@@ -40,7 +40,7 @@ show_help() {
     cat << EOF
 Usage: $0 [OPTIONS]
 
-Import Claude agents from Agent OS to the current project.
+Import Claude agents from Dev-OS to the current project.
 
 Options:
     --all              Import all available agents (skip selection)
@@ -382,7 +382,7 @@ execute_import() {
 # -----------------------------------------------------------------------------
 
 main() {
-    print_section "Agent OS Import Agents"
+    print_section "Dev-OS Import Agents"
 
     # Parse arguments
     parse_arguments "$@"

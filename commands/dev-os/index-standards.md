@@ -10,7 +10,7 @@ The index enables `/inject-standards` to suggest relevant standards without read
 
 ### Step 1: Scan for Standards Files
 
-1. List all `.md` files in `agent-os/standards/` and its subfolders
+1. List all `.md` files in `dev-os/standards/` and its subfolders
 2. Build a list of all standards organized by folder:
    ```
    root/coding-style.md        # Files in standards/ root use "root" as the folder name
@@ -20,11 +20,11 @@ The index enables `/inject-standards` to suggest relevant standards without read
    database/migrations.md
    ```
 
-**Note:** `root` is a reserved keyword — it refers to `.md` files directly in `agent-os/standards/` (not in a subfolder). Do not create an actual folder named "root".
+**Note:** `root` is a reserved keyword — it refers to `.md` files directly in `dev-os/standards/` (not in a subfolder). Do not create an actual folder named "root".
 
 ### Step 2: Load Existing Index
 
-Read `agent-os/standards/index.yml` if it exists. Note which entries already have descriptions.
+Read `dev-os/standards/index.yml` if it exists. Note which entries already have descriptions.
 
 ### Step 3: Identify Changes
 
@@ -63,7 +63,7 @@ Report: "Removed 2 stale index entries: api/old-pattern.md, testing/deprecated.m
 
 ### Step 6: Write Updated Index
 
-Generate `agent-os/standards/index.yml` with this structure:
+Generate `dev-os/standards/index.yml` with this structure:
 
 ```yaml
 folder-name:
@@ -96,7 +96,7 @@ database:
     description: Migration file structure, naming conventions, rollback patterns
 ```
 
-**Note:** `root` appears first and contains standards files that live directly in `agent-os/standards/` (not in subfolders).
+**Note:** `root` appears first and contains standards files that live directly in `dev-os/standards/` (not in subfolders).
 
 ### Step 7: Report Results
 
@@ -121,4 +121,4 @@ Total: 9 standards indexed
 
 ## Output
 
-Updates `agent-os/standards/index.yml`
+Updates `dev-os/standards/index.yml`

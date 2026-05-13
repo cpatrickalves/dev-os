@@ -117,14 +117,14 @@ All API responses use this envelope:
 Create this file? (yes / edit: [your changes] / skip)
 ```
 
-4. Create or update the file in `agent-os/standards/[folder]/`
+4. Create or update the file in `dev-os/standards/[folder]/`
 5. **Then repeat Steps 3-4 for the next selected standard**
 
 ### Step 5: Update the Index
 
 After all standards are created:
 
-1. Scan `agent-os/standards/` for all `.md` files
+1. Scan `dev-os/standards/` for all `.md` files
 2. For each new file without an index entry, use AskUserQuestion:
 
 ```
@@ -136,7 +136,7 @@ Suggested description: "API response envelope structure and error format"
 Accept this description? (yes / or type a better one)
 ```
 
-3. Update `agent-os/standards/index.yml`:
+3. Update `dev-os/standards/index.yml`:
 
 ```yaml
 api:
@@ -160,8 +160,8 @@ Would you like to discover standards in another area, or are we done?
 
 ## Output Location
 
-All standards: `agent-os/standards/[folder]/[standard].md`
-Index file: `agent-os/standards/index.yml`
+All standards: `dev-os/standards/[folder]/[standard].md`
+Index file: `dev-os/standards/index.yml`
 
 ## Writing Concise Standards
 

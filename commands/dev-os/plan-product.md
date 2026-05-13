@@ -1,6 +1,6 @@
 # Plan Product
 
-Establish foundational product documentation through an interactive conversation. Creates mission, roadmap, and tech stack files in `agent-os/product/`.
+Establish foundational product documentation through an interactive conversation. Creates mission, roadmap, and tech stack files in `dev-os/product/`.
 
 ## Important Guidelines
 
@@ -12,7 +12,7 @@ Establish foundational product documentation through an interactive conversation
 
 ### Step 1: Check for Existing Product Docs
 
-Check if `agent-os/product/` exists and contains any of these files:
+Check if `dev-os/product/` exists and contains any of these files:
 - `mission.md`
 - `roadmap.md`
 - `tech-stack.md`
@@ -88,7 +88,7 @@ After they respond, use AskUserQuestion:
 
 ### Step 4: Establish Tech Stack (for tech-stack.md)
 
-First, check if `agent-os/standards/global/tech-stack.md` exists.
+First, check if `dev-os/standards/global/tech-stack.md` exists.
 
 **If the tech-stack standard exists**, read it and use AskUserQuestion:
 
@@ -122,7 +122,7 @@ Please describe your tech stack:
 
 ### Step 5: Generate Files
 
-Create the `agent-os/product/` directory if it doesn't exist.
+Create the `dev-os/product/` directory if it doesn't exist.
 
 Generate each file based on the information gathered:
 
@@ -189,9 +189,9 @@ After creating all files, output to user:
 ```
 ✓ Product documentation created:
 
-  agent-os/product/mission.md
-  agent-os/product/roadmap.md
-  agent-os/product/tech-stack.md
+  dev-os/product/mission.md
+  dev-os/product/roadmap.md
+  dev-os/product/tech-stack.md
 
 Review these files to ensure they accurately capture your product vision.
 You can edit them directly or run /plan-product again to update.

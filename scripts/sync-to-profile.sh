@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =============================================================================
-# Agent OS Sync to Profile Script
+# Dev-OS Sync to Profile Script
 # Syncs project standards back to a base profile for reuse
 # =============================================================================
 
@@ -101,7 +101,7 @@ parse_arguments() {
 
 validate_base_installation() {
     if [[ ! -d "$BASE_DIR" ]]; then
-        print_error "Agent OS base installation not found"
+        print_error "Dev-OS base installation not found"
         exit 1
     fi
 
@@ -112,12 +112,12 @@ validate_base_installation() {
 }
 
 validate_project_standards() {
-    local standards_dir="$PROJECT_DIR/agent-os/standards"
+    local standards_dir="$PROJECT_DIR/dev-os/standards"
 
     if [[ ! -d "$standards_dir" ]]; then
-        print_error "No standards directory found at agent-os/standards/"
+        print_error "No standards directory found at dev-os/standards/"
         echo ""
-        echo "Run project-install.sh first to set up Agent OS in this project."
+        echo "Run project-install.sh first to set up Dev-OS in this project."
         exit 1
     fi
 }
@@ -127,7 +127,7 @@ validate_project_standards() {
 # -----------------------------------------------------------------------------
 
 find_standards_files() {
-    local standards_dir="$PROJECT_DIR/agent-os/standards"
+    local standards_dir="$PROJECT_DIR/dev-os/standards"
     STANDARDS_FILES=()
 
     # Find all .md files, excluding .backups directory
@@ -464,7 +464,7 @@ backup_files() {
 # -----------------------------------------------------------------------------
 
 execute_sync() {
-    local project_standards="$PROJECT_DIR/agent-os/standards"
+    local project_standards="$PROJECT_DIR/dev-os/standards"
     local profile_standards="$BASE_DIR/profiles/$PROFILE/standards"
 
     local sync_count=0
@@ -490,7 +490,7 @@ execute_sync() {
 # -----------------------------------------------------------------------------
 
 main() {
-    print_section "Agent OS Sync to Profile"
+    print_section "Dev-OS Sync to Profile"
 
     # Parse arguments
     parse_arguments "$@"
