@@ -17,6 +17,10 @@ claude plugin install compound-engineering --scope project
 claude plugin marketplace update every-marketplace
 claude plugin update compound-engineering@every-marketplace
 
+# Matt Pocock https://github.com/mattpocock/skills
+npx skills@latest add mattpocock/skills
+npx skills@latest update mattpocock/skills
+
 # Langchain
 npx skills add langchain-ai/langchain-skills --agent claude-code --skill '*' --yes --project
 
