@@ -17,9 +17,10 @@ claude plugin install compound-engineering --scope project
 claude plugin marketplace update every-marketplace
 claude plugin update compound-engineering@every-marketplace
 
-# Skills
+# Langchain
 npx skills add langchain-ai/langchain-skills --agent claude-code --skill '*' --yes --project
 
+# Shadcn
 ### https://ui.shadcn.com/docs/skills
 npx skills add shadcn/ui --agent claude-code --skill '*' --yes --project
 
@@ -27,3 +28,6 @@ npx skills add shadcn/ui --agent claude-code --skill '*' --yes --project
 claude plugin marketplace add forrestchang/andrej-karpathy-skills
 claude plugin install andrej-karpathy-skills@karpathy-skills
 
+# Frontend slides https://github.com/zarazhangrui/frontend-slides
+claude plugin marketplace add zarazhangrui/frontend-slides
+claude plugin install frontend-slides@frontend-slides
