@@ -311,7 +311,7 @@ _pk_render() {
     [[ $_PK_window_start -gt $max_start ]] && _PK_window_start=$max_start
 
     local n=0
-    print_status "Select ${PICKER_NOUN} to import:"; ((n++)) || true
+    print_status "Select ${PICKER_NOUN}:"; ((n++)) || true
     echo "  ↑/↓ navigate   Space toggle   a all   n none   Enter confirm   q quit"; ((n++)) || true
 
     if [[ $_PK_window_start -gt 0 ]]; then
@@ -352,7 +352,7 @@ select_items() {
     # Non-TTY guard: no interactive terminal is a deterministic error,
     # not a hang in a raw-mode loop that cannot work.
     if [[ ! -t 0 || ! -t 1 ]]; then
-        print_error "No interactive terminal; re-run with --all to import all ${PICKER_NOUN}."
+        print_error "No interactive terminal; re-run with --all to select all ${PICKER_NOUN}."
         exit 1
     fi
 
