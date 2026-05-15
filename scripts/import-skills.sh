@@ -201,12 +201,17 @@ select_skills() {
     local total=${#SKILL_DIRS[@]}
     local -a selected
     local i
-    for ((i=0; i<total; i++)); do selected[$i]=0; done
 
     local cursor=0
     local window_start=0
     local prev_lines=0
     local status_msg=""
+
+    _picker_set_all() {
+        local v=$1 j
+        for ((j=0; j<total; j++)); do selected[$j]=$v; done
+    }
+    _picker_set_all 0   # start with everything deselected
 
     _picker_restore() {
         tput cnorm 2>/dev/null || printf '\033[?25h'
@@ -242,11 +247,10 @@ select_skills() {
 
     _picker_render() {
         # Clear exactly what was drawn last frame (window height varies).
+        # Cursor up N lines then clear to end of screen: one write, no
+        # per-line tput subprocess (same raw-ANSI assumption as civis below).
         if [[ $prev_lines -gt 0 ]]; then
-            for ((i=0; i<prev_lines; i++)); do
-                tput cuu1 2>/dev/null || printf '\033[1A'
-                tput el   2>/dev/null || printf '\033[2K'
-            done
+            printf '\033[%dA\033[J' "$prev_lines"
         fi
 
         # Re-read terminal height every frame so a mid-picker resize is absorbed.
@@ -308,33 +312,30 @@ select_skills() {
 
     tput civis 2>/dev/null || printf '\033[?25l'
 
+    # Redraw only when state changed. Stray bytes, mouse/paste data, and no-op
+    # navigation (Up at top, Down at bottom) leave dirty=0 and skip the repaint
+    # (and its tput-lines subprocess) entirely.
+    local dirty=1
+    local key
     while true; do
-        _picker_render
-        local key
-        key=$(_picker_read_key)
+        if [[ $dirty -eq 1 ]]; then _picker_render; fi
+        dirty=0
         status_msg=""
+        key=$(_picker_read_key)
         case $key in
-            UP)    [[ $cursor -gt 0 ]] && cursor=$((cursor - 1)) || true ;;
-            DOWN)  [[ $cursor -lt $((total - 1)) ]] && cursor=$((cursor + 1)) || true ;;
-            SPACE)
-                if [[ ${selected[$cursor]} -eq 1 ]]; then
-                    selected[$cursor]=0
-                else
-                    selected[$cursor]=1
-                fi
-                ;;
-            ALL)   for ((i=0; i<total; i++)); do selected[$i]=1; done ;;
-            NONE)  for ((i=0; i<total; i++)); do selected[$i]=0; done ;;
+            UP)    if [[ $cursor -gt 0 ]]; then cursor=$((cursor - 1)); dirty=1; fi ;;
+            DOWN)  if [[ $cursor -lt $((total - 1)) ]]; then cursor=$((cursor + 1)); dirty=1; fi ;;
+            SPACE) selected[$cursor]=$((1 - selected[$cursor])); dirty=1 ;;
+            ALL)   _picker_set_all 1; dirty=1 ;;
+            NONE)  _picker_set_all 0; dirty=1 ;;
             ENTER)
                 local any=0
                 for ((i=0; i<total; i++)); do
                     if [[ ${selected[$i]} -eq 1 ]]; then any=1; break; fi
                 done
-                if [[ $any -eq 1 ]]; then
-                    break
-                else
-                    status_msg="Select at least one skill, or press q to cancel"
-                fi
+                if [[ $any -eq 1 ]]; then break; fi
+                status_msg="Select at least one skill, or press q to cancel"
+                dirty=1
                 ;;
             QUIT|ESC)
                 _picker_restore
