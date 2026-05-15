@@ -1,7 +1,7 @@
 ---
 title: "feat: Interactive keyboard-driven skill picker for import-skills.sh"
 type: feat
-status: active
+status: completed
 created: 2026-05-15
 depth: lightweight
 deepened: 2026-05-15
