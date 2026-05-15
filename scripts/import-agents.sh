@@ -181,103 +181,17 @@ select_agents() {
         return
     fi
 
-    # Initialize selection array (all deselected by default)
-    local selected=()
-    for ((i=0; i<${#AGENT_FILES[@]}; i++)); do
-        selected[$i]=0
-    done
+    # Interactive keyboard picker (shared, in common-functions.sh).
+    PICKER_NAMES=("${AGENT_NAMES[@]}")
+    PICKER_DESCS=("${AGENT_DESCRIPTIONS[@]}")
+    PICKER_NOUN="agents"
+    select_items
 
-    # Calculate lines to clear (agents + 7 for header/footer/spacing)
-    local lines_to_clear=$((${#AGENT_FILES[@]} + 7))
-
-    display_agent_selection() {
-        echo ""
-        print_status "Select agents to import:"
-        echo ""
-        local i=1
-        for ((idx=0; idx<${#AGENT_FILES[@]}; idx++)); do
-            local mark=" "
-            if [[ ${selected[$idx]} -eq 1 ]]; then
-                mark="x"
-            fi
-            local desc="${AGENT_DESCRIPTIONS[$idx]}"
-            # Truncate description to 60 chars
-            if [[ ${#desc} -gt 60 ]]; then
-                desc="${desc:0:57}..."
-            fi
-            if [[ -n "$desc" ]]; then
-                printf "  %2d) [%s] %s — %s\n" "$i" "$mark" "${AGENT_NAMES[$idx]}" "$desc"
-            else
-                printf "  %2d) [%s] %s\n" "$i" "$mark" "${AGENT_NAMES[$idx]}"
-            fi
-            ((i++))
-        done
-        echo ""
-        echo ""
-        echo "  Enter number to toggle   a) All   n) None   d) Done"
-        echo ""
-    }
-
-    clear_display() {
-        # Move cursor up and clear lines
-        for ((i=0; i<lines_to_clear; i++)); do
-            tput cuu1 2>/dev/null || echo -ne "\033[1A"
-            tput el 2>/dev/null || echo -ne "\033[2K"
-        done
-    }
-
-    local first_display=true
-
-    while true; do
-        if [[ "$first_display" == "true" ]]; then
-            first_display=false
-        else
-            clear_display
-        fi
-
-        display_agent_selection
-        read -p "Toggle (1-${#AGENT_FILES[@]}), a, n, or d: " choice
-
-        case "$choice" in
-            a|A)
-                for ((i=0; i<${#AGENT_FILES[@]}; i++)); do
-                    selected[$i]=1
-                done
-                ;;
-            n|N)
-                for ((i=0; i<${#AGENT_FILES[@]}; i++)); do
-                    selected[$i]=0
-                done
-                ;;
-            d|D)
-                break
-                ;;
-            *)
-                if [[ "$choice" =~ ^[0-9]+$ ]] && [[ "$choice" -ge 1 ]] && [[ "$choice" -le ${#AGENT_FILES[@]} ]]; then
-                    local idx=$((choice-1))
-                    if [[ ${selected[$idx]} -eq 1 ]]; then
-                        selected[$idx]=0
-                    else
-                        selected[$idx]=1
-                    fi
-                fi
-                # Invalid input just redisplays
-                ;;
-        esac
-    done
-
-    # Build selected agents array
     SELECTED_AGENTS=()
-    for ((i=0; i<${#AGENT_FILES[@]}; i++)); do
-        if [[ ${selected[$i]} -eq 1 ]]; then
-            SELECTED_AGENTS+=("${AGENT_FILES[$i]}")
-        fi
+    local i
+    for i in "${PICKER_SELECTED[@]}"; do
+        SELECTED_AGENTS+=("${AGENT_FILES[$i]}")
     done
-
-    if [[ ${#SELECTED_AGENTS[@]} -eq 0 ]]; then
-        print_error "No agents selected."
-        exit 1
-    fi
 
     print_verbose "Selected ${#SELECTED_AGENTS[@]} agents"
 }
