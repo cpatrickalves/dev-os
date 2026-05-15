@@ -177,9 +177,9 @@ discover_skills() {
 #     only viable lone-ESC disambiguation (Esc is the cancel action anyway).
 #   - Every picker read uses `|| true` so an expected non-zero (timeout) does
 #     not trip the script-wide `set -e`.
-#   - Cursor hidden via `tput civis`; restored via a `restore_terminal` trap on
-#     INT/EXIT, detached on every normal return path so it does not fire during
-#     the later conflict/import prompts.
+#   - Cursor hidden via `tput civis`; restored by `_picker_restore` via an
+#     INT/EXIT trap, detached on every normal return path so it does not fire
+#     during the later conflict/import prompts.
 # Written as a single self-contained function so the deferred extraction into
 # common-functions.sh (shared with import-agents.sh) is a move, not a rewrite.
 
@@ -227,11 +227,13 @@ select_skills() {
             # ESC: grab a 2-byte CSI tail with an integer-second timeout.
             # Empty/timeout => lone Esc (cancel).
             IFS= read -rsn2 -t 1 tail 2>/dev/null || true
+            # Accept both CSI (ESC [ A) and SS3 (ESC O A) arrow encodings;
+            # terminals in application-cursor-keys mode send the latter.
             case $tail in
-                '[A') printf 'UP' ;;
-                '[B') printf 'DOWN' ;;
-                '')   printf 'ESC' ;;
-                *)    printf 'OTHER' ;;
+                '[A'|'OA') printf 'UP' ;;
+                '[B'|'OB') printf 'DOWN' ;;
+                '')        printf 'ESC' ;;
+                *)         printf 'OTHER' ;;
             esac
             return
         fi
