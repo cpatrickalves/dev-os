@@ -169,6 +169,19 @@ discover_skills() {
 # -----------------------------------------------------------------------------
 # Skill Selection
 # -----------------------------------------------------------------------------
+#
+# Interactive keyboard-driven multi-select picker. Pure bash, constrained to
+# macOS stock bash 3.2.57:
+#   - read -rsn1 for single keys; ESC + (read -rsn2 -t 1) for arrow tails.
+#     bash 3.2 rejects fractional `read -t`, so the integer 1s timeout is the
+#     only viable lone-ESC disambiguation (Esc is the cancel action anyway).
+#   - Every picker read uses `|| true` so an expected non-zero (timeout) does
+#     not trip the script-wide `set -e`.
+#   - Cursor hidden via `tput civis`; restored via a `restore_terminal` trap on
+#     INT/EXIT, detached on every normal return path so it does not fire during
+#     the later conflict/import prompts.
+# Written as a single self-contained function so the deferred extraction into
+# common-functions.sh (shared with import-agents.sh) is a move, not a rewrite.
 
 select_skills() {
     # If --all was specified, select all skills
@@ -178,103 +191,172 @@ select_skills() {
         return
     fi
 
-    # Initialize selection array (all deselected by default)
-    local selected=()
-    for ((i=0; i<${#SKILL_DIRS[@]}; i++)); do
-        selected[$i]=0
-    done
+    # Non-TTY guard: no interactive terminal and not --all is a deterministic
+    # error, not a hang in a raw-mode loop that cannot work.
+    if [[ ! -t 0 || ! -t 1 ]]; then
+        print_error "No interactive terminal; re-run with --all to import all skills."
+        exit 1
+    fi
 
-    # Calculate lines to clear (skills + 7 for header/footer/spacing)
-    local lines_to_clear=$((${#SKILL_DIRS[@]} + 7))
+    local total=${#SKILL_DIRS[@]}
+    local -a selected
+    local i
+    for ((i=0; i<total; i++)); do selected[$i]=0; done
 
-    display_skill_selection() {
-        echo ""
-        print_status "Select skills to import:"
-        echo ""
-        local i=1
-        for ((idx=0; idx<${#SKILL_DIRS[@]}; idx++)); do
-            local mark=" "
-            if [[ ${selected[$idx]} -eq 1 ]]; then
-                mark="x"
-            fi
-            local desc="${SKILL_DESCRIPTIONS[$idx]}"
-            # Truncate description to 60 chars
-            if [[ ${#desc} -gt 60 ]]; then
-                desc="${desc:0:57}..."
-            fi
-            if [[ -n "$desc" ]]; then
-                printf "  %2d) [%s] %s — %s\n" "$i" "$mark" "${SKILL_NAMES[$idx]}" "$desc"
-            else
-                printf "  %2d) [%s] %s\n" "$i" "$mark" "${SKILL_NAMES[$idx]}"
-            fi
-            ((i++))
-        done
-        echo ""
-        echo ""
-        echo "  Enter number to toggle   a) All   n) None   d) Done"
-        echo ""
+    local cursor=0
+    local window_start=0
+    local prev_lines=0
+    local status_msg=""
+
+    _picker_restore() {
+        tput cnorm 2>/dev/null || printf '\033[?25h'
     }
 
-    clear_display() {
-        # Move cursor up and clear lines
-        for ((i=0; i<lines_to_clear; i++)); do
-            tput cuu1 2>/dev/null || echo -ne "\033[1A"
-            tput el 2>/dev/null || echo -ne "\033[2K"
-        done
+    # Restore terminal on interrupt/exit; detached on every normal return below.
+    trap '_picker_restore' INT EXIT
+
+    _picker_read_key() {
+        local k="" tail=""
+        IFS= read -rsn1 k 2>/dev/null || true
+        if [[ $k == $'\e' ]]; then
+            # ESC: grab a 2-byte CSI tail with an integer-second timeout.
+            # Empty/timeout => lone Esc (cancel).
+            IFS= read -rsn2 -t 1 tail 2>/dev/null || true
+            case $tail in
+                '[A') printf 'UP' ;;
+                '[B') printf 'DOWN' ;;
+                '')   printf 'ESC' ;;
+                *)    printf 'OTHER' ;;
+            esac
+            return
+        fi
+        case $k in
+            ''|$'\n'|$'\r') printf 'ENTER' ;;
+            ' ')            printf 'SPACE' ;;
+            a|A)            printf 'ALL' ;;
+            n|N)            printf 'NONE' ;;
+            q|Q)            printf 'QUIT' ;;
+            *)              printf 'OTHER' ;;
+        esac
     }
 
-    local first_display=true
-
-    while true; do
-        if [[ "$first_display" == "true" ]]; then
-            first_display=false
-        else
-            clear_display
+    _picker_render() {
+        # Clear exactly what was drawn last frame (window height varies).
+        if [[ $prev_lines -gt 0 ]]; then
+            for ((i=0; i<prev_lines; i++)); do
+                tput cuu1 2>/dev/null || printf '\033[1A'
+                tput el   2>/dev/null || printf '\033[2K'
+            done
         fi
 
-        display_skill_selection
-        read -p "Toggle (1-${#SKILL_DIRS[@]}), a, n, or d: " choice
+        # Re-read terminal height every frame so a mid-picker resize is absorbed.
+        local term_lines
+        term_lines=$(tput lines 2>/dev/null)
+        [[ "$term_lines" =~ ^[0-9]+$ ]] || term_lines=24
+        # Reserve: header + instruction + 2 scroll markers + count + status.
+        local reserved=6
+        local window_height=$((term_lines - reserved))
+        [[ $window_height -lt 1 ]] && window_height=1
+        [[ $window_height -gt $total ]] && window_height=$total
 
-        case "$choice" in
-            a|A)
-                for ((i=0; i<${#SKILL_DIRS[@]}; i++)); do
-                    selected[$i]=1
-                done
-                ;;
-            n|N)
-                for ((i=0; i<${#SKILL_DIRS[@]}; i++)); do
-                    selected[$i]=0
-                done
-                ;;
-            d|D)
-                break
-                ;;
-            *)
-                if [[ "$choice" =~ ^[0-9]+$ ]] && [[ "$choice" -ge 1 ]] && [[ "$choice" -le ${#SKILL_DIRS[@]} ]]; then
-                    local idx=$((choice-1))
-                    if [[ ${selected[$idx]} -eq 1 ]]; then
-                        selected[$idx]=0
-                    else
-                        selected[$idx]=1
-                    fi
+        # Clamp the window so the cursor is always visible.
+        if [[ $cursor -lt $window_start ]]; then
+            window_start=$cursor
+        elif [[ $cursor -ge $((window_start + window_height)) ]]; then
+            window_start=$((cursor - window_height + 1))
+        fi
+        [[ $window_start -lt 0 ]] && window_start=0
+        local max_start=$((total - window_height))
+        [[ $max_start -lt 0 ]] && max_start=0
+        [[ $window_start -gt $max_start ]] && window_start=$max_start
+
+        local n=0
+        print_status "Select skills to import:"; ((n++)) || true
+        echo "  ↑/↓ navigate   Space toggle   a all   n none   Enter confirm   q quit"; ((n++)) || true
+
+        if [[ $window_start -gt 0 ]]; then
+            echo "  ▲ more above"; ((n++)) || true
+        fi
+
+        local end=$((window_start + window_height))
+        [[ $end -gt $total ]] && end=$total
+        local idx
+        for ((idx=window_start; idx<end; idx++)); do
+            local g=" "; [[ $idx -eq $cursor ]] && g=">"
+            local m=" "; [[ ${selected[$idx]} -eq 1 ]] && m="x"
+            local desc="${SKILL_DESCRIPTIONS[$idx]}"
+            if [[ ${#desc} -gt 60 ]]; then desc="${desc:0:57}..."; fi
+            if [[ -n "$desc" ]]; then
+                printf '%s [%s] %s — %s\n' "$g" "$m" "${SKILL_NAMES[$idx]}" "$desc"
+            else
+                printf '%s [%s] %s\n' "$g" "$m" "${SKILL_NAMES[$idx]}"
+            fi
+            ((n++)) || true
+        done
+
+        if [[ $end -lt $total ]]; then
+            echo "  ▼ more below"; ((n++)) || true
+        fi
+        echo "  showing $((window_start + 1))-$end of $total"; ((n++)) || true
+
+        if [[ -n "$status_msg" ]]; then
+            print_warning "$status_msg"; ((n++)) || true
+        fi
+
+        prev_lines=$n
+    }
+
+    tput civis 2>/dev/null || printf '\033[?25l'
+
+    while true; do
+        _picker_render
+        local key
+        key=$(_picker_read_key)
+        status_msg=""
+        case $key in
+            UP)    [[ $cursor -gt 0 ]] && cursor=$((cursor - 1)) || true ;;
+            DOWN)  [[ $cursor -lt $((total - 1)) ]] && cursor=$((cursor + 1)) || true ;;
+            SPACE)
+                if [[ ${selected[$cursor]} -eq 1 ]]; then
+                    selected[$cursor]=0
+                else
+                    selected[$cursor]=1
                 fi
-                # Invalid input just redisplays
+                ;;
+            ALL)   for ((i=0; i<total; i++)); do selected[$i]=1; done ;;
+            NONE)  for ((i=0; i<total; i++)); do selected[$i]=0; done ;;
+            ENTER)
+                local any=0
+                for ((i=0; i<total; i++)); do
+                    if [[ ${selected[$i]} -eq 1 ]]; then any=1; break; fi
+                done
+                if [[ $any -eq 1 ]]; then
+                    break
+                else
+                    status_msg="Select at least one skill, or press q to cancel"
+                fi
+                ;;
+            QUIT|ESC)
+                _picker_restore
+                trap - INT EXIT
+                echo
+                print_status "Cancelled."
+                exit 0
                 ;;
         esac
     done
 
+    _picker_restore
+    trap - INT EXIT
+    echo
+
     # Build selected skills array
     SELECTED_SKILLS=()
-    for ((i=0; i<${#SKILL_DIRS[@]}; i++)); do
+    for ((i=0; i<total; i++)); do
         if [[ ${selected[$i]} -eq 1 ]]; then
             SELECTED_SKILLS+=("${SKILL_DIRS[$i]}")
         fi
     done
-
-    if [[ ${#SELECTED_SKILLS[@]} -eq 0 ]]; then
-        print_error "No skills selected."
-        exit 1
-    fi
 
     print_verbose "Selected ${#SELECTED_SKILLS[@]} skills"
 }
