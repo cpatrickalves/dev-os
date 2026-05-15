@@ -224,3 +224,192 @@ copy_standards() {
 
     echo "$count"
 }
+
+# -----------------------------------------------------------------------------
+# Interactive Multi-Select Picker
+# -----------------------------------------------------------------------------
+#
+# Reusable keyboard-driven picker shared by the import-* scripts. Pure bash,
+# constrained to macOS stock bash 3.2.57:
+#   - read -rsn1 for single keys; ESC + (read -rsn2 -t 1) for arrow tails.
+#     bash 3.2 rejects fractional `read -t`, so the integer 1s timeout is the
+#     only viable lone-Esc disambiguation (Esc is the cancel action anyway).
+#   - Every picker read uses `|| true` so an expected non-zero (timeout) does
+#     not trip a caller's `set -e`.
+#   - Cursor hidden via `tput civis`; restored by `_pk_restore` via an
+#     INT/EXIT trap, detached on every normal return path so it does not fire
+#     during a caller's later prompts.
+#
+# bash 3.2 lacks namerefs, so the calling convention is global arrays:
+#   Caller sets : PICKER_NAMES[]  (display names, parallel to PICKER_DESCS)
+#                 PICKER_DESCS[]  (descriptions, "" allowed)
+#                 PICKER_NOUN     (e.g. "skills" — used in copy + non-TTY hint)
+#   Returns     : PICKER_SELECTED[]  (0-based indices the user chose; >=1)
+#   Exits       : 0 on q/Esc cancel; 1 when there is no interactive terminal.
+
+_pk_set_all() {
+    local v=$1 j
+    for ((j=0; j<_PK_total; j++)); do _PK_sel[$j]=$v; done
+}
+
+_pk_restore() {
+    tput cnorm 2>/dev/null || printf '\033[?25h'
+}
+
+_pk_read_key() {
+    local k="" tail=""
+    IFS= read -rsn1 k 2>/dev/null || true
+    if [[ $k == $'\e' ]]; then
+        # ESC: grab a 2-byte tail with an integer-second timeout.
+        # Empty/timeout => lone Esc (cancel). Accept CSI and SS3 arrows.
+        IFS= read -rsn2 -t 1 tail 2>/dev/null || true
+        case $tail in
+            '[A'|'OA') printf 'UP' ;;
+            '[B'|'OB') printf 'DOWN' ;;
+            '')        printf 'ESC' ;;
+            *)         printf 'OTHER' ;;
+        esac
+        return
+    fi
+    case $k in
+        ''|$'\n'|$'\r') printf 'ENTER' ;;
+        ' ')            printf 'SPACE' ;;
+        a|A)            printf 'ALL' ;;
+        n|N)            printf 'NONE' ;;
+        q|Q)            printf 'QUIT' ;;
+        *)              printf 'OTHER' ;;
+    esac
+}
+
+_pk_render() {
+    # Clear exactly what was drawn last frame (window height varies).
+    # Cursor up N lines then clear to end of screen: one write, no
+    # per-line tput subprocess (same raw-ANSI assumption as civis below).
+    if [[ $_PK_prev_lines -gt 0 ]]; then
+        printf '\033[%dA\033[J' "$_PK_prev_lines"
+    fi
+
+    # Re-read terminal height every frame so a mid-picker resize is absorbed.
+    local term_lines
+    term_lines=$(tput lines 2>/dev/null)
+    [[ "$term_lines" =~ ^[0-9]+$ ]] || term_lines=24
+    # Reserve: header + instruction + 2 scroll markers + count + status.
+    local reserved=6
+    local window_height=$((term_lines - reserved))
+    [[ $window_height -lt 1 ]] && window_height=1
+    [[ $window_height -gt $_PK_total ]] && window_height=$_PK_total
+
+    # Clamp the window so the cursor is always visible.
+    if [[ $_PK_cursor -lt $_PK_window_start ]]; then
+        _PK_window_start=$_PK_cursor
+    elif [[ $_PK_cursor -ge $((_PK_window_start + window_height)) ]]; then
+        _PK_window_start=$((_PK_cursor - window_height + 1))
+    fi
+    [[ $_PK_window_start -lt 0 ]] && _PK_window_start=0
+    local max_start=$((_PK_total - window_height))
+    [[ $max_start -lt 0 ]] && max_start=0
+    [[ $_PK_window_start -gt $max_start ]] && _PK_window_start=$max_start
+
+    local n=0
+    print_status "Select ${PICKER_NOUN}:"; ((n++)) || true
+    echo "  ↑/↓ navigate   Space toggle   a all   n none   Enter confirm   q quit"; ((n++)) || true
+
+    if [[ $_PK_window_start -gt 0 ]]; then
+        echo "  ▲ more above"; ((n++)) || true
+    fi
+
+    local end=$((_PK_window_start + window_height))
+    [[ $end -gt $_PK_total ]] && end=$_PK_total
+    local idx
+    for ((idx=_PK_window_start; idx<end; idx++)); do
+        local g=" "; [[ $idx -eq $_PK_cursor ]] && g=">"
+        local m=" "; [[ ${_PK_sel[$idx]} -eq 1 ]] && m="x"
+        local desc="${PICKER_DESCS[$idx]}"
+        if [[ ${#desc} -gt 60 ]]; then desc="${desc:0:57}..."; fi
+        if [[ -n "$desc" ]]; then
+            printf '%s [%s] %s — %s\n' "$g" "$m" "${PICKER_NAMES[$idx]}" "$desc"
+        else
+            printf '%s [%s] %s\n' "$g" "$m" "${PICKER_NAMES[$idx]}"
+        fi
+        ((n++)) || true
+    done
+
+    if [[ $end -lt $_PK_total ]]; then
+        echo "  ▼ more below"; ((n++)) || true
+    fi
+    echo "  showing $((_PK_window_start + 1))-$end of $_PK_total"; ((n++)) || true
+
+    if [[ -n "$_PK_status" ]]; then
+        print_warning "$_PK_status"; ((n++)) || true
+    fi
+
+    _PK_prev_lines=$n
+}
+
+select_items() {
+    PICKER_SELECTED=()
+
+    # Non-TTY guard: no interactive terminal is a deterministic error,
+    # not a hang in a raw-mode loop that cannot work.
+    if [[ ! -t 0 || ! -t 1 ]]; then
+        print_error "No interactive terminal; re-run with --all to select all ${PICKER_NOUN}."
+        exit 1
+    fi
+
+    _PK_total=${#PICKER_NAMES[@]}
+    _PK_cursor=0
+    _PK_window_start=0
+    _PK_prev_lines=0
+    _PK_status=""
+    _PK_sel=()
+    _pk_set_all 0
+
+    # Restore terminal on interrupt/exit; detached on every normal return.
+    trap '_pk_restore' INT EXIT
+    tput civis 2>/dev/null || printf '\033[?25l'
+
+    # Redraw only when state changed. Stray bytes, mouse/paste data, and no-op
+    # navigation (Up at top, Down at bottom) leave dirty=0 and skip the repaint
+    # (and its tput-lines subprocess) entirely.
+    local dirty=1
+    local key i
+    while true; do
+        if [[ $dirty -eq 1 ]]; then _pk_render; fi
+        dirty=0
+        _PK_status=""
+        key=$(_pk_read_key)
+        case $key in
+            UP)    if [[ $_PK_cursor -gt 0 ]]; then _PK_cursor=$((_PK_cursor - 1)); dirty=1; fi ;;
+            DOWN)  if [[ $_PK_cursor -lt $((_PK_total - 1)) ]]; then _PK_cursor=$((_PK_cursor + 1)); dirty=1; fi ;;
+            SPACE) _PK_sel[$_PK_cursor]=$((1 - _PK_sel[$_PK_cursor])); dirty=1 ;;
+            ALL)   _pk_set_all 1; dirty=1 ;;
+            NONE)  _pk_set_all 0; dirty=1 ;;
+            ENTER)
+                local any=0
+                for ((i=0; i<_PK_total; i++)); do
+                    if [[ ${_PK_sel[$i]} -eq 1 ]]; then any=1; break; fi
+                done
+                if [[ $any -eq 1 ]]; then break; fi
+                _PK_status="Select at least one ${PICKER_NOUN%s}, or press q to cancel"
+                dirty=1
+                ;;
+            QUIT|ESC)
+                _pk_restore
+                trap - INT EXIT
+                echo
+                print_status "Cancelled."
+                exit 0
+                ;;
+        esac
+    done
+
+    _pk_restore
+    trap - INT EXIT
+    echo
+
+    for ((i=0; i<_PK_total; i++)); do
+        if [[ ${_PK_sel[$i]} -eq 1 ]]; then
+            PICKER_SELECTED+=("$i")
+        fi
+    done
+}
