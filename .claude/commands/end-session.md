@@ -1,6 +1,8 @@
 ---
 description: End session
 model: claude-haiku-4-5
+context: fork
+disable-model-invocation: true
 ---
 
 Create the folder '/logbook' if it doesn't exist.

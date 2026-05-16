@@ -3,6 +3,8 @@ argument-hint: [ticket-id]
 description: Create a commit message.
 model: haiku
 allowed-tools: Bash(git diff *), Bash(git status), Bash(git log *)
+context: fork
+disable-model-invocation: true
 ---
 
 # Use the following rules when crafting each commit:

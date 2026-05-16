@@ -1,3 +1,8 @@
+---
+description: Create a detailed single-feature PRD via clarifying questions, saved to /tasks/prd-[feature].md
+argument-hint: "[feature description]"
+---
+
 Help me to create a detailed Product Requirements Document (PRD) in Markdown format for a single feature, based on an initial user prompt. The PRD should be clear, actionable, and suitable for a junior developer to understand and implement the feature.
 
 ## Process

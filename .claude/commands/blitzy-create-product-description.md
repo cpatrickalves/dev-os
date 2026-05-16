@@ -1,3 +1,6 @@
+---
+description: Create a structured product description (vision, requirements, implementation, business rules)
+---
 
 # Create Product Description
 

@@ -1,3 +1,7 @@
+---
+description: Review the codebase and generate a structured codebase-ingestion doc at docs/02-codebase.md
+---
+
 ## Codebase Ingestion Prompt Template
 
 Review the codebase and create a documentation file in markdown format in docs/02-codebase.md

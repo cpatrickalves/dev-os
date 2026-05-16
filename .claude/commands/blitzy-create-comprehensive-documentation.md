@@ -1,3 +1,7 @@
+---
+description: Add comprehensive module-level and code-level documentation across the project
+---
+
 # Document Code Prompt Template
 
 **Prompt Template**

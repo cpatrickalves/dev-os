@@ -1,3 +1,8 @@
+---
+description: Read a spec file and interview the user in depth to fill gaps, then rewrite the spec
+argument-hint: "<path to spec file>"
+---
+
 Read $1 and interview me in detail using the AskUserQuestionTool about literally anything:
 - Technical implementation
 - UI & UX

@@ -1,3 +1,8 @@
+---
+description: Create or update the project README.md (PT-BR) following the standard entry-point structure
+context: fork
+---
+
 # Crie ou atualize o README.md do projeto
 
 Crie ou atualize o conteúdo para um arquivo README.md file para este projeto. 
