@@ -1,85 +1,109 @@
+---
+description: Create or update CHANGELOG.md (Keep a Changelog) and tag the release
+argument-hint: "[version]"
+context: fork
+disable-model-invocation: true
+---
+
 # Create or Update Changelog
 
 You are tasked with creating (if needed) and updating a changelog for a software project. Follow these instructions carefully to create a well-structured and informative changelog.
 
-You must focus on changes that impact users, developers, or the software's behavior. Avoid excessive technical details and keep entries brief and objective.
+Focus on changes that impact users, developers, or the software's behavior. Avoid excessive technical details and keep entries brief and objective. The changelog output is written in **Brazilian Portuguese** — keep it that way.
 
-First, here is the template you should use for your changelog (CHANGELOG.md):
+## Workflow
 
-<changelog_template>
+Copy this checklist and work through it in order:
+
+```
+- [ ] Detect the version source: pyproject.toml (Python) or package.json (JavaScript)
+- [ ] Run: git log $(git describe --tags --abbrev=0)..HEAD --oneline
+- [ ] Categorize the changes using the Keep a Changelog order (see template)
+- [ ] Bump the version following Semantic Versioning
+- [ ] Write/update CHANGELOG.md: promote [Não Publicado] → [VERSÃO] - YYYY-MM-DD
+- [ ] Confirm version + entries with the user
+- [ ] Commit (commit message in Portuguese) — only after user confirmation
+- [ ] Create the git tag for the version — only after user confirmation
+```
+
+## Changelog template (CHANGELOG.md)
+
+```markdown
 # Changelog
 
 Todas as mudanças significativas neste projeto serão documentadas neste arquivo.
+
+O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/)
+e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
+
+## [Não Publicado]
+
+### Adicionado
+- [Mudanças em andamento ainda não publicadas]
 
 ## [VERSÃO] - YYYY-MM-DD
 
 ### Adicionado
 - [Descreva novas funcionalidades aqui]
 
-### Corrigido
-- [Descreva correções de bugs aqui]
-
 ### Alterado
 - [Descreva alterações em funcionalidades existentes aqui]
 
+### Depreciado
+- [Descreva funcionalidades que serão removidas em breve]
+
 ### Removido
-- [Descreva remoções ou depreciações aqui]
+- [Descreva remoções aqui]
+
+### Corrigido
+- [Descreva correções de bugs aqui]
 
 ### Segurança
 - [Correções de vulnerabilidades ou melhorias de segurança]
-
 ```
-</changelog_template>
 
-## Creating the Changelog
+Always use this category order: **Adicionado → Alterado → Depreciado → Removido → Corrigido → Segurança**. Omit any category that has no entries for a given version.
 
-Next, consider these guidelines when creating your changelog entries:
+## Creating the changelog (first time)
 
-- Create the first changelog to version using the commits
-- The current version is the on in package.json or pyproject.toml file
-- Create a git tag if it does not exists
+- Build the first changelog from the existing commit history.
+- The current version is the one in `pyproject.toml` (Python) or `package.json` (JavaScript).
+- If no git tag exists yet, create one for the current version (after user confirmation — see Versioning).
 
-## Updating the Changelog
-
-Consider these versioning guidelines when updating your changelog entries:
+## Updating the changelog
 
 <versioning_guidelines>
-- Seguir o Versionamento Semântico
-- A versão (x.x.x) deve ser a mesma do `pyproject.toml` (Python) ou `packages.json` (Javascript)
-- Documentar não só o que mudou, mas também por que mudou (se houver uma razão específica para a mudança, documentar a razão ou perguntar para o usuário);
-;
+- Follow Semantic Versioning (x.x.x).
+- The version (x.x.x) must match the one in `pyproject.toml` (Python) or `package.json` (JavaScript).
+- Document not only *what* changed, but also *why* it changed. If there is a specific reason for the change, document the reason or ask the user.
 </versioning_guidelines>
 
-To help manage versions and releases, use Git tags. Here's a guide on how to use Git tags effectively:
+### Git tags
 
-<git_tags_guide>
-- Listar os Commits Após a Última Tag, para saber o que mudou desde da última tag:
-```
-git log $(git describe --tags --abbrev=0)..HEAD --oneline
-```
-- Criar tag
-```
-  git tag -a v[VERSAO no formaro x.x.x] -m "Mensagem descritiva da versão, ex.: Lançamento inicial com funcionalidades básicas"
-```
-</git_tags_guide>
+Use Git tags to manage versions and releases. Only create a tag after the user confirms the version.
 
-Update version:
-- Bump the version following Semantic Versioning
-- Now, to create your changelog:
+- List the commits since the last tag, to see what changed:
+  ```
+  git log $(git describe --tags --abbrev=0)..HEAD --oneline
+  ```
+- Create the tag for the new version:
+  ```
+  git tag -a v[VERSAO no formato x.x.x] -m "Mensagem descritiva da versão, ex.: Lançamento inicial com funcionalidades básicas"
+  ```
 
-1. Update the CHANGELOG.md using provided template structure.
+### Rules for entries
+
+1. Update CHANGELOG.md using the template structure above.
 2. For each version or release:
    a. Use the correct version number following the versioning guidelines.
    b. Include the date in YYYY-MM-DD format.
-   c. Categorize changes under "Adicionado", "Alterado", "Removido", "Corrigido", and "Segurança" as appropriate.
+   c. Categorize changes under "Adicionado", "Alterado", "Depreciado", "Removido", "Corrigido", and "Segurança" as appropriate.
    d. Write clear, concise descriptions for each change, starting with a verb in the infinitive or past tense.
-3. Order entries from the most recent version to the oldest.
-4. Include an "[Não Publicado]" section at the top for ongoing changes.
+3. Order versions from the most recent to the oldest.
+4. Keep a "[Não Publicado]" section at the top for ongoing changes; promote it to a versioned section on release.
 5. Use Markdown formatting for readability.
 6. Reference issue numbers or pull requests if relevant, but avoid duplicating information.
 7. Update the changelog in conjunction with releases, using Git tags to mark each version.
-- Commit (in Portuguese)
-- Create a git tag bases on the commits before the last tag
 
 ## Changelog example
 

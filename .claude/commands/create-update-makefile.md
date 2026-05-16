@@ -1,6 +1,8 @@
 ---
 description: Create or update a project Makefile using the self-documenting standard format (awk-driven help, sectioned, inline-documented targets).
 argument-hint: "[optional: target/section to add or focus on]"
+context: fork
+disable-model-invocation: true
 ---
 
 You will create or update a project's `Makefile`, collecting the important and frequently used commands so developers (and AI agents) can run common tasks without memorizing them.
