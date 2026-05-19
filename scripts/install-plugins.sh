@@ -14,6 +14,12 @@
 # one-time setup (e.g. `claude plugin marketplace add`) and then install.
 # A never-installed plugin's update naturally fails, which falls through
 # to install — so the same flow both installs and updates.
+#
+# EXCEPTION — npx-skills entries: `npx skills update <pkg>` exits 0 with
+# "No installed skills found" when the package was never added, so it
+# never falls through to install. `npx skills add` is idempotent (it
+# re-copies files, acting as both install and update), so npx-skills
+# entries use the `add` command in BOTH the update and install slots.
 
 set -e
 
@@ -77,6 +83,8 @@ define_catalog() {
         "claude plugin update skill-creator" \
         "claude plugin install skill-creator -s user"
 
+    # npx-skills: `add` is idempotent and used for update too (see header note).
+
     add_plugin "compound-engineering" \
         "Compound Engineering pipeline (every-marketplace, user scope)" \
         "claude plugin marketplace add EveryInc/compound-engineering-plugin" \
@@ -92,7 +100,7 @@ define_catalog() {
     add_plugin "mattpocock-skills" \
         "Matt Pocock skills (npx skills, global)" \
         "" \
-        "npx skills@latest update mattpocock/skills --agent claude-code --global --yes" \
+        "npx skills@latest add mattpocock/skills --agent claude-code --global --yes" \
         "npx skills@latest add mattpocock/skills --agent claude-code --global --yes"
 
     add_plugin "pyright-lsp" \
@@ -110,13 +118,13 @@ define_catalog() {
     add_plugin "langchain-skills" \
         "LangChain skills (npx skills, project scope)" \
         "" \
-        "npx skills@latest update langchain-ai/langchain-skills --agent claude-code --skill '*' --project --yes" \
+        "npx skills@latest add langchain-ai/langchain-skills --agent claude-code --skill '*' --project --yes" \
         "npx skills@latest add langchain-ai/langchain-skills --agent claude-code --skill '*' --project --yes"
 
     add_plugin "shadcn-ui" \
         "shadcn/ui skills (npx skills, project scope)" \
         "" \
-        "npx skills@latest update shadcn/ui --agent claude-code --skill '*' --yes --project" \
+        "npx skills@latest add shadcn/ui --agent claude-code --skill '*' --yes --project" \
         "npx skills@latest add shadcn/ui --agent claude-code --skill '*' --yes --project"
 
     add_plugin "frontend-slides" \
