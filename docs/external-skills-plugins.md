@@ -11,7 +11,7 @@ claude plugin marketplace update every-marketplace
 claude plugin update compound-engineering@every-marketplace
 
 # karpathy-guidelines
-claude plugin marketplace add forrestchang/andrej-karpathy-skills
+claude plugin marketplace add multica-ai/andrej-karpathy-skills
 claude plugin install andrej-karpathy-skills@karpathy-skills
 
 # Matt Pocock https://github.com/mattpocock/skills

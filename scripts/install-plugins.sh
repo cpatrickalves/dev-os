@@ -93,7 +93,7 @@ define_catalog() {
 
     add_plugin "andrej-karpathy-skills" \
         "Andrej Karpathy guideline skills" \
-        "claude plugin marketplace add forrestchang/andrej-karpathy-skills" \
+        "claude plugin marketplace add multica-ai/andrej-karpathy-skills" \
         "claude plugin update andrej-karpathy-skills@karpathy-skills" \
         "claude plugin install andrej-karpathy-skills@karpathy-skills"
 
