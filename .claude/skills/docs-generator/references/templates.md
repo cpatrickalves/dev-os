@@ -91,6 +91,7 @@ For deeper detail, see the [docs/](docs/) folder:
 - [Architecture](docs/architecture.md) — System overview and key decisions
 - [Contributing](CONTRIBUTING.md) — How to contribute *(Standard tier only)*
 - [ADRs](docs/adr/) — Architecture decisions *(Standard tier only)*
+- [Runbook](docs/guides/runbook.md) — Operations & incident response *(Standard tier only)*
 
 ## Maintainers
 
@@ -154,7 +155,7 @@ For deeper detail, see the [docs/](docs/) folder:
 
 ## docs/getting-started.md
 
-Tutorial only — local setup and first run. Operational content (logs, rollback, escalation) belongs in `docs/guides/deployment.md`.
+Tutorial only — local setup and first run. Operational content (logs, incident remediation, escalation) belongs in `docs/guides/runbook.md`.
 
 ```markdown
 # Getting Started
@@ -395,7 +396,7 @@ All changes must include tests. Run the test suite before submitting:
 
 ## docs/guides/deployment.md
 
-For typical Docker-based projects this single file covers deploy + operate. Drop the Escalation section if there is no on-call rotation.
+Scoped to the planned release process. Operational and incident content (health check, logs, incident remediation, escalation) lives in `docs/guides/runbook.md`.
 
 ```markdown
 # Deployment
@@ -418,20 +419,60 @@ For typical Docker-based projects this single file covers deploy + operate. Drop
 - [ ] {check}
 - [ ] {check}
 
-## Logs
-
-\```bash
-{log-access-command}          # e.g., docker compose logs -f {service}
-\```
-
-Patterns worth watching:
-- `{pattern}` — indicates {meaning}
-
 ## Rollback
 
 \```bash
 {rollback-command}            # e.g., git checkout {prev-tag} && docker compose up -d --build
 \```
+
+For operating the system and responding to incidents, see the [Runbook](runbook.md).
+```
+
+---
+
+## docs/guides/runbook.md
+
+The operational / incident-response doc — action-oriented and prescriptive. Every section answers "what do I run next?". Drop the Escalation section if there is no on-call rotation.
+
+```markdown
+# Runbook
+
+## Health Check
+
+\```bash
+{health-check-command-or-url}
+\```
+
+Expected response: {expected}
+
+## Logs
+
+\```bash
+{local-log-command}      # Local
+{prod-log-command}       # Production (e.g., docker compose logs -f {service}, kubectl logs)
+\```
+
+Patterns worth watching:
+- `{pattern}` — indicates {meaning}
+
+## Common Incidents
+
+### {Incident — e.g., "API returning 5xx"}
+**Symptom:** {what you observe / the alert that fires}
+**Remediation:**
+1. {prescriptive step with command}
+2. {step}
+**Verify:** {how to confirm it's resolved}
+
+### {Incident 2}
+**Symptom:** {what you observe}
+**Remediation:**
+1. {step}
+**Verify:** {check}
+
+## Rollback
+
+See [Deployment → Rollback](deployment.md#rollback). Do not duplicate the procedure here.
 
 ## Escalation (only if the project has on-call)
 
@@ -440,7 +481,7 @@ Patterns worth watching:
 | L1 | {team/person} | {criteria — e.g., "user-facing errors > 1%"} |
 | L2 | {team/person} | {criteria — e.g., "data loss or outage > 15 min"} |
 
-For incident playbooks (symptoms → cause → resolution), see [Troubleshooting](troubleshooting.md).
+For diagnosing development or setup problems, see [Troubleshooting](troubleshooting.md).
 ```
 
 ---

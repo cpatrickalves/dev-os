@@ -26,12 +26,13 @@ ESSENTIAL = [
 
 STANDARD_EXTRA = [
     ("CONTRIBUTING.md", "Dev workflow, code style, PR process"),
-    ("docs/guides/deployment.md", "Deploy + operate guide (logs, rollback, escalation)"),
+    ("docs/guides/deployment.md", "Release process (environments, deploy, checklist, rollback)"),
     ("docs/guides/configuration.md", "Configuration guide"),
-    ("docs/guides/troubleshooting.md", "Troubleshooting guide"),
+    ("docs/guides/troubleshooting.md", "Troubleshooting guide (diagnostic — dev/setup problems)"),
     ("docs/reference/api.md", "API contract documentation"),
     ("docs/reference/environment-variables.md", "Environment variable reference"),
     ("docs/adr/template.md", "ADR template (MADR 4.0) for new decisions"),
+    ("docs/guides/runbook.md", "Operational/incident runbook (health, logs, incidents, escalation)"),
 ]
 
 # Alternative locations/names for common files.
@@ -47,6 +48,7 @@ ALTERNATIVES = {
     "docs/guides/deployment.md": ["docs/guias/deploy.md", "docs/guias/implantacao.md"],
     "docs/guides/configuration.md": ["docs/guias/configuracao.md"],
     "docs/guides/troubleshooting.md": ["docs/guias/solucao-de-problemas.md"],
+    "docs/guides/runbook.md": ["docs/guias/runbook.md", "docs/runbook.md"],
     "docs/reference/api.md": ["docs/referencia/api.md"],
     "docs/reference/environment-variables.md": ["docs/referencia/variaveis-de-ambiente.md"],
 }

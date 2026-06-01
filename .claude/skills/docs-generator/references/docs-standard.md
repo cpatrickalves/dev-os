@@ -41,7 +41,8 @@ project-root/
 │   ├── guides/                      # How-to guides (Diátaxis)
 │   │   ├── deployment.md
 │   │   ├── configuration.md
-│   │   └── troubleshooting.md
+│   │   ├── troubleshooting.md
+│   │   └── runbook.md               # Operational / incident-response procedures
 │   ├── reference/                   # Technical reference (Diátaxis)
 │   │   ├── api.md
 │   │   └── environment-variables.md
@@ -69,7 +70,7 @@ project-root/
 - **Installation** — clone + env config + install commands
 - **Usage** — at least one practical command showing how to run the project
 - **Notes & Constraints** *(optional)* — operational restrictions, scheduling, known limits. Include only if there are real ones.
-- **Documentation** — links to `docs/getting-started.md`, `docs/architecture.md`, `CONTRIBUTING.md`, `docs/adr/` (Standard tier)
+- **Documentation** — links to `docs/getting-started.md`, `docs/architecture.md`, `CONTRIBUTING.md`, `docs/adr/`, `docs/guides/runbook.md` (Standard tier)
 - **Maintainers** — names and contact for project owners
 - **License** *(if applicable)*
 
@@ -77,7 +78,7 @@ project-root/
 - Detailed architecture (link to docs/architecture.md)
 - Full API reference (link to docs/reference/api.md)
 - Detailed contribution guidelines (link to CONTRIBUTING.md)
-- Step-by-step deployment runbook (link to docs/guides/deployment.md)
+- Step-by-step deploy or operational procedures (link to docs/guides/deployment.md and docs/guides/runbook.md)
 - Extensive badges/shields that push content below the fold
 
 **How to fill the Maintainers section:** extract from project metadata first; only fall back to git contributors when metadata is missing.
@@ -121,7 +122,7 @@ project-root/
 - How to verify everything works (expected output, health check URL, etc.)
 - Common setup problems and solutions (2-3 most frequent)
 
-**Scope discipline (Diátaxis):** This is a tutorial — onboarding-only. Do not mix in operational content (production logs, rollback, escalation). That belongs in `docs/guides/deployment.md`.
+**Scope discipline (Diátaxis):** This is a tutorial — onboarding-only. Do not mix in operational content (production logs, incident remediation, escalation). That belongs in `docs/guides/runbook.md`.
 
 **Success metric:** A new developer should go from clone to running in < 30 minutes.
 
@@ -179,21 +180,17 @@ project-root/
 
 ### docs/guides/ (Standard tier)
 
-**deployment.md** — How to deploy and operate the application. Must document the actual deployment process, not an aspirational one. For typical Docker-based projects (the common case), this single file replaces a separate runbook.
+**deployment.md** — How to deploy a release. Must document the actual deployment process, not an aspirational one. Scoped to the planned release path; operational and incident content lives in `docs/guides/runbook.md`.
 
 Required sections:
 - Environments (dev / staging / prod with URLs)
 - Deploy Process (the real commands — `docker compose up -d`, `kubectl apply`, etc.)
 - Pre-deploy Checklist
-- Logs (how to tail them locally and in production)
-- Rollback (the real procedure)
-- Escalation (L1/L2 contacts and paging criteria) — only if the project has on-call
-
-Link to `troubleshooting.md` for incident playbooks (symptoms → cause → resolution); do not duplicate.
+- Rollback (the real procedure to undo a release) — the runbook links here instead of duplicating it
 
 **configuration.md** — How to configure the application for different environments. Document all configuration mechanisms (env vars, config files, CLI flags). Link to docs/reference/environment-variables.md for the complete reference.
 
-**troubleshooting.md** — Solutions to common problems. Format: Problem → Cause → Solution. Each entry should be scannable.
+**troubleshooting.md** — Diagnostic guide for development and setup problems: it helps the reader *identify* what is wrong. Format: Problem → Cause → Solution, each entry scannable. Prescriptive production incident remediation (step-by-step commands) lives in `docs/guides/runbook.md`, not here.
 
 **Target length per guide:** 30-80 lines
 
@@ -204,6 +201,18 @@ Link to `troubleshooting.md` for incident playbooks (symptoms → cause → reso
 - **Only write the long form** when the project does NOT serve generated docs (libraries with public interfaces, REST APIs without OpenAPI). Then document endpoints, methods, request/response shapes manually.
 
 **environment-variables.md** — Complete reference of all environment variables. Format as a table organized by category (database, auth, external services, feature flags). Include: variable name, required/optional, default value, description.
+
+### docs/guides/runbook.md (Standard tier)
+**Purpose:** Operational procedures for running the system in production and responding to incidents — the action-oriented, prescriptive companion to the diagnostic `troubleshooting.md`. An on-call engineer should go from alert to resolution using only this file.
+**Target length:** 40-120 lines
+**Must contain:**
+- **Health check** — how to confirm the system is up (command or URL + expected response)
+- **Logs** — how to tail them locally and in production, plus the log patterns worth watching
+- **Common incidents** — for each: symptom (what you observe / the alert) → prescriptive remediation steps (copy-paste commands) → verification (how to confirm it's resolved)
+- **Rollback** — link to `docs/guides/deployment.md#rollback`; do not duplicate the procedure
+- **Escalation** — L1/L2 contacts and paging criteria (only if the project has on-call)
+
+**Why a dedicated file:** Runbooks are an industry-standard operational pattern (SRE/DevOps). During an incident, responders need a single prescriptive document — not onboarding mixed with release mechanics. Keep it action-oriented: every section answers "what do I run next?". This is the difference from `troubleshooting.md` (which is diagnostic — it identifies the problem) and from `deployment.md` (which covers the planned release path).
 
 ## Language guidelines
 
@@ -241,6 +250,7 @@ The detected documentation language **also controls file names** inside `docs/`.
 | `docs/reference/api.md` | `docs/referencia/api.md` |
 | `docs/reference/environment-variables.md` | `docs/referencia/variaveis-de-ambiente.md` |
 | `docs/adr/` | `docs/adr/` *(ADR is a universal acronym — keep as is)* |
+| `docs/guides/runbook.md` | `docs/guias/runbook.md` *(folder translates; "runbook" is an industry-standard term — keep the filename as is)* |
 
 **Why ASCII-only for PT-BR filenames:** the doc *content* uses proper accents and cedilla (`configuração`, `variáveis`, `solução`), but the filename strips them (`configuracao.md`, `variaveis-de-ambiente.md`, `solucao-de-problemas.md`) for cross-platform portability. Some legacy tooling, URL encoders, CI runners on Windows, and older file systems still struggle with non-ASCII filenames. This convention is widely used in established Brazilian open source.
 
