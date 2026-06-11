@@ -1,0 +1,15 @@
+{
+  "name": "dev-os",
+  "description": "Marketplace pessoal do dev-os: plugins, skills e agentes versionados para uso entre projetos.",
+  "owner": {
+    "name": "Patrick Alves",
+    "email": "cpatrickalves@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "thermos",
+      "source": "./plugins/thermos",
+      "description": "Revisão thermo-nuclear de branch: dois subagentes em paralelo (bugs/segurança e qualidade de código) com síntese final via /thermos."
+    }
+  ]
+}
