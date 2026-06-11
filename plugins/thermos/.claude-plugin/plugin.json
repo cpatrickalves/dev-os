@@ -1,0 +1,8 @@
+{
+  "name": "thermos",
+  "description": "Revisão thermo-nuclear de branch: dois subagentes em paralelo (bugs/segurança e qualidade de código) com síntese final via /thermos.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Patrick Alves"
+  }
+}
