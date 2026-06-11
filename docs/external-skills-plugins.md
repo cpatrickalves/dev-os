@@ -2,6 +2,7 @@
 claude plugin install github@claude-plugins-official
 claude plugin install claude-md-management@claude-plugins-official --scope user
 claude plugin install skill-creator -s user
+claude plugin install claude-code-setup@claude-plugins-official --scope user
 
 # Compound Engineer
 claude plugin marketplace add EveryInc/compound-engineering-plugin

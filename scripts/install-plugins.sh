@@ -83,6 +83,12 @@ define_catalog() {
         "claude plugin update skill-creator" \
         "claude plugin install skill-creator -s user"
 
+    add_plugin "claude-code-setup" \
+        "Claude Code setup helper (official, user scope)" \
+        "" \
+        "claude plugin update claude-code-setup@claude-plugins-official" \
+        "claude plugin install claude-code-setup@claude-plugins-official --scope user"
+
     # npx-skills: `add` is idempotent and used for update too (see header note).
 
     add_plugin "compound-engineering" \
