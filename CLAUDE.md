@@ -21,6 +21,7 @@ All scripts live in `scripts/`, `source common-functions.sh`, and follow the sam
 ~/dev-os/scripts/import-skills.sh [--all] [--overwrite]
 ~/dev-os/scripts/import-commands.sh [--all] [--overwrite]
 ~/dev-os/scripts/import-agents.sh [--all] [--overwrite]
+~/dev-os/scripts/import-workflows.sh [--all] [--overwrite]
 
 # Install/update Claude plugins from the curated catalog
 ~/dev-os/scripts/install-plugins.sh
