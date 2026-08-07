@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # =============================================================================
-# Dev-OS Import Agents Script
-# Import Claude agents from Dev-OS to the current project
+# Dev-OS Import Output Styles Script
+# Import Claude output styles from Dev-OS globally (~/.claude/output-styles)
 # =============================================================================
 
 set -e
@@ -23,19 +23,16 @@ VERBOSE="false"
 IMPORT_ALL="false"
 OVERWRITE="false"
 
-AGENTS_SOURCE="$HOME/dev-os/agents"
-AGENTS_DEST="$PROJECT_DIR/.claude/agents"
+# Output styles are installed globally (user-level) so they are available in
+# every project, not into the current project's .claude/output-styles.
+STYLES_SOURCE="$HOME/dev-os/output-styles"
+STYLES_DEST="$HOME/.claude/output-styles"
 
-# Agents installed globally (user-level) instead of into the project.
-# These are copied to $GLOBAL_AGENTS_DEST so they are available in every project.
-GLOBAL_AGENTS_DEST="$HOME/.claude/agents"
-declare -a GLOBAL_AGENTS=("framework-docs-researcher")
-
-# Arrays for agent handling
-declare -a AGENT_FILES
-declare -a AGENT_NAMES
-declare -a AGENT_DESCRIPTIONS
-declare -a SELECTED_AGENTS
+# Arrays for style handling
+declare -a STYLE_FILES
+declare -a STYLE_NAMES
+declare -a STYLE_DESCRIPTIONS
+declare -a SELECTED_STYLES
 
 # -----------------------------------------------------------------------------
 # Help Function
@@ -45,11 +42,12 @@ show_help() {
     cat << EOF
 Usage: $0 [OPTIONS]
 
-Import Claude agents from Dev-OS to the current project.
+Import Claude output styles from Dev-OS globally (into ~/.claude/output-styles),
+making them available in every project.
 
 Options:
-    --all              Import all available agents (skip selection)
-    --overwrite        Overwrite existing agents without prompting
+    --all              Import all available output styles (skip selection)
+    --overwrite        Overwrite existing output styles without prompting
     --verbose          Show detailed output
     -h, --help         Show this help message
 
@@ -96,64 +94,38 @@ parse_arguments() {
 # Validation Functions
 # -----------------------------------------------------------------------------
 
-validate_agents_source() {
-    if [[ ! -d "$AGENTS_SOURCE" ]]; then
-        print_error "Agents source not found: $AGENTS_SOURCE"
+validate_styles_source() {
+    if [[ ! -d "$STYLES_SOURCE" ]]; then
+        print_error "Output styles source not found: $STYLES_SOURCE"
         exit 1
     fi
 
-    # Check that at least one agent file exists
+    # Check that at least one style file exists
     local count=0
-    for file in "$AGENTS_SOURCE"/*.md; do
+    for file in "$STYLES_SOURCE"/*.md; do
         if [[ -f "$file" ]]; then
             count=$((count + 1))
         fi
     done
 
     if [[ "$count" -eq 0 ]]; then
-        print_error "No agents found in $AGENTS_SOURCE"
+        print_error "No output styles found in $STYLES_SOURCE"
         exit 1
     fi
 
-    print_verbose "Found $count agent file(s) in source"
+    print_verbose "Found $count output style file(s) in source"
 }
 
 # -----------------------------------------------------------------------------
-# Destination Resolution
+# Output Style Discovery
 # -----------------------------------------------------------------------------
 
-# Return 0 if the given agent (by source filename) installs globally.
-is_global_agent() {
-    local agent="${1%.md}"
-    local g
-    for g in "${GLOBAL_AGENTS[@]}"; do
-        if [[ "$agent" == "$g" ]]; then
-            return 0
-        fi
-    done
-    return 1
-}
+discover_styles() {
+    STYLE_FILES=()
+    STYLE_NAMES=()
+    STYLE_DESCRIPTIONS=()
 
-# Echo the destination agents root for the given agent.
-agent_dest_dir() {
-    local agent="$1"
-    if is_global_agent "$agent"; then
-        echo "$GLOBAL_AGENTS_DEST"
-    else
-        echo "$AGENTS_DEST"
-    fi
-}
-
-# -----------------------------------------------------------------------------
-# Agent Discovery
-# -----------------------------------------------------------------------------
-
-discover_agents() {
-    AGENT_FILES=()
-    AGENT_NAMES=()
-    AGENT_DESCRIPTIONS=()
-
-    for file in "$AGENTS_SOURCE"/*.md; do
+    for file in "$STYLES_SOURCE"/*.md; do
         if [[ ! -f "$file" ]]; then
             continue
         fi
@@ -162,7 +134,8 @@ discover_agents() {
         local name="${filename%.md}"
         local description=""
 
-        # Extract name and description from YAML frontmatter
+        # Extract name and description from YAML frontmatter when present.
+        # The filename is the fallback name and the description stays empty.
         local in_frontmatter=false
         while IFS= read -r line; do
             if [[ "$line" == "---" ]]; then
@@ -175,79 +148,66 @@ discover_agents() {
             if [[ "$in_frontmatter" == "true" ]]; then
                 if [[ "$line" =~ ^name:[[:space:]]*(.*) ]]; then
                     name="${BASH_REMATCH[1]}"
-                    # Strip surrounding quotes if present
                     name="${name%\"}"
                     name="${name#\"}"
                 elif [[ "$line" =~ ^description:[[:space:]]*(.*) ]]; then
                     description="${BASH_REMATCH[1]}"
-                    # Strip surrounding quotes if present
                     description="${description%\"}"
                     description="${description#\"}"
                 fi
             fi
         done < "$file"
 
-        AGENT_FILES+=("$filename")
-        AGENT_NAMES+=("$name")
-        AGENT_DESCRIPTIONS+=("$description")
+        STYLE_FILES+=("$filename")
+        STYLE_NAMES+=("$name")
+        STYLE_DESCRIPTIONS+=("$description")
     done
 
-    if [[ ${#AGENT_FILES[@]} -eq 0 ]]; then
-        print_error "No agents discovered."
+    if [[ ${#STYLE_FILES[@]} -eq 0 ]]; then
+        print_error "No output styles discovered."
         exit 1
     fi
 
-    print_verbose "Discovered ${#AGENT_FILES[@]} agents"
+    print_verbose "Discovered ${#STYLE_FILES[@]} output styles"
 }
 
 # -----------------------------------------------------------------------------
-# Agent Selection
+# Output Style Selection
 # -----------------------------------------------------------------------------
 
-select_agents() {
-    # If --all was specified, select all agents
+select_styles() {
+    # If --all was specified, select all styles
     if [[ "$IMPORT_ALL" == "true" ]]; then
-        SELECTED_AGENTS=("${AGENT_FILES[@]}")
-        print_verbose "Selected all ${#SELECTED_AGENTS[@]} agents"
+        SELECTED_STYLES=("${STYLE_FILES[@]}")
+        print_verbose "Selected all ${#SELECTED_STYLES[@]} output styles"
         return
     fi
 
     # Interactive keyboard picker (shared, in common-functions.sh).
-    # Tag globally-installed agents so the user knows they land in ~/.claude/agents.
-    PICKER_NAMES=()
-    local i
-    for i in "${!AGENT_NAMES[@]}"; do
-        if is_global_agent "${AGENT_FILES[$i]}"; then
-            PICKER_NAMES+=("${AGENT_NAMES[$i]} (global)")
-        else
-            PICKER_NAMES+=("${AGENT_NAMES[$i]} (local)")
-        fi
-    done
-    PICKER_DESCS=("${AGENT_DESCRIPTIONS[@]}")
-    PICKER_NOUN="agents"
+    PICKER_NAMES=("${STYLE_NAMES[@]}")
+    PICKER_DESCS=("${STYLE_DESCRIPTIONS[@]}")
+    PICKER_NOUN="output styles"
     select_items
 
-    SELECTED_AGENTS=()
+    SELECTED_STYLES=()
     local i
     for i in "${PICKER_SELECTED[@]}"; do
-        SELECTED_AGENTS+=("${AGENT_FILES[$i]}")
+        SELECTED_STYLES+=("${STYLE_FILES[$i]}")
     done
 
-    print_verbose "Selected ${#SELECTED_AGENTS[@]} agents"
+    print_verbose "Selected ${#SELECTED_STYLES[@]} output styles"
 }
 
 # -----------------------------------------------------------------------------
 # Conflict Detection
 # -----------------------------------------------------------------------------
 
-check_existing_agents() {
+check_existing_styles() {
     local conflicts=()
 
-    for agent in "${SELECTED_AGENTS[@]}"; do
-        local dest_dir
-        dest_dir="$(agent_dest_dir "$agent")"
-        if [[ -f "$dest_dir/$agent" ]]; then
-            conflicts+=("$agent")
+    for style in "${SELECTED_STYLES[@]}"; do
+        if [[ -f "$STYLES_DEST/$style" ]]; then
+            conflicts+=("$style")
         fi
     done
 
@@ -257,22 +217,22 @@ check_existing_agents() {
 
     # If --overwrite specified, just continue
     if [[ "$OVERWRITE" == "true" ]]; then
-        print_verbose "Overwriting ${#conflicts[@]} existing agent(s)"
+        print_verbose "Overwriting ${#conflicts[@]} existing output style(s)"
         return 0
     fi
 
     # Prompt user
     echo ""
-    print_warning "${#conflicts[@]} agent(s) already exist at destination:"
-    for agent in "${conflicts[@]}"; do
-        echo "    - ${agent%.md}"
+    print_warning "${#conflicts[@]} output style(s) already exist at destination:"
+    for style in "${conflicts[@]}"; do
+        echo "    - ${style%.md}"
     done
     echo ""
 
     while true; do
         echo "What do you want to do?"
         echo "  1) Overwrite (replace existing)"
-        echo "  2) Skip existing agents"
+        echo "  2) Skip existing output styles"
         echo "  3) Cancel"
         echo ""
         read -p "Choice (1-3): " conflict_choice
@@ -282,24 +242,24 @@ check_existing_agents() {
                 return 0
                 ;;
             2)
-                # Remove conflicts from selected agents
+                # Remove conflicts from selected styles
                 local new_selected=()
-                for agent in "${SELECTED_AGENTS[@]}"; do
+                for style in "${SELECTED_STYLES[@]}"; do
                     local is_conflict=false
                     for conflict in "${conflicts[@]}"; do
-                        if [[ "$agent" == "$conflict" ]]; then
+                        if [[ "$style" == "$conflict" ]]; then
                             is_conflict=true
                             break
                         fi
                     done
                     if [[ "$is_conflict" == "false" ]]; then
-                        new_selected+=("$agent")
+                        new_selected+=("$style")
                     fi
                 done
-                SELECTED_AGENTS=("${new_selected[@]}")
+                SELECTED_STYLES=("${new_selected[@]}")
 
-                if [[ ${#SELECTED_AGENTS[@]} -eq 0 ]]; then
-                    print_warning "No agents left to import after skipping conflicts."
+                if [[ ${#SELECTED_STYLES[@]} -eq 0 ]]; then
+                    print_warning "No output styles left to import after skipping conflicts."
                     exit 0
                 fi
                 return 0
@@ -320,29 +280,17 @@ check_existing_agents() {
 # -----------------------------------------------------------------------------
 
 execute_import() {
-    local local_count=0
-    local global_count=0
-    for agent in "${SELECTED_AGENTS[@]}"; do
-        local dest_dir
-        dest_dir="$(agent_dest_dir "$agent")"
-        mkdir -p "$dest_dir"
-        cp "$AGENTS_SOURCE/$agent" "$dest_dir/"
-        if is_global_agent "$agent"; then
-            global_count=$((global_count + 1))
-            print_verbose "Imported (global): ${agent%.md} -> $dest_dir/"
-        else
-            local_count=$((local_count + 1))
-            print_verbose "Imported (local): ${agent%.md} -> $dest_dir/"
-        fi
+    mkdir -p "$STYLES_DEST"
+
+    local import_count=0
+    for style in "${SELECTED_STYLES[@]}"; do
+        cp "$STYLES_SOURCE/$style" "$STYLES_DEST/"
+        import_count=$((import_count + 1))
+        print_verbose "Imported: ${style%.md}"
     done
 
     echo ""
-    if [[ "$local_count" -gt 0 ]]; then
-        print_success "Imported $local_count agent(s) to $AGENTS_DEST/"
-    fi
-    if [[ "$global_count" -gt 0 ]]; then
-        print_success "Imported $global_count agent(s) globally to $GLOBAL_AGENTS_DEST/"
-    fi
+    print_success "Imported $import_count output style(s) globally to $STYLES_DEST/"
 }
 
 # -----------------------------------------------------------------------------
@@ -350,37 +298,36 @@ execute_import() {
 # -----------------------------------------------------------------------------
 
 main() {
-    print_section "Dev-OS Import Agents"
+    print_section "Dev-OS Import Output Styles"
 
     # Parse arguments
     parse_arguments "$@"
 
     # Validate source
-    validate_agents_source
+    validate_styles_source
 
-    # Discover available agents
-    discover_agents
+    # Discover available styles
+    discover_styles
 
     # Show summary
     echo ""
-    print_status "Source: $AGENTS_SOURCE"
-    print_status "Destination (local): $AGENTS_DEST"
-    print_status "Destination (global): $GLOBAL_AGENTS_DEST (${GLOBAL_AGENTS[*]})"
+    print_status "Source: $STYLES_SOURCE"
+    print_status "Destination: $STYLES_DEST"
     echo ""
-    print_status "Available agents: ${#AGENT_FILES[@]}"
+    print_status "Available output styles: ${#STYLE_FILES[@]}"
     echo ""
 
-    # Select agents
-    select_agents
+    # Select styles
+    select_styles
 
     # Show selection summary
     echo ""
     print_status "Import summary:"
-    echo "  Agents to import: ${#SELECTED_AGENTS[@]}"
+    echo "  Output styles to import: ${#SELECTED_STYLES[@]}"
     echo ""
 
     # Check for conflicts
-    check_existing_agents
+    check_existing_styles
 
     # Execute import
     execute_import

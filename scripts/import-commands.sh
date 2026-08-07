@@ -23,7 +23,7 @@ VERBOSE="false"
 IMPORT_ALL="false"
 OVERWRITE="false"
 
-COMMANDS_SOURCE="$HOME/dev-os/.claude/commands"
+COMMANDS_SOURCE="$HOME/dev-os/commands"
 COMMANDS_DEST="$PROJECT_DIR/.claude/commands"
 
 # Arrays for command handling

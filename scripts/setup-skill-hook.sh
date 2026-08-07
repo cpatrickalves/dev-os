@@ -4,21 +4,19 @@
 
 set -e
 
-# 1. Create the hook script
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+BASE_DIR="$(dirname "$SCRIPT_DIR")"
+
+# 1. Install the hook script from the versioned source
+HOOK_SOURCE="$BASE_DIR/hooks/log-skill.sh"
+
+if [ ! -f "$HOOK_SOURCE" ]; then
+  echo "Error: hook source not found: $HOOK_SOURCE" >&2
+  exit 1
+fi
+
 mkdir -p ~/.claude/hooks
-cat > ~/.claude/hooks/log-skill.sh << 'HOOK'
-#!/bin/bash
-# Logs every Skill invocation with timestamp, user, skill name, and args
-# stdin is the hook payload: { tool_name, tool_input: { skill, args }, session_id, ... }
-
-payload=$(cat)
-skill=$(jq -r '.tool_input.skill' <<< "$payload")
-args=$(jq -r '.tool_input.args // ""' <<< "$payload" | cut -c1-100)
-
-project_dir=$(jq -r '.cwd // "."' <<< "$payload")
-mkdir -p "$project_dir/.claude"
-echo "$(date -u '+%Y-%m-%d %H:%M:%S') [$skill] '$args'" >> "$project_dir/.claude/skill-usage.log"
-HOOK
+cp "$HOOK_SOURCE" ~/.claude/hooks/log-skill.sh
 chmod +x ~/.claude/hooks/log-skill.sh
 
 # 2. Add hook config to settings.json

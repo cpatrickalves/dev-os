@@ -23,7 +23,7 @@ VERBOSE="false"
 IMPORT_ALL="false"
 OVERWRITE="false"
 
-SKILLS_SOURCE="$HOME/dev-os/.claude/skills"
+SKILLS_SOURCE="$HOME/dev-os/skills"
 SKILLS_DEST="$PROJECT_DIR/.claude/skills"
 
 # Skills installed globally (user-level) instead of into the project.

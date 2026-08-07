@@ -62,30 +62,21 @@ Official Claude Code plugins enabled in this workspace.
 | typescript-lsp | TypeScript type checking |
 | claude-md-management | Markdown management tools |
 
-### Standards & Profiles
-
-Pre-configured development profiles with tech stack standards.
-
-- **Default profile** — React 18, TypeScript, Tailwind CSS, Vite, Node.js, Express, PostgreSQL
-- **Python profile** — FastAPI, Python (uv), Next.js, Tailwind CSS, PostgreSQL, SQLAlchemy, Redis, pytest, Ruff
-
----
-
 ## Project Structure
 
 ```
 dev-os/
-├── .claude/
-│   ├── commands/          # Custom slash commands
-│   ├── skills/            # 17 reusable skill modules
-│   └── settings.json      # Plugin and permission config
-├── commands/
-│   └── dev-os/            # Standards management commands
-├── profiles/
-│   ├── default/           # Default tech stack profile
-│   └── python/            # Python tech stack profile
-├── scripts/               # Helper scripts
-└── config.yml             # Main configuration
+├── skills/                # Reusable skill modules
+├── commands/              # Custom slash commands
+├── agents/                # Sub-agent definitions
+├── hooks/                 # Hook scripts (single source of truth)
+├── workflows/             # Multi-agent workflow scripts
+├── output-styles/         # Output styles
+├── plugins/               # Curated plugin catalog
+├── scripts/               # Import/install helper scripts
+├── CONTEXT.md             # Domain glossary
+└── .claude/               # Local session state + symlinks to the
+                           # root asset folders (enables auto-load)
 ```
 
 ---
@@ -100,6 +91,9 @@ The skills cover the full stack I work with daily — from FastAPI backends and 
 
 ## Getting Started
 
-1. Clone the repo
-2. Open it with Claude Code — skills, commands, and plugins load automatically from `.claude/`
-3. Use `/create-simple-feature-tasks` to break down a feature, `/pr-summary` to summarize changes, or any other command
+1. Clone the repo into `~/dev-os`
+2. Open it with Claude Code — skills, commands, and agents auto-load via the `.claude/` symlinks
+3. From any other project, run the import scripts to install assets:
+   `~/dev-os/scripts/import-skills.sh`, `import-commands.sh`, `import-agents.sh` (per-project),
+   `import-workflows.sh`, `import-output-styles.sh` (global, into `~/.claude/`)
+4. Use `/create-simple-feature-tasks` to break down a feature, `/pr-summary` to summarize changes, or any other command
