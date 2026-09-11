@@ -1,10 +1,10 @@
 export const meta = {
   name: 'dev-flow',
-  description: 'Fluxo de desenvolvimento: implementação do plano → code review quádruplo → correções no PR',
+  description: 'Fluxo de desenvolvimento: implementação do plano → code review com 5 revisores → correções no PR',
   whenToUse: 'Quando existir um plano de implementação em markdown pronto para executar de ponta a ponta. Uso: Workflow({name: "dev-flow", args: "/path/do/plano.md"})',
   phases: [
     { title: 'Development', detail: 'implementa o plano, commita e abre PR para a branch dev', model: 'sonnet' },
-    { title: 'Code Review', detail: '4 revisores em paralelo (thermos + ce-code-review + matt-code-review + /code-review embutida do Claude Code, todos Opus), consolidação dos relatórios e relatório de avaliação dos revisores' },
+    { title: 'Code Review', detail: '5 revisores em paralelo (thermos + ce-code-review + matt-code-review + /code-review + /security-review embutidas do Claude Code, todos Opus), consolidação dos relatórios e relatório de avaliação dos revisores' },
     { title: 'PR Fixes', detail: 'verifica cada achado contra o código do PR, aplica as correções procedentes e atualiza o PR', model: 'opus' },
     { title: 'Review Eval', detail: 'cruza os vereditos com os achados de cada revisor e fecha o relatório de avaliação (eficácia das skills de review)', model: 'sonnet' },
     { title: 'Docs Audit', detail: 'auditoria de documentação da branch com a skill docs-generator (sincronia /docs + ADRs/guides)', model: 'opus' },
@@ -71,16 +71,25 @@ const REPORT_SCHEMA = {
 const prId =
   String(dev.pr_url).match(/\/(?:pullrequest|pull)\/(\d+)/i)?.[1] ?? String(dev.pr_url).match(/\d+/g)?.pop() ?? 'pr'
 
-// A skill /code-review embutida no Claude Code tem o mesmo nome da skill do plugin
-// mattpocock, por isso a do plugin é referenciada com o namespace. A embutida não
-// aceita uma "tarefa": recebe só nível de esforço + alvo e devolve os achados; o
-// agente que a invoca grava o relatório. Sem --fix, quem aplica é a etapa PR Fixes.
+// /code-review e /security-review são skills embutidas no Claude Code: não aceitam
+// uma "tarefa", recebem só argumentos (nível de esforço/alvo) e devolvem os achados;
+// o agente que as invoca grava o relatório. Sem --fix, quem aplica é a etapa PR Fixes.
 // Nível "high" amplia a cobertura; os falsos positivos caem nos vereditos.
+// A /code-review embutida tem o mesmo nome da skill do plugin mattpocock, por isso
+// a do plugin é referenciada com o namespace.
 const REVIEWERS = [
   { key: 'thermos', skill: 'thermos:thermos' },
   { key: 'ce-code-review', skill: 'ce-code-review' },
   { key: 'matt-code-review', skill: 'mattpocock-skills:code-review' },
   { key: 'code-review', skill: 'code-review', args: `high origin/dev...origin/${dev.branch}` },
+  {
+    key: 'security-review',
+    skill: 'security-review',
+    args: `origin/dev...origin/${dev.branch}`,
+    hint:
+      'Por padrão essa skill compara a branch atual com a branch default do origin; restrinja a análise ao range acima ' +
+      '(a base do PR é dev) e não troque de branch nem altere o working tree — outros revisores rodam em paralelo no mesmo checkout. ',
+  },
 ]
 const REVIEWER_KEYS = REVIEWERS.map((r) => r.key)
 
@@ -95,7 +104,8 @@ const reviewPrompt = (r) => {
     ? `Invoque a skill "${r.skill}" (via Skill tool) com os argumentos exatamente "${r.args}" para revisar ` +
       `o PR ${dev.pr_url} (branch ${dev.branch} → dev). Ela apenas devolve a lista de achados, sem gravar arquivo: ` +
       `escreva-os em "${reportPath}" detalhando, para cada um, arquivo, trecho, problema e correção sugerida. ` +
-      'Não altere o código nem comente no PR — apenas gere o relatório. '
+      'Não altere o código nem comente no PR — apenas gere o relatório. ' +
+      (r.hint ?? '')
     : `Invoque a skill "${r.skill}" (via Skill tool) com a seguinte tarefa: ` +
       `revise o PR ${dev.pr_url} e gere um relatório detalhando os achados e possíveis correções ` +
       `em "${reportPath}". `
