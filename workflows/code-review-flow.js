@@ -1,10 +1,10 @@
 export const meta = {
   name: 'code-review-flow',
-  description: 'Code review triplo (thermos + ce-code-review + matt-code-review, todos Opus) de um PR e consolidação dos relatórios',
+  description: 'Code review com 5 revisores (thermos + ce-code-review + matt-code-review + /code-review + pr-security-review, todos Opus) de um PR e consolidação dos relatórios',
   whenToUse:
     'Quando quiser revisar um PR existente sem implementar nada. Uso: Workflow({name: "code-review-flow", args: "<PR url ou número>"})',
   phases: [
-    { title: 'Code Review', detail: '3 revisores em paralelo (thermos + ce-code-review + matt-code-review, todos Opus), consolidação dos relatórios e relatório de avaliação dos revisores' },
+    { title: 'Code Review', detail: '5 revisores em paralelo (thermos + ce-code-review + matt-code-review + /code-review embutida + pr-security-review do Dev-OS, todos Opus), consolidação dos relatórios e relatório de avaliação dos revisores' },
     { title: 'Final Review', detail: 'verifica cada achado contra o código do PR e gera o relatório final em markdown + HTML (html-it) na raiz do projeto', model: 'opus' },
     { title: 'Review Eval', detail: 'cruza os vereditos com os achados de cada revisor e fecha o relatório de avaliação (eficácia das skills de review)', model: 'sonnet' },
   ],
@@ -32,10 +32,23 @@ const REPORT_SCHEMA = {
 // GitHub (.../pull/1234) ou o número solto. Fallback: última sequência de dígitos.
 const prId = String(prRef).match(/\/(?:pullrequest|pull)\/(\d+)/i)?.[1] ?? String(prRef).match(/\d+/g)?.pop() ?? 'pr'
 
+// /code-review (embutida no Claude Code) e pr-security-review (skill do Dev-OS,
+// instalada globalmente) não aceitam uma "tarefa": recebem só argumentos (nível de
+// esforço, alvo) e devolvem os achados; o agente que as invoca resolve as branches
+// do PR e grava o relatório. Sem --fix. Nível "high" amplia a cobertura; os falsos
+// positivos caem nos vereditos.
+// A /security-review embutida NÃO serve aqui: ela injeta `git diff origin/HEAD...`
+// fixo e ignora argumentos, ou seja, revisa a branch atual contra a branch default
+// do origin — fora do PR quando a base é outra ou a branch não está no checkout.
+// A pr-security-review usa a mesma rubrica com o range explícito.
+// A /code-review embutida tem o mesmo nome da skill do plugin mattpocock, por isso
+// a do plugin é referenciada com o namespace.
 const REVIEWERS = [
   { key: 'thermos', skill: 'thermos:thermos' },
   { key: 'ce-code-review', skill: 'ce-code-review' },
-  { key: 'matt-code-review', skill: 'code-review' },
+  { key: 'matt-code-review', skill: 'mattpocock-skills:code-review' },
+  { key: 'code-review', skill: 'code-review', args: 'high origin/<base>...origin/<origem>' },
+  { key: 'security-review', skill: 'pr-security-review', args: 'origin/<base>...origin/<origem>' },
 ]
 const REVIEWER_KEYS = REVIEWERS.map((r) => r.key)
 
@@ -44,15 +57,31 @@ const REVIEWER_KEYS = REVIEWERS.map((r) => r.key)
 // no longo prazo quais revisores realmente acertam.
 const EVAL_DIR = '~/.claude/review-evals'
 
-// Barreira proposital: a consolidação precisa dos TRÊS relatórios juntos.
+const reviewPrompt = (r) => {
+  const reportPath = `/tmp/relatorio-${r.key}-${prId}.md`
+  const invoke = r.args
+    ? `Descubra a branch de origem e a branch alvo (base) do PR ${prRef} (ex.: \`gh pr view --json baseRefName,headRefName\` ` +
+      'no GitHub ou `az repos pr show` no Azure DevOps), rode `git fetch origin` e invoque a skill ' +
+      `"${r.skill}" (via Skill tool) com os argumentos "${r.args}" preenchidos com essas branches. ` +
+      `Ela apenas devolve a lista de achados, sem gravar arquivo: escreva-os em "${reportPath}" detalhando, ` +
+      'para cada um, arquivo, trecho, problema e correção sugerida. ' +
+      'Não altere o código nem comente no PR — apenas gere o relatório. '
+    : `Invoque a skill "${r.skill}" (via Skill tool) com a seguinte tarefa: ` +
+      `revise o PR ${prRef} e gere um relatório detalhando os achados e possíveis correções ` +
+      `em "${reportPath}". `
+  return (
+    invoke +
+    'Não troque de branch nem altere o working tree: outros revisores rodam em paralelo no mesmo checkout. ' +
+    'Como resultado, retorne o path do relatório gerado.'
+  )
+}
+
+// Barreira proposital: a consolidação precisa de TODOS os relatórios juntos.
 const reviews = (
   await parallel(
     REVIEWERS.map((r) => () =>
       agent(
-        `Invoque a skill "${r.skill}" (via Skill tool) com a seguinte tarefa: ` +
-          `revise o PR ${prRef} e gere um relatório detalhando os achados e possíveis correções ` +
-          `em "/tmp/relatorio-${r.key}-${prId}.md". ` +
-          'Como resultado, retorne o path do relatório gerado.',
+        reviewPrompt(r),
         { label: `review:${r.key}`, phase: 'Code Review', model: 'opus', schema: REPORT_SCHEMA },
       ),
     ),
@@ -93,7 +122,7 @@ const CONSOLIDATED_SCHEMA = {
 
 const consolidated = await agent(
   `Consolide em um único relatório os relatórios de code review do PR ${prRef}: ${reportPaths.join(' e ')}. ` +
-    'Preserve todos os achados, agrupe os duplicados (citando que ambos os revisores apontaram) e mantenha as correções sugeridas. ' +
+    'Preserve todos os achados, agrupe os duplicados (citando quais revisores apontaram) e mantenha as correções sugeridas. ' +
     'Atribua a cada achado consolidado um ID sequencial (F01, F02, ...) e registre em cada um quais revisores o apontaram ' +
     `(use as chaves ${REVIEWER_KEYS.join(', ')} — os relatórios de origem estão nomeados por elas). ` +
     `Salve o relatório consolidado em "/tmp/relatorio-consolidado-${prId}.md". ` +
@@ -132,7 +161,7 @@ const VERDICTS_SCHEMA = {
 
 const finalReview = await agent(
   `Você executa a etapa "Final Review" do workflow code-review-flow, que o usuário pediu para ` +
-    `rodar sobre o PR ${prRef}. Três revisores independentes produziram o relatório consolidado ` +
+    `rodar sobre o PR ${prRef}. ${REVIEWERS.length} revisores independentes produziram o relatório consolidado ` +
     `em ${consolidated.report_path}. ` +
     'Julgue cada achado como procedente ou improcedente, verificando-o contra o código real antes de aceitar. Para cada achado: ' +
     '(1) abra o diff/arquivos do PR referenciados e verifique se a premissa procede no código real; ' +
