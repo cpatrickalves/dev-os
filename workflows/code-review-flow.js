@@ -1,10 +1,10 @@
 export const meta = {
   name: 'code-review-flow',
-  description: 'Code review com 5 revisores (thermos + ce-code-review + matt-code-review + /code-review + /security-review, todos Opus) de um PR e consolidação dos relatórios',
+  description: 'Code review com 5 revisores (thermos + ce-code-review + matt-code-review + /code-review + pr-security-review, todos Opus) de um PR e consolidação dos relatórios',
   whenToUse:
     'Quando quiser revisar um PR existente sem implementar nada. Uso: Workflow({name: "code-review-flow", args: "<PR url ou número>"})',
   phases: [
-    { title: 'Code Review', detail: '5 revisores em paralelo (thermos + ce-code-review + matt-code-review + /code-review + /security-review embutidas do Claude Code, todos Opus), consolidação dos relatórios e relatório de avaliação dos revisores' },
+    { title: 'Code Review', detail: '5 revisores em paralelo (thermos + ce-code-review + matt-code-review + /code-review embutida + pr-security-review do Dev-OS, todos Opus), consolidação dos relatórios e relatório de avaliação dos revisores' },
     { title: 'Final Review', detail: 'verifica cada achado contra o código do PR e gera o relatório final em markdown + HTML (html-it) na raiz do projeto', model: 'opus' },
     { title: 'Review Eval', detail: 'cruza os vereditos com os achados de cada revisor e fecha o relatório de avaliação (eficácia das skills de review)', model: 'sonnet' },
   ],
@@ -32,10 +32,15 @@ const REPORT_SCHEMA = {
 // GitHub (.../pull/1234) ou o número solto. Fallback: última sequência de dígitos.
 const prId = String(prRef).match(/\/(?:pullrequest|pull)\/(\d+)/i)?.[1] ?? String(prRef).match(/\d+/g)?.pop() ?? 'pr'
 
-// /code-review e /security-review são skills embutidas no Claude Code: não aceitam
-// uma "tarefa", recebem só argumentos (nível de esforço/alvo) e devolvem os achados;
-// o agente que as invoca resolve as branches do PR e grava o relatório. Sem --fix.
-// Nível "high" amplia a cobertura; os falsos positivos caem nos vereditos.
+// /code-review (embutida no Claude Code) e pr-security-review (skill do Dev-OS,
+// instalada globalmente) não aceitam uma "tarefa": recebem só argumentos (nível de
+// esforço, alvo) e devolvem os achados; o agente que as invoca resolve as branches
+// do PR e grava o relatório. Sem --fix. Nível "high" amplia a cobertura; os falsos
+// positivos caem nos vereditos.
+// A /security-review embutida NÃO serve aqui: ela injeta `git diff origin/HEAD...`
+// fixo e ignora argumentos, ou seja, revisa a branch atual contra a branch default
+// do origin — fora do PR quando a base é outra ou a branch não está no checkout.
+// A pr-security-review usa a mesma rubrica com o range explícito.
 // A /code-review embutida tem o mesmo nome da skill do plugin mattpocock, por isso
 // a do plugin é referenciada com o namespace.
 const REVIEWERS = [
@@ -43,14 +48,7 @@ const REVIEWERS = [
   { key: 'ce-code-review', skill: 'ce-code-review' },
   { key: 'matt-code-review', skill: 'mattpocock-skills:code-review' },
   { key: 'code-review', skill: 'code-review', args: 'high origin/<base>...origin/<origem>' },
-  {
-    key: 'security-review',
-    skill: 'security-review',
-    args: 'origin/<base>...origin/<origem>',
-    hint:
-      'Por padrão essa skill compara a branch atual com a branch default do origin; restrinja a análise ao range acima ' +
-      '(a base real do PR) e não troque de branch nem altere o working tree — outros revisores rodam em paralelo no mesmo checkout. ',
-  },
+  { key: 'security-review', skill: 'pr-security-review', args: 'origin/<base>...origin/<origem>' },
 ]
 const REVIEWER_KEYS = REVIEWERS.map((r) => r.key)
 
@@ -67,12 +65,15 @@ const reviewPrompt = (r) => {
       `"${r.skill}" (via Skill tool) com os argumentos "${r.args}" preenchidos com essas branches. ` +
       `Ela apenas devolve a lista de achados, sem gravar arquivo: escreva-os em "${reportPath}" detalhando, ` +
       'para cada um, arquivo, trecho, problema e correção sugerida. ' +
-      'Não altere o código nem comente no PR — apenas gere o relatório. ' +
-      (r.hint ?? '')
+      'Não altere o código nem comente no PR — apenas gere o relatório. '
     : `Invoque a skill "${r.skill}" (via Skill tool) com a seguinte tarefa: ` +
       `revise o PR ${prRef} e gere um relatório detalhando os achados e possíveis correções ` +
       `em "${reportPath}". `
-  return invoke + 'Como resultado, retorne o path do relatório gerado.'
+  return (
+    invoke +
+    'Não troque de branch nem altere o working tree: outros revisores rodam em paralelo no mesmo checkout. ' +
+    'Como resultado, retorne o path do relatório gerado.'
+  )
 }
 
 // Barreira proposital: a consolidação precisa de TODOS os relatórios juntos.
