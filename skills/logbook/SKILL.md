@@ -47,28 +47,22 @@ where `<project name>` is the basename of the project root.
 
 ## Step 4: Write today's entry
 
-File layout — months as `##`, days as `###`, chronological (newest at the bottom):
+File layout: one `## YYYY-MM-DD` heading per day, no month headings, oldest first and newest at the bottom, the same order as the user's Notion logbook:
 
 ```markdown
 # Logbook — acai-chatcontas-api
 
-## 2026-08
-
-### 2026-08-31
+## 2026-08-31
 - Finalizei a implementação da CHATCONTAS-125 (compactação de versões de checkpoint)
   - Regra de retenção em três `DELETE` numa transação, agendada como `BackgroundTask` após o stream
   - ADR 0015 e guia `docs/guias/limpeza-de-checkpoints.md`
 
-## 2026-09
-
-### 2026-09-08
+## 2026-09-08
 - Finalizei o grill da CHATCONTAS-130 e iniciei a implementação
 - [ ] Aprovar o PR 1350
 ```
 
-Add the `## YYYY-MM` heading when today is the first entry of a new month.
-
-**If today's block doesn't exist**, append it at the end.
+**If today's block doesn't exist**, append it at the end of the file.
 
 **If it already exists** (the skill already ran today, or the user wrote in it), merge into it:
 - Keep every existing bullet, including ones the user wrote by hand — reword only to reflect progress on the same item.
@@ -92,4 +86,4 @@ A typical day is 2–6 bullets. If the block is getting long, merge related item
 
 ## Step 5: Show the day's block
 
-After saving, print today's block (from the `###` line down) in a fenced `markdown` code block so the user can copy it into Notion, followed by one line saying where the file is. Nothing else — no recap of the process.
+After saving, print today's block (from its `## YYYY-MM-DD` heading down) in a fenced `markdown` code block so the user can copy it into Notion, followed by one line saying where the file is. Nothing else — no recap of the process.
