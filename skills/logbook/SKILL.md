@@ -2,6 +2,8 @@
 name: logbook
 description: |
   Update the project's daily work logbook at `.claude/logbook.md` with a succinct, dated, PT-BR record of what was done — written so the user can paste the day's block straight into their Notion logbook. Safe to run many times a day: it merges new work into today's entry instead of duplicating it. Use whenever the user says "logbook", "atualiza o logbook", "registra no log", "log do dia", "anota o que fizemos", "o que fiz hoje", or asks to record/summarize progress so far in a session — even mid-session and even if they don't name the file. Prefer this over end-session when the user wants a short daily record rather than a full end-of-session report.
+disable-model-invocation: true
+context: fork
 ---
 
 # Logbook
