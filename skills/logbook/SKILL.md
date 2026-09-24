@@ -75,7 +75,7 @@ Add the `## YYYY-MM` heading when today is the first entry of a new month.
 - When an item progressed, update it in place instead of adding a second bullet: "Iniciei a FRONTACAI-739" becomes "Iniciei e finalizei a FRONTACAI-739"; `- [ ] Aprovar o PR 1350` becomes `- [x] Aprovar o PR 1350` once it's done.
 - Add genuinely new items at the end of the block.
 
-Never touch previous days. They are history the user may already have pasted into Notion.
+Never touch previous days. They are history the user may already have pasted into Notion. If a pending item from an earlier day got done today, record it as done in today's block and leave the old checkbox as it is.
 
 ### Writing style
 
