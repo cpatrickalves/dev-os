@@ -32,7 +32,7 @@ Two sources:
    git branch --show-current
    ```
 
-   Commits tell you *that* something happened; turn them into outcomes ("Implementei o endpoint de histórico (CHATCONTAS-123)"), not a commit list. Skip commits already covered by the conversation or by today's existing entry.
+   Commits tell you *that* something happened; turn them into outcomes ("Implementei a CHATCONTAS-123 (endpoint de histórico de conversas)"), not a commit list. Skip commits already covered by the conversation or by today's existing entry.
 
 Only record what you have evidence for. If something is ambiguous (was the PR merged or just opened?), write the weaker claim.
 
@@ -59,7 +59,7 @@ File layout: one `## YYYY-MM-DD` heading per day, no month headings, oldest firs
   - ADR 0015 e guia `docs/guias/limpeza-de-checkpoints.md`
 
 ## 2026-09-08
-- Finalizei o grill da CHATCONTAS-130 e iniciei a implementação
+- Finalizei o grill da CHATCONTAS-130 (exportar conversas em PDF) e iniciei a implementação
 - [ ] Aprovar o PR 1350
 ```
 
@@ -67,7 +67,7 @@ File layout: one `## YYYY-MM-DD` heading per day, no month headings, oldest firs
 
 **If it already exists** (the skill already ran today, or the user wrote in it), merge into it:
 - Keep every existing bullet, including ones the user wrote by hand — reword only to reflect progress on the same item.
-- When an item progressed, update it in place instead of adding a second bullet: "Iniciei a FRONTACAI-739" becomes "Iniciei e finalizei a FRONTACAI-739"; `- [ ] Aprovar o PR 1350` becomes `- [x] Aprovar o PR 1350` once it's done.
+- When an item progressed, update it in place instead of adding a second bullet: "Iniciei a FRONTACAI-739 (filtro por período)" becomes "Iniciei e finalizei a FRONTACAI-739 (filtro por período)"; `- [ ] Aprovar o PR 1350` becomes `- [x] Aprovar o PR 1350` once it's done.
 - Add genuinely new items at the end of the block.
 
 Never touch previous days. They are history the user may already have pasted into Notion. If a pending item from an earlier day got done today, record it as done in today's block and leave the old checkbox as it is.
@@ -79,7 +79,8 @@ Match the user's own logbook voice:
 - **PT-BR, first person, past tense**, with the user as the actor even if Claude did the typing: "Implementei", "Revisei", "Iniciei", "Continuei", "Finalizei", "Corrigi", "Investiguei", "Aprovei", "Decidimos".
 - **One bullet per task or outcome**, not per step. "Revisei o PR 1364" — not "abri o PR, li o diff, comentei".
 - **Sub-bullets only when they carry something worth remembering**: a decision and its reason, a root cause, a key number, the main files/ADRs produced. At most ~3 per item, one line each.
-- **Keep identifiers**: issue keys (FRONTACAI-646), PR numbers, branch or session names, and file paths, in backticks where they're code. They're what the user searches for later.
+- **Keep identifiers**: issue keys, PR numbers, branch or session names, and file paths, in backticks where they're code. They're what the user searches for later.
+- **Every issue key carries its title**: write `FRONTACAI-646 (Corrigir paginação do extrato)`, never the bare key — a week later the user won't remember what the number was about. Take the title from the conversation, the branch or commit messages, or the issue tracker (e.g. `planecli`, `gh issue view`) if one is available. If none of these gives it, use a short description of what the issue is about instead. Only the first mention in a day's block needs the title; later mentions in the same block can use the bare key.
 - **Open items as checkboxes**: `- [ ] Aprovar o PR 1350`. Only real pending actions, not vague "next steps".
 - **Leave out** tool mechanics (read files, ran grep), routine test runs unless they revealed something, and assistant-speak ("com sucesso", "de forma robusta").
 
