@@ -79,10 +79,21 @@ Match the user's own logbook voice:
 - **PT-BR, first person, past tense**, with the user as the actor even if Claude did the typing: "Implementei", "Revisei", "Iniciei", "Continuei", "Finalizei", "Corrigi", "Investiguei", "Aprovei", "Decidimos".
 - **One bullet per task or outcome**, not per step. "Revisei o PR 1364" — not "abri o PR, li o diff, comentei".
 - **Sub-bullets only when they carry something worth remembering**: a decision and its reason, a root cause, a key number, the main files/ADRs produced. At most ~3 per item, one line each.
-- **Keep identifiers**: issue keys, PR numbers, branch or session names, and file paths, in backticks where they're code. They're what the user searches for later.
+- **Keep identifiers**: issue keys, PR numbers, commit hashes, branch or session names, and file paths, in backticks where they're code. They're what the user searches for later. Section or item numbers inside a document are not identifiers in this sense (see "Say what changed, not where").
 - **Every issue key carries its title**: write `FRONTACAI-646 (Corrigir paginação do extrato)`, never the bare key — a week later the user won't remember what the number was about. Take the title from the conversation, the branch or commit messages, or the issue tracker (e.g. `planecli`, `gh issue view`) if one is available. If none of these gives it, use a short description of what the issue is about instead. Only the first mention in a day's block needs the title; later mentions in the same block can use the bare key.
+- **Say what changed, not where.** Section numbers, clause letters, line numbers and function names are addresses, not content: "TR 7.1.1 'd', 11.8.1 'g', 15.1" tells the reader nothing without opening the file. Describe the change in plain words ("reservas de capacidade com pagamento antecipado", "nota fiscal única mensal") and add the number only as a complement, in parentheses, when it helps find the spot. A bullet that is mostly a list of numbers is wrong.
 - **Open items as checkboxes**: `- [ ] Aprovar o PR 1350`. Only real pending actions, not vague "next steps".
 - **Leave out** tool mechanics (read files, ran grep), routine test runs unless they revealed something, and assistant-speak ("com sucesso", "de forma robusta").
+
+Before saving, reread each bullet and ask: would the user understand it a week from now without opening the file it mentions? If not, rewrite it.
+
+Bad:
+- Alinhei o TR ao novo ETP (`223b9a3`): 5.6.6 novo, 7.1.1 "d" e 11.8.1 "g", 15.1 com NF única, 16.6.2, 16.7.1 "b" e 16.8.1
+
+Good:
+- Levei ao TR as regras que saíram do ETP (`223b9a3`)
+  - Novos: controles de segurança da SETIN nos acessos delegados; reservas pagas antecipadamente, com devolução se não houver execução
+  - Pagamento numa só nota fiscal mensal; parceria Microsoft com o nome novo (*Cloud & AI Platforms*)
 
 A typical day is 2–6 bullets. If the block is getting long, merge related items rather than dropping identifiers.
 
