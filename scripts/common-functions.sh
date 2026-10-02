@@ -124,6 +124,9 @@ copy_file() {
 #   Caller sets : PICKER_NAMES[]  (display names, parallel to PICKER_DESCS)
 #                 PICKER_DESCS[]  (descriptions, "" allowed)
 #                 PICKER_NOUN     (e.g. "skills" — used in copy + non-TTY hint)
+#                 PICKER_GROUPS[] (optional, parallel to PICKER_NAMES: a header is
+#                                  drawn whenever the group changes; items must
+#                                  already be sorted by group)
 #   Returns     : PICKER_SELECTED[]  (0-based indices the user chose; >=1)
 #   Exits       : 0 on q/Esc cancel; 1 when there is no interactive terminal.
 
@@ -161,6 +164,43 @@ _pk_read_key() {
     esac
 }
 
+# True when item $1 gets a group header: grouping is on and it is the first
+# visible item or its group differs from the previous item's.
+_pk_is_group_start() {
+    local idx=$1
+    [[ ${#PICKER_GROUPS[@]} -gt 0 ]] || return 1
+    [[ $idx -eq $_PK_window_start ]] && return 0
+    [[ "${PICKER_GROUPS[$idx]}" != "${PICKER_GROUPS[$((idx - 1))]}" ]]
+}
+
+# Echo how many lines the group headers of a window of $1 items from
+# _PK_window_start take: one per header, plus a blank line above all but the first.
+_pk_count_headers() {
+    local height=$1 count=0 idx
+    for ((idx=_PK_window_start; idx<_PK_window_start+height && idx<_PK_total; idx++)); do
+        if _pk_is_group_start "$idx"; then
+            count=$((count + 1))
+            [[ $idx -gt $_PK_window_start ]] && count=$((count + 1))
+        fi
+    done
+    echo "$count"
+}
+
+# Clamp _PK_window_start so the cursor is visible in a window of $1 items.
+_pk_clamp_window() {
+    local height=$1
+    if [[ $_PK_cursor -lt $_PK_window_start ]]; then
+        _PK_window_start=$_PK_cursor
+    elif [[ $_PK_cursor -ge $((_PK_window_start + height)) ]]; then
+        _PK_window_start=$((_PK_cursor - height + 1))
+    fi
+    [[ $_PK_window_start -lt 0 ]] && _PK_window_start=0
+    local max_start=$((_PK_total - height))
+    [[ $max_start -lt 0 ]] && max_start=0
+    [[ $_PK_window_start -gt $max_start ]] && _PK_window_start=$max_start
+    return 0
+}
+
 _pk_render() {
     # Clear exactly what was drawn last frame (window height varies).
     # Cursor up N lines then clear to end of screen: one write, no
@@ -175,20 +215,18 @@ _pk_render() {
     [[ "$term_lines" =~ ^[0-9]+$ ]] || term_lines=24
     # Reserve: header + instruction + 2 scroll markers + count + status.
     local reserved=6
-    local window_height=$((term_lines - reserved))
-    [[ $window_height -lt 1 ]] && window_height=1
+    local available=$((term_lines - reserved))
+    [[ $available -lt 1 ]] && available=1
+    local window_height=$available
     [[ $window_height -gt $_PK_total ]] && window_height=$_PK_total
 
-    # Clamp the window so the cursor is always visible.
-    if [[ $_PK_cursor -lt $_PK_window_start ]]; then
-        _PK_window_start=$_PK_cursor
-    elif [[ $_PK_cursor -ge $((_PK_window_start + window_height)) ]]; then
-        _PK_window_start=$((_PK_cursor - window_height + 1))
-    fi
-    [[ $_PK_window_start -lt 0 ]] && _PK_window_start=0
-    local max_start=$((_PK_total - window_height))
-    [[ $max_start -lt 0 ]] && max_start=0
-    [[ $_PK_window_start -gt $max_start ]] && _PK_window_start=$max_start
+    # Shrink the window (in items) until items plus group headers fit.
+    while true; do
+        _pk_clamp_window "$window_height"
+        local used=$((window_height + $(_pk_count_headers "$window_height")))
+        if [[ $used -le $available || $window_height -le 1 ]]; then break; fi
+        window_height=$((window_height - 1))
+    done
 
     local n=0
     print_status "Select ${PICKER_NOUN}:"; ((n++)) || true
@@ -202,6 +240,14 @@ _pk_render() {
     [[ $end -gt $_PK_total ]] && end=$_PK_total
     local idx
     for ((idx=_PK_window_start; idx<end; idx++)); do
+        if _pk_is_group_start "$idx"; then
+            # Blank line between categories, not above the first visible one
+            if [[ $idx -gt $_PK_window_start ]]; then
+                echo; ((n++)) || true
+            fi
+            printf '  \033[1m%s\033[0m\n' "${PICKER_GROUPS[$idx]}"
+            ((n++)) || true
+        fi
         local g=" "; [[ $idx -eq $_PK_cursor ]] && g=">"
         local m=" "; [[ ${_PK_sel[$idx]} -eq 1 ]] && m="x"
         local desc="${PICKER_DESCS[$idx]}"

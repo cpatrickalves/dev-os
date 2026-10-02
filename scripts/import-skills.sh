@@ -212,20 +212,20 @@ select_skills() {
     fi
 
     # Interactive keyboard picker (shared, in common-functions.sh).
-    # Tag each skill with its category and whether it lands in ~/.claude/skills.
+    # Group skills under their category (discovery is sorted by path, so each
+    # category is contiguous) and tag the ones that land in ~/.claude/skills.
     PICKER_NAMES=()
+    PICKER_GROUPS=()
     local i
     for i in "${!SKILL_NAMES[@]}"; do
         local category
         category="$(dirname "${SKILL_PATHS[$i]}")"
-        local scope="local"
+        [[ "$category" == "." ]] && category="(uncategorized)"
+        PICKER_GROUPS+=("$category")
         if is_global_skill "${SKILL_DIRS[$i]}"; then
-            scope="global"
-        fi
-        if [[ "$category" == "." ]]; then
-            PICKER_NAMES+=("${SKILL_NAMES[$i]} ($scope)")
+            PICKER_NAMES+=("${SKILL_NAMES[$i]} (global)")
         else
-            PICKER_NAMES+=("${SKILL_NAMES[$i]} ($category, $scope)")
+            PICKER_NAMES+=("${SKILL_NAMES[$i]} (local)")
         fi
     done
     PICKER_DESCS=("${SKILL_DESCRIPTIONS[@]}")
