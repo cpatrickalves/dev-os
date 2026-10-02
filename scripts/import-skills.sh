@@ -166,8 +166,11 @@ discover_skills() {
         local name="$dirname"
         local description=""
 
-        # Extract name and description from SKILL.md YAML frontmatter
+        # Extract name and description from SKILL.md YAML frontmatter.
+        # A block-scalar description (`description: >` or `|`) continues on the
+        # following indented lines, which are joined into one line.
         local in_frontmatter=false
+        local in_block_desc=false
         while IFS= read -r line; do
             if [[ "$line" == "---" ]]; then
                 if [[ "$in_frontmatter" == "true" ]]; then
@@ -177,10 +180,25 @@ discover_skills() {
                 continue
             fi
             if [[ "$in_frontmatter" == "true" ]]; then
+                if [[ "$in_block_desc" == "true" ]]; then
+                    if [[ "$line" =~ ^[[:space:]]+(.*) ]]; then
+                        description="${description:+$description }${BASH_REMATCH[1]}"
+                        continue
+                    fi
+                    in_block_desc=false
+                fi
                 if [[ "$line" =~ ^name:[[:space:]]*(.*) ]]; then
                     name="${BASH_REMATCH[1]}"
                 elif [[ "$line" =~ ^description:[[:space:]]*(.*) ]]; then
                     description="${BASH_REMATCH[1]}"
+                    if [[ "$description" =~ ^[\>\|][+-]?$ ]]; then
+                        description=""
+                        in_block_desc=true
+                    else
+                        # Strip surrounding quotes if present
+                        description="${description%\"}"
+                        description="${description#\"}"
+                    fi
                 fi
             fi
         done < "$skill_md"
