@@ -1,4 +1,5 @@
 ---
+name: create-simple-feature-tasks
 description: Generate a phased, step-by-step task list from requirements, saved to /tasks/tasks-[feature].md
 argument-hint: "[feature request or path to PRD]"
 context: fork

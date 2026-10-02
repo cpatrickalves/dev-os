@@ -1,4 +1,5 @@
 ---
+name: create-update-makefile
 description: Create or update a project Makefile using the self-documenting standard format (awk-driven help, sectioned, inline-documented targets).
 argument-hint: "[optional: target/section to add or focus on]"
 context: fork

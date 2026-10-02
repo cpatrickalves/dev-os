@@ -1,4 +1,5 @@
 ---
+name: create-simple-feature-prd
 description: Create a detailed single-feature PRD via clarifying questions, saved to /tasks/prd-[feature].md
 argument-hint: "[feature description]"
 disable-model-invocation: true

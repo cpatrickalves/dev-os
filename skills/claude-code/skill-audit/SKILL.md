@@ -1,4 +1,5 @@
 ---
+name: skill-audit
 argument-hint: [skill-name] [skill-path]
 description: Audit a skill to test, benchmark, optimize or remove it.
 disable-model-invocation: true

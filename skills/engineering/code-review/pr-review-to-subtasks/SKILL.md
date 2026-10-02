@@ -1,4 +1,5 @@
 ---
+name: pr-review-to-subtasks
 argument-hint: [pr-review-file] [work-item-to-create-subissues] [work-item-assignee]
 description: Create subtasks for a work item based on a review file.
 disable-model-invocation: true

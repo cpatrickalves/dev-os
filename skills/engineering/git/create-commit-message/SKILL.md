@@ -1,4 +1,5 @@
 ---
+name: create-commit-message
 argument-hint: [ticket-id]
 description: Create a commit message.
 model: haiku

@@ -1,4 +1,5 @@
 ---
+name: end-session
 description: End session
 model: sonnet
 disable-model-invocation: true

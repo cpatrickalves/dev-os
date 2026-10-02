@@ -1,4 +1,5 @@
 ---
+name: blitzy-create-comprehensive-documentation
 description: Add comprehensive module-level and code-level documentation across the project
 disable-model-invocation: true
 ---

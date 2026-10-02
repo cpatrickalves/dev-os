@@ -1,4 +1,5 @@
 ---
+name: create-update-readme
 description: Create or update the project README.md (PT-BR) following the standard entry-point structure
 context: fork
 ---

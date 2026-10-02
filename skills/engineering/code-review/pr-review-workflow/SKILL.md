@@ -1,4 +1,5 @@
 ---
+name: pr-review-workflow
 argument-hint: [pr-number] [pr-url]
 description: Revisa um PR do Azure Devops e crie subtasks para um work item baseado no review.
 disable-model-invocation: true

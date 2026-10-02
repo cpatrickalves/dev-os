@@ -1,4 +1,5 @@
 ---
+name: blitzy-create-product-description
 description: Create a structured product description (vision, requirements, implementation, business rules)
 disable-model-invocation: true
 ---
