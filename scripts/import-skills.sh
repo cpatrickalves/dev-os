@@ -29,9 +29,11 @@ SKILLS_DEST="$PROJECT_DIR/.claude/skills"
 # Skills installed globally (user-level) instead of into the project.
 # These are copied to $GLOBAL_SKILLS_DEST so they are available in every project.
 GLOBAL_SKILLS_DEST="$HOME/.claude/skills"
-declare -a GLOBAL_SKILLS=("ce-code-review" "docs-generator" "planecli" "azure-devops-cli" "napkin-runbook" "unslop" "pr-security-review" "logbook")
+declare -a GLOBAL_SKILLS=("ce-code-review" "docs-generator" "planecli" "azure-devops-cli" "napkin-runbook" "unslop" "pr-security-review" "logbook" "end-session")
 
-# Arrays for skill handling
+# Arrays for skill handling. SKILL_PATHS holds each skill's path relative to
+# $SKILLS_SOURCE (e.g. engineering/build/python-testing); SKILL_DIRS its basename.
+declare -a SKILL_PATHS
 declare -a SKILL_DIRS
 declare -a SKILL_NAMES
 declare -a SKILL_DESCRIPTIONS
@@ -102,20 +104,16 @@ validate_skills_source() {
         exit 1
     fi
 
-    # Check that at least one skill subdirectory exists
-    local count=0
-    for dir in "$SKILLS_SOURCE"/*/; do
-        if [[ -d "$dir" ]]; then
-            count=$((count + 1))
-        fi
-    done
+    # Check that at least one skill exists, at any category depth
+    local count
+    count=$(find "$SKILLS_SOURCE" -name SKILL.md -type f | wc -l | tr -d ' ')
 
     if [[ "$count" -eq 0 ]]; then
         print_error "No skills found in $SKILLS_SOURCE"
         exit 1
     fi
 
-    print_verbose "Found $count skill directories in source"
+    print_verbose "Found $count skills in source"
 }
 
 # -----------------------------------------------------------------------------
@@ -148,46 +146,50 @@ skill_dest_dir() {
 # Skill Discovery
 # -----------------------------------------------------------------------------
 
+# Skills are grouped into category folders in the source (skills/<category>/...),
+# but Claude Code only discovers .claude/skills/<name>/SKILL.md one level deep.
+# Discovery therefore finds SKILL.md at any depth, and the import flattens each
+# skill to its basename at the destination.
 discover_skills() {
+    SKILL_PATHS=()
     SKILL_DIRS=()
     SKILL_NAMES=()
     SKILL_DESCRIPTIONS=()
 
-    for dir in "$SKILLS_SOURCE"/*/; do
-        if [[ ! -d "$dir" ]]; then
-            continue
-        fi
-
-        local dirname=$(basename "$dir")
-        local skill_md="$dir/SKILL.md"
+    local skill_md
+    while IFS= read -r skill_md; do
+        local dir
+        dir="$(dirname "$skill_md")"
+        local rel="${dir#$SKILLS_SOURCE/}"
+        local dirname
+        dirname="$(basename "$dir")"
         local name="$dirname"
         local description=""
 
         # Extract name and description from SKILL.md YAML frontmatter
-        if [[ -f "$skill_md" ]]; then
-            local in_frontmatter=false
-            while IFS= read -r line; do
-                if [[ "$line" == "---" ]]; then
-                    if [[ "$in_frontmatter" == "true" ]]; then
-                        break
-                    fi
-                    in_frontmatter=true
-                    continue
-                fi
+        local in_frontmatter=false
+        while IFS= read -r line; do
+            if [[ "$line" == "---" ]]; then
                 if [[ "$in_frontmatter" == "true" ]]; then
-                    if [[ "$line" =~ ^name:[[:space:]]*(.*) ]]; then
-                        name="${BASH_REMATCH[1]}"
-                    elif [[ "$line" =~ ^description:[[:space:]]*(.*) ]]; then
-                        description="${BASH_REMATCH[1]}"
-                    fi
+                    break
                 fi
-            done < "$skill_md"
-        fi
+                in_frontmatter=true
+                continue
+            fi
+            if [[ "$in_frontmatter" == "true" ]]; then
+                if [[ "$line" =~ ^name:[[:space:]]*(.*) ]]; then
+                    name="${BASH_REMATCH[1]}"
+                elif [[ "$line" =~ ^description:[[:space:]]*(.*) ]]; then
+                    description="${BASH_REMATCH[1]}"
+                fi
+            fi
+        done < "$skill_md"
 
+        SKILL_PATHS+=("$rel")
         SKILL_DIRS+=("$dirname")
         SKILL_NAMES+=("$name")
         SKILL_DESCRIPTIONS+=("$description")
-    done
+    done < <(find "$SKILLS_SOURCE" -name SKILL.md -type f | sort)
 
     if [[ ${#SKILL_DIRS[@]} -eq 0 ]]; then
         print_error "No skills discovered."
@@ -204,20 +206,26 @@ discover_skills() {
 select_skills() {
     # If --all was specified, select all skills
     if [[ "$IMPORT_ALL" == "true" ]]; then
-        SELECTED_SKILLS=("${SKILL_DIRS[@]}")
+        SELECTED_SKILLS=("${SKILL_PATHS[@]}")
         print_verbose "Selected all ${#SELECTED_SKILLS[@]} skills"
         return
     fi
 
     # Interactive keyboard picker (shared, in common-functions.sh).
-    # Tag globally-installed skills so the user knows they land in ~/.claude/skills.
+    # Tag each skill with its category and whether it lands in ~/.claude/skills.
     PICKER_NAMES=()
     local i
     for i in "${!SKILL_NAMES[@]}"; do
+        local category
+        category="$(dirname "${SKILL_PATHS[$i]}")"
+        local scope="local"
         if is_global_skill "${SKILL_DIRS[$i]}"; then
-            PICKER_NAMES+=("${SKILL_NAMES[$i]} (global)")
+            scope="global"
+        fi
+        if [[ "$category" == "." ]]; then
+            PICKER_NAMES+=("${SKILL_NAMES[$i]} ($scope)")
         else
-            PICKER_NAMES+=("${SKILL_NAMES[$i]} (local)")
+            PICKER_NAMES+=("${SKILL_NAMES[$i]} ($category, $scope)")
         fi
     done
     PICKER_DESCS=("${SKILL_DESCRIPTIONS[@]}")
@@ -226,7 +234,7 @@ select_skills() {
 
     SELECTED_SKILLS=()
     for i in "${PICKER_SELECTED[@]}"; do
-        SELECTED_SKILLS+=("${SKILL_DIRS[$i]}")
+        SELECTED_SKILLS+=("${SKILL_PATHS[$i]}")
     done
 
     print_verbose "Selected ${#SELECTED_SKILLS[@]} skills"
@@ -239,11 +247,14 @@ select_skills() {
 check_existing_skills() {
     local conflicts=()
 
-    for skill in "${SELECTED_SKILLS[@]}"; do
+    local path
+    for path in "${SELECTED_SKILLS[@]}"; do
+        local skill
+        skill="$(basename "$path")"
         local dest_dir
         dest_dir="$(skill_dest_dir "$skill")"
         if [[ -d "$dest_dir/$skill" ]]; then
-            conflicts+=("$skill")
+            conflicts+=("$path")
         fi
     done
 
@@ -260,8 +271,8 @@ check_existing_skills() {
     # Prompt user
     echo ""
     print_warning "${#conflicts[@]} skill(s) already exist at destination:"
-    for skill in "${conflicts[@]}"; do
-        echo "    - $skill"
+    for path in "${conflicts[@]}"; do
+        echo "    - $(basename "$path")"
     done
     echo ""
 
@@ -318,11 +329,15 @@ check_existing_skills() {
 execute_import() {
     local local_count=0
     local global_count=0
-    for skill in "${SELECTED_SKILLS[@]}"; do
+    local path
+    for path in "${SELECTED_SKILLS[@]}"; do
+        local skill
+        skill="$(basename "$path")"
         local dest_dir
         dest_dir="$(skill_dest_dir "$skill")"
         mkdir -p "$dest_dir"
-        cp -r "$SKILLS_SOURCE/$skill" "$dest_dir/"
+        # Read from the categorized source path, write flat as <dest>/<skill>
+        cp -r "$SKILLS_SOURCE/$path" "$dest_dir/"
         if is_global_skill "$skill"; then
             global_count=$((global_count + 1))
             print_verbose "Imported (global): $skill -> $dest_dir/"
