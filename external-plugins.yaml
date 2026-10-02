@@ -1,0 +1,71 @@
+# Claude Code plugins installed by scripts/install-plugins.sh.
+#
+# Fields:
+#   name                plugin name (unique)
+#   description         shown in the picker
+#   marketplace         marketplace the plugin is installed from (name@marketplace)
+#   marketplace_source  optional; `claude plugin marketplace add` argument for a
+#                       marketplace that is not built in (GitHub owner/repo, URL
+#                       or path). A relative path resolves against the Dev-OS root.
+#                       When set, the marketplace is refreshed before each update.
+#   scope               user | project | local
+
+plugins:
+  - name: github
+    description: GitHub plugin (official)
+    marketplace: claude-plugins-official
+    scope: user
+
+  - name: claude-md-management
+    description: CLAUDE.md management (official)
+    marketplace: claude-plugins-official
+    scope: user
+
+  - name: skill-creator
+    description: Skill scaffolding helper (official)
+    marketplace: claude-plugins-official
+    scope: user
+
+  - name: claude-code-setup
+    description: Claude Code setup helper (official)
+    marketplace: claude-plugins-official
+    scope: user
+
+  - name: thermos
+    description: Thermo-nuclear branch review (Dev-OS marketplace)
+    marketplace: dev-os
+    marketplace_source: .
+    scope: user
+
+  - name: compound-engineering
+    description: Compound Engineering pipeline
+    marketplace: every-marketplace
+    marketplace_source: EveryInc/compound-engineering-plugin
+    scope: user
+
+  - name: andrej-karpathy-skills
+    description: Andrej Karpathy guideline skills
+    marketplace: karpathy-skills
+    marketplace_source: multica-ai/andrej-karpathy-skills
+    scope: user
+
+  - name: mattpocock-skills
+    description: Matt Pocock skills (official)
+    marketplace: claude-plugins-official
+    scope: user
+
+  - name: pyright-lsp
+    description: Python Pyright LSP (official)
+    marketplace: claude-plugins-official
+    scope: project
+
+  - name: typescript-lsp
+    description: TypeScript LSP (official)
+    marketplace: claude-plugins-official
+    scope: project
+
+  - name: frontend-slides
+    description: Frontend slides plugin
+    marketplace: frontend-slides
+    marketplace_source: zarazhangrui/frontend-slides
+    scope: project

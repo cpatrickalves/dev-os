@@ -1,0 +1,22 @@
+# External skill packages installed by scripts/install-external-skills.sh
+# through `npx skills add` (idempotent: the same command installs and updates).
+#
+# Fields:
+#   name         entry name (unique), shown in the picker
+#   description  shown in the picker
+#   source       package passed to `npx skills add` (GitHub owner/repo or URL)
+#   skills       "*" for every skill in the package, or a comma-separated list
+#   scope        project | global
+
+skills:
+  - name: langchain-skills
+    description: LangChain, LangGraph and Deep Agents skills
+    source: langchain-ai/langchain-skills
+    skills: "*"
+    scope: project
+
+  - name: shadcn-ui
+    description: shadcn/ui skills
+    source: shadcn/ui
+    skills: "*"
+    scope: project

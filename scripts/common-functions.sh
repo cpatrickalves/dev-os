@@ -83,6 +83,119 @@ get_yaml_value() {
 }
 
 # -----------------------------------------------------------------------------
+# External Catalog Loading (external-plugins.yaml / external-skills.yaml)
+# -----------------------------------------------------------------------------
+#
+# Reads a restricted YAML subset, so no yq dependency:
+#
+#   <list_key>:
+#     - key: value
+#       key: "quoted value"   # comments allowed
+#
+# One top-level list of flat maps, one `key: value` per line, scalar values
+# only (no nesting, flow style or block scalars). Unknown keys, missing
+# required keys, duplicate keys and duplicate `name` values are errors,
+# reported with file and line number.
+#
+# Usage : load_catalog <file> <list_key> <keys> <required>
+#           keys / required are comma-separated; keys sets the field order.
+# Output: one record per line on stdout, fields joined by CATALOG_SEP
+#         (\x1f: not whitespace, so empty fields survive `read`).
+# Returns non-zero (errors on stderr) when the file is invalid.
+
+CATALOG_SEP=$'\x1f'
+
+load_catalog() {
+    local file=$1 list_key=$2 keys=$3 required=$4
+
+    if [[ ! -f "$file" ]]; then
+        print_error "Catalog not found: $file" >&2
+        return 1
+    fi
+
+    awk -v list_key="$list_key" -v keys="$keys" -v required="$required" \
+        -v sep="$CATALOG_SEP" -v file="$file" '
+        function fail(msg) {
+            printf "Error: %s:%d: %s\n", file, NR, msg > "/dev/stderr"
+            failed = 1
+            exit 1
+        }
+        function unquote(v) {
+            if (v ~ /^".*"$/ || v ~ /^\047.*\047$/) return substr(v, 2, length(v) - 2)
+            sub(/[ \t]+#.*$/, "", v)
+            return v
+        }
+        function flush(   i, k, out) {
+            if (!in_record) return
+            for (i = 1; i <= n_req; i++) {
+                if (!(req[i] in rec)) {
+                    printf "Error: %s:%d: entry missing required key \"%s\"\n", \
+                        file, rec_line, req[i] > "/dev/stderr"
+                    failed = 1
+                    exit 1
+                }
+            }
+            if (rec["name"] in seen_names) {
+                printf "Error: %s:%d: duplicate name \"%s\"\n", \
+                    file, rec_line, rec["name"] > "/dev/stderr"
+                failed = 1
+                exit 1
+            }
+            seen_names[rec["name"]] = 1
+            out = ""
+            for (i = 1; i <= n_keys; i++) {
+                k = key_list[i]
+                out = out (i > 1 ? sep : "") ((k in rec) ? rec[k] : "")
+            }
+            print out
+            delete rec
+            in_record = 0
+        }
+        function set_field(line,   k, v) {
+            k = line; sub(/:.*/, "", k)
+            v = line; sub(/^[^:]*:[ \t]*/, "", v); sub(/[ \t]+$/, "", v)
+            if (k !~ /^[a-z_]+$/ || line !~ /^[a-z_]+:/) fail("expected \"key: value\"")
+            if (!(k in allowed)) fail("unknown key \"" k "\"")
+            if (k in rec) fail("duplicate key \"" k "\"")
+            v = unquote(v)
+            if (index(v, sep)) fail("value contains a control character")
+            rec[k] = v
+        }
+        BEGIN {
+            n_keys = split(keys, key_list, ",")
+            for (i = 1; i <= n_keys; i++) allowed[key_list[i]] = 1
+            n_req = split(required, req, ",")
+        }
+        /^[ \t]*(#.*)?$/ { next }
+        /^[^ \t-]/ {
+            if ($0 !~ ("^" list_key ":[ \t]*(#.*)?$")) fail("expected top-level \"" list_key ":\"")
+            if (in_list) fail("\"" list_key ":\" declared twice")
+            in_list = 1
+            next
+        }
+        {
+            if (!in_list) fail("expected top-level \"" list_key ":\" first")
+            line = $0
+            if (line ~ /^[ \t]*-[ \t]+/) {
+                flush()
+                sub(/^[ \t]*-[ \t]+/, "", line)
+                in_record = 1
+                rec_line = NR
+                set_field(line)
+            } else {
+                if (!in_record) fail("field outside a \"- \" entry")
+                sub(/^[ \t]+/, "", line)
+                set_field(line)
+            }
+        }
+        END {
+            if (failed) exit 1
+            flush()
+        }
+    ' "$file"
+}
+
+# -----------------------------------------------------------------------------
 # File Operations
 # -----------------------------------------------------------------------------
 

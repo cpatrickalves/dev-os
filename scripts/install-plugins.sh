@@ -2,24 +2,22 @@
 
 # =============================================================================
 # Dev-OS Install Plugins Script
-# Pick Claude plugins / skills from a curated catalog and install or update them
+# Pick Claude plugins from external-plugins.yaml and install or update them
 # =============================================================================
 #
 # Selection uses the same shared keyboard picker as import-skills.sh
 # (select_items in common-functions.sh): ↑/↓ navigate, Space toggle,
 # a all, n none, Enter confirm, q quit.
 #
-# Execution policy: for every selected entry, always try the *update*
-# command first. Only if that fails (non-zero exit) do we run the
-# one-time setup (e.g. `claude plugin marketplace add`) and then install.
-# A never-installed plugin's update naturally fails, which falls through
-# to install — so the same flow both installs and updates.
+# Catalog: external-plugins.yaml at the Dev-OS root (see its header for
+# the fields). Commands are built from those fields, never read from the
+# file, and run as argv arrays — no eval.
 #
-# EXCEPTION — npx-skills entries: `npx skills update <pkg>` exits 0 with
-# "No installed skills found" when the package was never added, so it
-# never falls through to install. `npx skills add` is idempotent (it
-# re-copies files, acting as both install and update), so npx-skills
-# entries use the `add` command in BOTH the update and install slots.
+# Execution policy: for every selected entry, always try the *update*
+# first (refreshing its marketplace when it has a marketplace_source).
+# Only if that fails (non-zero exit) do we add the marketplace and then
+# install. A never-installed plugin's update naturally fails, which falls
+# through to install — so the same flow both installs and updates.
 
 set -e
 
@@ -37,113 +35,54 @@ source "$SCRIPT_DIR/common-functions.sh"
 VERBOSE="false"
 INSTALL_ALL="false"
 
+CATALOG_FILE="$BASE_DIR/external-plugins.yaml"
+
 # Parallel catalog arrays (bash 3.2: no associative arrays).
-# Command strings are hardcoded here and run via `eval`, never built from
-# user input, so eval is safe. `'*'` stays literal through eval re-parse.
 declare -a PLUGIN_NAMES
 declare -a PLUGIN_DESCS
-declare -a PLUGIN_SETUP    # one-time prerequisite (marketplace add), may be ""
-declare -a PLUGIN_UPDATE   # tried first
-declare -a PLUGIN_INSTALL  # fallback when update fails
+declare -a PLUGIN_MARKETPLACES
+declare -a PLUGIN_SOURCES  # marketplace_source, may be ""
+declare -a PLUGIN_SCOPES
 declare -a SELECTED_PLUGINS
 
 # -----------------------------------------------------------------------------
 # Plugin Catalog
 # -----------------------------------------------------------------------------
-#
-# npx-skills entries carry `--yes` so update/add run non-interactively under
-# the picker-driven flow (the original notes omitted it on a few lines).
 
-add_plugin() {
-    PLUGIN_NAMES+=("$1")
-    PLUGIN_DESCS+=("$2")
-    PLUGIN_SETUP+=("$3")
-    PLUGIN_UPDATE+=("$4")
-    PLUGIN_INSTALL+=("$5")
-}
+load_plugins() {
+    PLUGIN_NAMES=(); PLUGIN_DESCS=(); PLUGIN_MARKETPLACES=(); PLUGIN_SOURCES=(); PLUGIN_SCOPES=()
 
-define_catalog() {
-    PLUGIN_NAMES=(); PLUGIN_DESCS=(); PLUGIN_SETUP=(); PLUGIN_UPDATE=(); PLUGIN_INSTALL=()
+    local records
+    records="$(load_catalog "$CATALOG_FILE" plugins \
+        name,description,marketplace,marketplace_source,scope \
+        name,description,marketplace,scope)" || exit 1
 
-    add_plugin "github" \
-        "GitHub plugin (official, global)" \
-        "" \
-        "claude plugin update github@claude-plugins-official" \
-        "claude plugin install github@claude-plugins-official"
+    local name desc marketplace source scope
+    while IFS="$CATALOG_SEP" read -r name desc marketplace source scope; do
+        [[ -z "$name" ]] && continue
+        case "$scope" in
+            user|project|local) ;;
+            *)
+                print_error "$CATALOG_FILE: $name: invalid scope \"$scope\" (user, project or local)"
+                exit 1
+                ;;
+        esac
+        # Relative paths resolve against the Dev-OS root, not the target project.
+        case "$source" in
+            .|./*|../*) source="$BASE_DIR/${source#./}"; source="${source%/.}" ;;
+        esac
+        PLUGIN_NAMES+=("$name")
+        PLUGIN_DESCS+=("$desc ($scope)")
+        PLUGIN_MARKETPLACES+=("$marketplace")
+        PLUGIN_SOURCES+=("$source")
+        PLUGIN_SCOPES+=("$scope")
+    done <<< "$records"
 
-    add_plugin "claude-md-management" \
-        "CLAUDE.md management (official, user scope)" \
-        "" \
-        "claude plugin update claude-md-management@claude-plugins-official" \
-        "claude plugin install claude-md-management@claude-plugins-official --scope user"
-
-    add_plugin "skill-creator" \
-        "Skill scaffolding helper (user scope)" \
-        "" \
-        "claude plugin update skill-creator" \
-        "claude plugin install skill-creator -s user"
-
-    add_plugin "claude-code-setup" \
-        "Claude Code setup helper (official, user scope)" \
-        "" \
-        "claude plugin update claude-code-setup@claude-plugins-official" \
-        "claude plugin install claude-code-setup@claude-plugins-official --scope user"
-
-    add_plugin "thermos" \
-        "Thermo-nuclear branch review (dev-os marketplace, user scope)" \
-        "claude plugin marketplace add $BASE_DIR" \
-        "claude plugin marketplace update dev-os && claude plugin update thermos@dev-os" \
-        "claude plugin install thermos@dev-os --scope global"
-
-    # npx-skills: `add` is idempotent and used for update too (see header note).
-
-    add_plugin "compound-engineering" \
-        "Compound Engineering pipeline (every-marketplace, user scope)" \
-        "claude plugin marketplace add EveryInc/compound-engineering-plugin" \
-        "claude plugin marketplace update every-marketplace && claude plugin update compound-engineering@every-marketplace" \
-        "claude plugin install compound-engineering@every-marketplace --scope user"
-
-    add_plugin "andrej-karpathy-skills" \
-        "Andrej Karpathy guideline skills" \
-        "claude plugin marketplace add multica-ai/andrej-karpathy-skills" \
-        "claude plugin update andrej-karpathy-skills@karpathy-skills" \
-        "claude plugin install andrej-karpathy-skills@karpathy-skills"
-
-    add_plugin "mattpocock-skills" \
-        "Matt Pocock skills (official, user scope)" \
-        "" \
-        "claude plugin update mattpocock-skills@claude-plugins-official" \
-        "claude plugin install mattpocock-skills@claude-plugins-official --scope user"
-
-    add_plugin "pyright-lsp" \
-        "Python Pyright LSP (official, project scope)" \
-        "" \
-        "claude plugin update pyright-lsp@claude-plugins-official" \
-        "claude plugin install pyright-lsp@claude-plugins-official --scope project"
-
-    add_plugin "typescript-lsp" \
-        "TypeScript LSP (official, project scope)" \
-        "" \
-        "claude plugin update typescript-lsp@claude-plugins-official" \
-        "claude plugin install typescript-lsp@claude-plugins-official --scope project"
-
-    add_plugin "langchain-skills" \
-        "LangChain skills (npx skills, project scope)" \
-        "" \
-        "npx skills@latest add langchain-ai/langchain-skills --agent claude-code --skill '*' --project --yes" \
-        "npx skills@latest add langchain-ai/langchain-skills --agent claude-code --skill '*' --project --yes"
-
-    add_plugin "shadcn-ui" \
-        "shadcn/ui skills (npx skills, project scope)" \
-        "" \
-        "npx skills@latest add shadcn/ui --agent claude-code --skill '*' --yes --project" \
-        "npx skills@latest add shadcn/ui --agent claude-code --skill '*' --yes --project"
-
-    add_plugin "frontend-slides" \
-        "Frontend slides plugin (project scope)" \
-        "claude plugin marketplace add zarazhangrui/frontend-slides" \
-        "claude plugin update frontend-slides@frontend-slides" \
-        "claude plugin install frontend-slides@frontend-slides --scope project"
+    print_verbose "Catalog contains ${#PLUGIN_NAMES[@]} plugins"
+    if [[ ${#PLUGIN_NAMES[@]} -eq 0 ]]; then
+        print_error "No plugins found in $CATALOG_FILE"
+        exit 1
+    fi
 }
 
 # -----------------------------------------------------------------------------
@@ -154,7 +93,7 @@ show_help() {
     cat << EOF
 Usage: $0 [OPTIONS]
 
-Pick Claude plugins/skills from a curated catalog and install or update them.
+Pick Claude plugins from external-plugins.yaml and install or update them.
 Each selected entry is updated first; if that fails it is installed.
 
 Options:
@@ -206,10 +145,6 @@ validate_environment() {
         print_error "The 'claude' CLI was not found on PATH."
         exit 1
     fi
-    if ! command -v npx >/dev/null 2>&1; then
-        print_warning "'npx' not found; npx-skills entries will fail if selected."
-    fi
-    print_verbose "Catalog contains ${#PLUGIN_NAMES[@]} plugins"
 }
 
 # -----------------------------------------------------------------------------
@@ -242,30 +177,40 @@ select_plugins() {
 # Install / Update Execution
 # -----------------------------------------------------------------------------
 
-# Update first; on failure run one-time setup then install.
-# Every `eval` sits in an `if` condition so a non-zero exit never trips
+# Run a command, hiding its output unless --verbose.
+run_quiet() {
+    if [[ "$VERBOSE" == "true" ]]; then
+        "$@"
+    else
+        "$@" >/dev/null 2>&1
+    fi
+}
+
+# Update first; on failure add the marketplace then install.
+# Every command sits in an `if` condition so a non-zero exit never trips
 # the script-level `set -e`.
 install_one() {
     local idx=$1
     local name="${PLUGIN_NAMES[$idx]}"
-    local setup="${PLUGIN_SETUP[$idx]}"
-    local update="${PLUGIN_UPDATE[$idx]}"
-    local install="${PLUGIN_INSTALL[$idx]}"
-
-    local redir=' >/dev/null 2>&1'
-    [[ "$VERBOSE" == "true" ]] && redir=''
+    local marketplace="${PLUGIN_MARKETPLACES[$idx]}"
+    local source="${PLUGIN_SOURCES[$idx]}"
+    local scope="${PLUGIN_SCOPES[$idx]}"
+    local ref="$name@$marketplace"
 
     print_status "→ ${name}: trying update..."
-    if eval "${update}${redir}"; then
+    if [[ -n "$source" ]]; then
+        run_quiet claude plugin marketplace update "$marketplace" || true
+    fi
+    if run_quiet claude plugin update "$ref"; then
         print_success "${name}: updated"
         return 0
     fi
 
     print_warning "${name}: update failed — installing"
-    if [[ -n "$setup" ]]; then
-        eval "${setup}${redir}" || true
+    if [[ -n "$source" ]]; then
+        run_quiet claude plugin marketplace add "$source" || true
     fi
-    if eval "$install"; then
+    if claude plugin install "$ref" --scope "$scope"; then
         print_success "${name}: installed"
         return 0
     fi
@@ -306,8 +251,8 @@ main() {
     print_section "Dev-OS Install Plugins"
 
     parse_arguments "$@"
-    define_catalog
     validate_environment
+    load_plugins
 
     echo ""
     print_status "Available plugins: ${#PLUGIN_NAMES[@]}"
