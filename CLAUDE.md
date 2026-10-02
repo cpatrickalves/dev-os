@@ -17,7 +17,6 @@ All scripts live in `scripts/`, `source common-functions.sh`, and follow the sam
 ```bash
 # Import curated assets into the current project (interactive picker; --all to skip it)
 ~/dev-os/scripts/import-skills.sh [--all] [--overwrite]
-~/dev-os/scripts/import-commands.sh [--all] [--overwrite]
 ~/dev-os/scripts/import-agents.sh [--all] [--overwrite]
 
 # Import curated assets globally into ~/.claude/ (all projects)
@@ -33,9 +32,11 @@ All scripts live in `scripts/`, `source common-functions.sh`, and follow the sam
 
 ## Architecture
 
-The curated asset library lives in root-level folders: `skills/`, `commands/`, `agents/`, `hooks/`, `workflows/`, `output-styles/`. The `import-*` scripts copy them into other projects (or globally). Each skill is a self-contained directory with `SKILL.md` (name + description frontmatter) plus optional `references/`, `scripts/`, `rules/`.
+The curated asset library lives in root-level folders: `skills/`, `agents/`, `hooks/`, `workflows/`, `output-styles/`. The `import-*` scripts copy them into other projects (or globally). Each skill is a self-contained directory with `SKILL.md` (name + description frontmatter) plus optional `references/`, `scripts/`, `rules/`. There are no separate slash commands: a skill with `disable-model-invocation: true` is the equivalent of a command, invoked only as `/<name>`.
 
-`.claude/` holds only local session state/config (`settings.json`, `napkin.md`, logs) plus committed relative symlinks (`.claude/skills → ../skills`, `.claude/commands → ../commands`, `.claude/agents → ../agents`) so the curated assets auto-load when the Dev-OS repo itself is opened in Claude Code.
+Skills are grouped by activity into four top-level categories: `skills/claude-code/`, `skills/engineering/` (with subcategories such as `build/`, `code-review/`, `documentation/`), `skills/learning/` and `skills/productivity/`. Categories exist only in this source library. Claude Code discovers skills one level deep (`.claude/skills/<name>/SKILL.md`), so `import-skills.sh` finds `SKILL.md` at any depth and flattens each skill to its basename at the destination. Skill names must therefore be unique across all categories.
+
+`.claude/` holds only local session state/config (`settings.json`, `napkin.md`, logs) plus a committed relative symlink `.claude/agents → ../agents`. The curated skills do not auto-load when the Dev-OS repo itself is opened in Claude Code; import them like in any other project.
 
 The skill-usage hook has a single source of truth in `hooks/log-skill.sh`; `setup-skill-hook.sh` copies it into `~/.claude/hooks/` and registers it.
 

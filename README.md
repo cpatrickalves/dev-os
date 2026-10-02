@@ -31,11 +31,11 @@ Reusable skill modules that extend Claude Code with specialized knowledge and wo
 | `improving-skills-from-sessions` | Productivity | Analyze sessions to propose skill improvements |
 | `macos-cleaner` | Productivity | Analyze and reclaim macOS disk space |
 
-### Commands
+### Slash-invoked skills
 
-Custom slash commands available in Claude Code.
+Former slash commands, now skills with `disable-model-invocation: true` (invoked only as `/<name>`).
 
-| Command | Description |
+| Skill | Description |
 |---------|-------------|
 | `/create-simple-feature-prd` | Create a detailed Product Requirements Document |
 | `/create-simple-feature-tasks` | Generate a step-by-step task list from requirements |
@@ -65,8 +65,11 @@ Official Claude Code plugins enabled in this workspace.
 
 ```
 dev-os/
-├── skills/                # Reusable skill modules
-├── commands/              # Custom slash commands
+├── skills/                # Reusable skills, grouped by category
+│   ├── claude-code/       #   Session and skill maintenance
+│   ├── engineering/       #   build, code-review, documentation, git, ...
+│   ├── learning/          #   Knowledge distillation and explainers
+│   └── productivity/      #   Writing, diagrams, ops, misc
 ├── agents/                # Sub-agent definitions
 ├── hooks/                 # Hook scripts (single source of truth)
 ├── workflows/             # Multi-agent workflow scripts
@@ -74,8 +77,7 @@ dev-os/
 ├── plugins/               # Curated plugin catalog
 ├── scripts/               # Import/install helper scripts
 ├── CONTEXT.md             # Domain glossary
-└── .claude/               # Local session state + symlinks to the
-                           # root asset folders (enables auto-load)
+└── .claude/               # Local session state + agents symlink
 ```
 
 ---
@@ -91,11 +93,11 @@ The skills cover the full stack I work with daily — from FastAPI backends and 
 ## Getting Started
 
 1. Clone the repo into `~/dev-os`
-2. Open it with Claude Code — skills, commands, and agents auto-load via the `.claude/` symlinks
-3. From any other project, run the import scripts to install assets:
-   `~/dev-os/scripts/import-skills.sh`, `import-commands.sh`, `import-agents.sh` (per-project),
+2. From any project (including Dev-OS itself), run the import scripts to install assets:
+   `~/dev-os/scripts/import-skills.sh`, `import-agents.sh` (per-project),
    `import-workflows.sh`, `import-output-styles.sh` (global, into `~/.claude/`).
-   A few assets always install globally regardless of script: the skills listed in
-   `GLOBAL_SKILLS` (`import-skills.sh`) and the commands in `GLOBAL_COMMANDS`
-   (`import-commands.sh`, e.g. `/end-session`) go to `~/.claude/` so every project sees them.
+   `import-skills.sh` flattens the categorized `skills/` tree into `.claude/skills/<name>/`,
+   since Claude Code only discovers skills one level deep. The skills listed in
+   `GLOBAL_SKILLS` (e.g. `/end-session`) always go to `~/.claude/skills/` so every project sees them.
+3. Open the project with Claude Code
 4. Use `/create-simple-feature-tasks` to break down a feature, `/pr-summary` to summarize changes, or any other command
