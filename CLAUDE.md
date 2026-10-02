@@ -23,8 +23,9 @@ All scripts live in `scripts/`, `source common-functions.sh`, and follow the sam
 ~/dev-os/scripts/import-workflows.sh [--all] [--overwrite]
 ~/dev-os/scripts/import-output-styles.sh [--all] [--overwrite]
 
-# Install/update Claude plugins from the curated catalog
-~/dev-os/scripts/install-plugins.sh
+# Install/update external plugins (external-plugins.yaml) and skill packages (external-skills.yaml)
+~/dev-os/scripts/install-plugins.sh [--all] [--verbose]
+~/dev-os/scripts/install-external-skills.sh [--all] [--verbose]
 
 # One-time, per-machine: install the skill-usage logging hook into ~/.claude
 ~/dev-os/scripts/setup-skill-hook.sh
@@ -37,6 +38,8 @@ The curated asset library lives in root-level folders: `skills/`, `agents/`, `ho
 Skills are grouped by activity into four top-level categories: `skills/claude-code/`, `skills/engineering/` (with subcategories such as `build/`, `code-review/`, `documentation/`), `skills/learning/` and `skills/productivity/`. Categories exist only in this source library. Claude Code discovers skills one level deep (`.claude/skills/<name>/SKILL.md`), so `import-skills.sh` finds `SKILL.md` at any depth and flattens each skill to its basename at the destination. Skill names must therefore be unique across all categories.
 
 `.claude/` holds only local session state/config (`settings.json`, `napkin.md`, logs) plus a committed relative symlink `.claude/agents → ../agents`. The curated skills do not auto-load when the Dev-OS repo itself is opened in Claude Code; import them like in any other project.
+
+External assets — Claude plugins and `npx skills` packages that are installed rather than copied — are declared in `external-plugins.yaml` and `external-skills.yaml` at the repo root, the single source for `install-plugins.sh` and `install-external-skills.sh`. The YAML holds data only (name, marketplace, source, scope); the scripts build the commands from those fields. `load_catalog` in `common-functions.sh` parses a restricted YAML subset with `awk` (one top-level list of flat `key: value` maps, no nesting or multi-line values), so there is no `yq` dependency; it rejects unknown keys. To add a plugin or package, add an entry to the YAML, not to the scripts. `plugins/` plus `.claude-plugin/marketplace.json` is Dev-OS's own marketplace (`thermos`), installed through the same catalog.
 
 The skill-usage hook has a single source of truth in `hooks/log-skill.sh`; `setup-skill-hook.sh` copies it into `~/.claude/hooks/` and registers it.
 

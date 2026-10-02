@@ -114,17 +114,34 @@ Legend: `/name` = invoked only as a slash command (`disable-model-invocation: tr
 | `unslop` **global** | Cut AI tells from writing and restore human voice |
 | `workflow-visualizer` | Map a system or workflow as an interactive HTML diagram |
 
-### Plugins
+### External plugins and skills
 
-Official Claude Code plugins enabled in this workspace.
+Third-party assets that are installed, not copied, are declared in two YAML catalogs at the repo root. To add one, add an entry to the YAML; the scripts build the install and update commands from its fields.
 
-| Plugin | Description |
-|--------|-------------|
-| [feature-dev](https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev) | 7-phase feature development workflow with `code-explorer`, `code-architect`, and `code-reviewer` agents |
-| [pr-review-toolkit](https://github.com/anthropics/claude-code/tree/main/plugins/pr-review-toolkit) | PR review with specialized agents for comments, tests, error handling, types, code quality, and simplification |
-| pyright-lsp | Python type checking |
-| typescript-lsp | TypeScript type checking |
-| claude-md-management | Markdown management tools |
+**Plugins** — [`external-plugins.yaml`](external-plugins.yaml), installed with `scripts/install-plugins.sh`.
+
+| Plugin | Marketplace | Scope | Description |
+|--------|-------------|-------|-------------|
+| `github` | official | user | GitHub plugin |
+| `claude-md-management` | official | user | CLAUDE.md management |
+| `skill-creator` | official | user | Skill scaffolding helper |
+| `claude-code-setup` | official | user | Claude Code setup helper |
+| `thermos` | dev-os (this repo, `plugins/`) | user | Thermo-nuclear branch review |
+| `compound-engineering` | [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin) | user | Compound Engineering pipeline |
+| `andrej-karpathy-skills` | [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | user | Andrej Karpathy guideline skills |
+| `mattpocock-skills` | official | user | Matt Pocock skills |
+| `pyright-lsp` | official | project | Python type checking |
+| `typescript-lsp` | official | project | TypeScript type checking |
+| `frontend-slides` | [zarazhangrui/frontend-slides](https://github.com/zarazhangrui/frontend-slides) | project | Frontend slides |
+
+**Skill packages** — [`external-skills.yaml`](external-skills.yaml), installed with `scripts/install-external-skills.sh` through `npx skills add`.
+
+| Package | Source | Scope | Description |
+|---------|--------|-------|-------------|
+| `langchain-skills` | [langchain-ai/langchain-skills](https://github.com/langchain-ai/langchain-skills) | project | LangChain, LangGraph and Deep Agents skills |
+| `shadcn-ui` | [shadcn/ui](https://ui.shadcn.com/docs/skills) | project | shadcn/ui skills |
+
+Third-party skills copied by hand into `skills/` (such as `unslop`) are listed in [`docs/vendored-skills.md`](docs/vendored-skills.md).
 
 ## Project Structure
 
@@ -139,8 +156,10 @@ dev-os/
 ├── hooks/                 # Hook scripts (single source of truth)
 ├── workflows/             # Multi-agent workflow scripts
 ├── output-styles/         # Output styles
-├── plugins/               # Curated plugin catalog
+├── plugins/               # Dev-OS's own plugin marketplace (thermos)
 ├── scripts/               # Import/install helper scripts
+├── external-plugins.yaml  # External plugins to install
+├── external-skills.yaml   # External skill packages to install
 ├── CONTEXT.md             # Domain glossary
 └── .claude/               # Local session state + agents symlink
 ```
@@ -165,5 +184,8 @@ The skills cover the full stack I work with daily — from FastAPI backends and 
    (`--all` skips it) and flattens the categorized `skills/` tree into `.claude/skills/<name>/`,
    since Claude Code only discovers skills one level deep. The skills listed in
    `GLOBAL_SKILLS` (e.g. `/end-session`) always go to `~/.claude/skills/` so every project sees them.
-3. Open the project with Claude Code
-4. Use `/create-simple-feature-tasks` to break down a feature, `/pr-summary` to summarize changes, or any other skill
+3. Install external plugins and skill packages with `~/dev-os/scripts/install-plugins.sh`
+   and `install-external-skills.sh` (picker; `--all` skips it). Both update entries
+   already installed, so rerun them to refresh.
+4. Open the project with Claude Code
+5. Use `/create-simple-feature-tasks` to break down a feature, `/pr-summary` to summarize changes, or any other skill
