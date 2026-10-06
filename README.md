@@ -1,6 +1,6 @@
 # Dev-OS
 
-My personal development operating system — a curated repository of configurations, skills, sub-agents, and plugins that power my daily software development workflow with [Claude Code](https://docs.anthropic.com/en/docs/claude-code).
+My personal development operating system — a curated repository of skills, sub-agents, workflows, output styles, hooks, and plugins that power my daily software development workflow with [Claude Code](https://docs.anthropic.com/en/docs/claude-code).
 
 This is where I document and evolve my **Vibe Coding** process.
 
@@ -143,6 +143,40 @@ Third-party assets that are installed, not copied, are declared in two YAML cata
 
 Third-party skills copied by hand into `skills/` (such as `unslop`) are listed in [`docs/vendored-skills.md`](docs/vendored-skills.md).
 
+### Agents
+
+Sub-agents in `agents/`, imported per project with `scripts/import-agents.sh`.
+
+| Agent | Description |
+|-------|-------------|
+| `ce-code-simplicity-reviewer` | Final review pass for YAGNI violations and simplification opportunities |
+| `framework-docs-researcher` | Gather official docs, version constraints, and best practices for a dependency |
+| `frontend-code-reviewer` | Review recently changed frontend code (components, styles, hooks) |
+
+### Workflows
+
+Multi-agent workflow scripts in `workflows/`, installed globally into `~/.claude/workflows/` with `scripts/import-workflows.sh`.
+
+| Workflow | Description |
+|----------|-------------|
+| `dev-flow` | Implement a markdown plan, open a PR, review it with 5 reviewers, apply the fixes, and audit the docs |
+| `code-review-flow` | Review an existing PR with 5 reviewers and produce a verified final report |
+
+Both rely on the `thermos` and `mattpocock-skills` plugins and on the `ce-code-review` and `pr-security-review` skills.
+
+### Output Styles
+
+Output styles in `output-styles/`, installed globally with `scripts/import-output-styles.sh`.
+
+| Style | Description |
+|-------|-------------|
+| `ELI5` | Keep explanations simple |
+| `Escrita Técnica Clara` | Direct PT-BR technical writing, without anglicisms or filler |
+
+### Hooks
+
+`hooks/log-skill.sh` logs every Skill invocation (timestamp, skill, args) to the project's `.claude/skill-usage.log`. Run `scripts/setup-skill-hook.sh` once per machine to copy it into `~/.claude/hooks/` and register it as a `PreToolUse` hook. Requires `jq`.
+
 ## Project Structure
 
 ```
@@ -158,6 +192,7 @@ dev-os/
 ├── output-styles/         # Output styles
 ├── plugins/               # Dev-OS's own plugin marketplace (thermos)
 ├── scripts/               # Import/install helper scripts
+├── docs/                  # Reference notes (vendored skills, LangGraph practices)
 ├── external-plugins.yaml  # External plugins to install
 ├── external-skills.yaml   # External skill packages to install
 ├── CONTEXT.md             # Domain glossary
@@ -187,5 +222,6 @@ The skills cover the full stack I work with daily — from FastAPI backends and 
 3. Install external plugins and skill packages with `~/dev-os/scripts/install-plugins.sh`
    and `install-external-skills.sh` (picker; `--all` skips it). Both update entries
    already installed, so rerun them to refresh.
-4. Open the project with Claude Code
-5. Use `/create-simple-feature-tasks` to break down a feature, `/pr-summary` to summarize changes, or any other skill
+4. Once per machine, run `~/dev-os/scripts/setup-skill-hook.sh` to log skill usage
+5. Open the project with Claude Code
+6. Use `/create-simple-feature-tasks` to break down a feature, `/pr-summary` to summarize changes, or any other skill
