@@ -9,14 +9,14 @@ disable-model-invocation: true
 
 You are tasked with creating (if needed) and updating a changelog for a software project. Follow these instructions carefully to create a well-structured and informative changelog.
 
-Focus on changes that impact users, developers, or the software's behavior. Avoid excessive technical details and keep entries brief and objective. The changelog output is written in **Brazilian Portuguese** — keep it that way.
+Focus on changes that impact users, developers, or the software's behavior. Avoid excessive technical details and keep entries brief and objective. The changelog output is written in **Brazilian Portuguese**, unless an existing CHANGELOG.md is written in another language: then keep that language and use the matching Keep a Changelog headings (in English: `[Unreleased]`, Added, Changed, Deprecated, Removed, Fixed, Security).
 
 ## Workflow
 
 Copy this checklist and work through it in order:
 
 ```
-- [ ] Detect the version source: pyproject.toml (Python) or package.json (JavaScript)
+- [ ] Detect the version source: pyproject.toml (Python), package.json (JavaScript), or else the latest git tag
 - [ ] Run: git log $(git describe --tags --abbrev=0)..HEAD --oneline
 - [ ] Categorize the changes using the Keep a Changelog order (see template)
 - [ ] Bump the version following Semantic Versioning
@@ -67,14 +67,14 @@ Always use this category order: **Adicionado → Alterado → Depreciado → Rem
 ## Creating the changelog (first time)
 
 - Build the first changelog from the existing commit history.
-- The current version is the one in `pyproject.toml` (Python) or `package.json` (JavaScript).
+- The current version is the one in `pyproject.toml` (Python) or `package.json` (JavaScript). Projects with neither use git tags as the only version source: ask the user for the first version (usually `1.0.0`).
 - If no git tag exists yet, create one for the current version (after user confirmation — see Versioning).
 
 ## Updating the changelog
 
 <versioning_guidelines>
 - Follow Semantic Versioning (x.x.x).
-- The version (x.x.x) must match the one in `pyproject.toml` (Python) or `package.json` (JavaScript).
+- The version (x.x.x) must match the one in `pyproject.toml` (Python) or `package.json` (JavaScript). Without either file, bump from the latest git tag (`git describe --tags --abbrev=0`).
 - Document not only *what* changed, but also *why* it changed. If there is a specific reason for the change, document the reason or ask the user.
 </versioning_guidelines>
 
