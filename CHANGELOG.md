@@ -56,5 +56,5 @@ state at that point instead of reconstructing the history.
 - `thermos` was installed with the invalid `--scope global`; it now uses
   `user`.
 
-[Unreleased]: https://github.com/cpatrickalves/agent-os/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/cpatrickalves/agent-os/releases/tag/v1.0.0
+[Unreleased]: https://github.com/cpatrickalves/dev-os/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/cpatrickalves/dev-os/releases/tag/v1.0.0
