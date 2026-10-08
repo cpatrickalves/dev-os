@@ -27,6 +27,9 @@ All scripts live in `scripts/`, `source common-functions.sh`, and follow the sam
 ~/dev-os/scripts/install-plugins.sh [--all] [--verbose]
 ~/dev-os/scripts/install-external-skills.sh [--all] [--verbose]
 
+# Install/update or uninstall Claude Code mods (external-mods.yaml)
+~/dev-os/scripts/manage-mods.sh install|uninstall [--all] [--verbose]
+
 # Report, diff or merge (--apply) upstream changes into third-party skills; works on ~/dev-os itself
 ~/dev-os/scripts/sync-third-party-skills.sh [--all] [--apply] [--verbose]
 
@@ -42,7 +45,7 @@ Skills are grouped by activity into four top-level categories: `skills/claude-co
 
 `.claude/` holds only local session state/config (`settings.json`, `napkin.md`, logs) plus a committed relative symlink `.claude/agents → ../agents`. The curated skills do not auto-load when the Dev-OS repo itself is opened in Claude Code; import them like in any other project.
 
-External assets — Claude plugins and `npx skills` packages that are installed rather than copied — are declared in `external-plugins.yaml` and `external-skills.yaml` at the repo root, the single source for `install-plugins.sh` and `install-external-skills.sh`. The YAML holds data only (name, marketplace, source, scope); the scripts build the commands from those fields. `load_catalog` in `common-functions.sh` parses a restricted YAML subset with `awk` (one top-level list of flat `key: value` maps, no nesting or multi-line values), so there is no `yq` dependency; it rejects unknown keys. To add a plugin or package, add an entry to the YAML, not to the scripts. `plugins/` plus `.claude-plugin/marketplace.json` is Dev-OS's own marketplace (`thermos`), installed through the same catalog.
+External assets — Claude plugins and `npx skills` packages that are installed rather than copied — are declared in `external-plugins.yaml` and `external-skills.yaml` at the repo root, the single source for `install-plugins.sh` and `install-external-skills.sh`. The YAML holds data only (name, marketplace, source, scope); the scripts build the commands from those fields. `load_catalog` in `common-functions.sh` parses a restricted YAML subset with `awk` (one top-level list of flat `key: value` maps, no nesting or multi-line values), so there is no `yq` dependency; it rejects unknown keys. To add a plugin or package, add an entry to the YAML, not to the scripts. Mods (plugins built from function hooks that change the Claude Code UI) have their own catalog, `external-mods.yaml`, with the same fields plus an optional `github`; `manage-mods.sh` installs them like `install-plugins.sh` and also uninstalls them, leaving the marketplace registered. `plugins/` plus `.claude-plugin/marketplace.json` is Dev-OS's own marketplace (`thermos`), installed through the same catalog.
 
 Third-party skills (see `CONTEXT.md`) are copied, not installed: a skill is third-party when its frontmatter has `metadata.last_synced`, and its `metadata.source` must be a GitHub `tree/<ref>/<dir>` URL or a gist `#file-<name>` URL. `sync-third-party-skills.sh` uses the last upstream commit up to that date as the merge base, so keep `last_synced` accurate when copying by hand.
 

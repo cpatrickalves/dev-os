@@ -1,0 +1,25 @@
+# Claude Code mods installed and uninstalled by scripts/manage-mods.sh.
+#
+# A mod is a plugin built from function hooks (live panes, bands, status
+# lines, toasts) that changes the Claude Code UI. It installs like any other
+# plugin, but is kept apart from external-plugins.yaml so it can be removed
+# as easily as it is added.
+#
+# Fields:
+#   name                plugin name (unique)
+#   description         shown in the picker
+#   marketplace         marketplace the mod is installed from (name@marketplace)
+#   marketplace_source  optional; `claude plugin marketplace add` argument for a
+#                       marketplace that is not built in (GitHub owner/repo, URL
+#                       or path). A relative path resolves against the Dev-OS root.
+#                       When set, the marketplace is refreshed before each update.
+#   scope               user | project | local
+#   github              optional; GitHub URL of the mod, printed after install
+
+mods:
+  - name: savvy-progress
+    description: Progress bar above the prompt and subagents panel
+    marketplace: claude-kit
+    marketplace_source: johnnyvizz/claude-kit
+    scope: user
+    github: https://github.com/JohnnyVizz/claude-kit

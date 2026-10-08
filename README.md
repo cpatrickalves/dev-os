@@ -134,6 +134,12 @@ Third-party assets that are installed, not copied, are declared in two YAML cata
 | `typescript-lsp` | official | project | TypeScript type checking |
 | `frontend-slides` | [zarazhangrui/frontend-slides](https://github.com/zarazhangrui/frontend-slides) | project | Frontend slides |
 
+**Mods** — [`external-mods.yaml`](external-mods.yaml), installed and uninstalled with `scripts/manage-mods.sh install|uninstall`. A mod is a plugin built from function hooks that changes the Claude Code UI (panes, bands, status lines). Uninstall leaves the marketplace registered.
+
+| Mod | Marketplace | Scope | Description |
+|-----|-------------|-------|-------------|
+| `savvy-progress` | [JohnnyVizz/claude-kit](https://github.com/JohnnyVizz/claude-kit) | user | Progress bar above the prompt and subagents panel (`/agents-info`) |
+
 **Skill packages** — [`external-skills.yaml`](external-skills.yaml), installed with `scripts/install-external-skills.sh` through `npx skills add`.
 
 | Package | Source | Scope | Description |
@@ -196,6 +202,7 @@ dev-os/
 ├── scripts/               # Import/install helper scripts
 ├── docs/                  # Reference notes (LangGraph practices)
 ├── external-plugins.yaml  # External plugins to install
+├── external-mods.yaml     # Claude Code mods to install or uninstall
 ├── external-skills.yaml   # External skill packages to install
 ├── CONTEXT.md             # Domain glossary
 └── .claude/               # Local session state + agents symlink
@@ -223,7 +230,8 @@ The skills cover the full stack I work with daily — from FastAPI backends and 
    `GLOBAL_SKILLS` (e.g. `/end-session`) always go to `~/.claude/skills/` so every project sees them.
 3. Install external plugins and skill packages with `~/dev-os/scripts/install-plugins.sh`
    and `install-external-skills.sh` (picker; `--all` skips it). Both update entries
-   already installed, so rerun them to refresh.
+   already installed, so rerun them to refresh. Mods go through
+   `~/dev-os/scripts/manage-mods.sh install` (or `uninstall`).
 4. Once per machine, run `~/dev-os/scripts/setup-skill-hook.sh` to log skill usage
 5. Open the project with Claude Code
 6. Use `/create-simple-feature-tasks` to break down a feature, `/pr-description` to write a PR description, or any other skill
