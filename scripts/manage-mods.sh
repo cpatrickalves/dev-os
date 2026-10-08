@@ -19,6 +19,9 @@
 #
 # Uninstall removes the plugin from its catalog scope and leaves the
 # marketplace registered, since other plugins may come from it.
+#
+# A mod with `marketplace: builtin` ships with Claude Code: install enables
+# it and uninstall disables it.
 
 set -e
 
@@ -101,7 +104,9 @@ Pick Claude Code mods from external-mods.yaml and install or uninstall them.
 
 Actions:
     install            Update each selected mod; install it if the update fails
-    uninstall          Uninstall each selected mod (its marketplace stays registered)
+                       (builtin mods are enabled)
+    uninstall          Uninstall each selected mod (its marketplace stays registered;
+                       builtin mods are disabled)
 
 Options:
     --all              Select every mod (skip the interactive picker)
@@ -219,6 +224,17 @@ install_one() {
 
     local github="${MOD_GITHUBS[$idx]}"
 
+    # Builtin mods ship with Claude Code: enable, nothing to install.
+    if [[ "$marketplace" == "builtin" ]]; then
+        print_status "→ ${name}: enabling..."
+        if claude plugin enable "$ref" --scope "$scope"; then
+            print_success "${name}: enabled"
+            return 0
+        fi
+        print_error "${name}: enable failed"
+        return 1
+    fi
+
     print_status "→ ${name}: trying update..."
     if [[ -n "$source" ]]; then
         run_quiet claude plugin marketplace update "$marketplace" || true
@@ -248,6 +264,16 @@ uninstall_one() {
     local name="${MOD_NAMES[$idx]}"
     local ref="$name@${MOD_MARKETPLACES[$idx]}"
     local scope="${MOD_SCOPES[$idx]}"
+
+    if [[ "${MOD_MARKETPLACES[$idx]}" == "builtin" ]]; then
+        print_status "→ ${name}: disabling..."
+        if claude plugin disable "$ref" --scope "$scope"; then
+            print_success "${name}: disabled"
+            return 0
+        fi
+        print_error "${name}: disable failed"
+        return 1
+    fi
 
     print_status "→ ${name}: uninstalling..."
     if claude plugin uninstall "$ref" --scope "$scope"; then

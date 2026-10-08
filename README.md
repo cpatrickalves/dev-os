@@ -134,7 +134,7 @@ Third-party assets that are installed, not copied, are declared in two YAML cata
 | `typescript-lsp` | official | project | TypeScript type checking |
 | `frontend-slides` | [zarazhangrui/frontend-slides](https://github.com/zarazhangrui/frontend-slides) | project | Frontend slides |
 
-**Mods** — [`external-mods.yaml`](external-mods.yaml), installed and uninstalled with `scripts/manage-mods.sh install|uninstall`. A mod is a plugin built from function hooks that changes the Claude Code UI (panes, bands, status lines). Uninstall leaves the marketplace registered.
+**Mods** — [`external-mods.yaml`](external-mods.yaml), installed and uninstalled with `scripts/manage-mods.sh install|uninstall`. A mod is a plugin built from function hooks that changes the Claude Code UI (panes, bands, status lines). Uninstall leaves the marketplace registered. A mod with `marketplace: builtin` ships with Claude Code and is enabled/disabled instead.
 
 | Mod | Marketplace | Scope | Description |
 |-----|-------------|-------|-------------|

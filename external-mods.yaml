@@ -8,7 +8,9 @@
 # Fields:
 #   name                plugin name (unique)
 #   description         shown in the picker
-#   marketplace         marketplace the mod is installed from (name@marketplace)
+#   marketplace         marketplace the mod is installed from (name@marketplace);
+#                       `builtin` for a mod bundled with Claude Code, which is
+#                       enabled/disabled instead of installed/uninstalled
 #   marketplace_source  optional; `claude plugin marketplace add` argument for a
 #                       marketplace that is not built in (GitHub owner/repo, URL
 #                       or path). A relative path resolves against the Dev-OS root.
@@ -23,3 +25,8 @@ mods:
     marketplace_source: johnnyvizz/claude-kit
     scope: user
     github: https://github.com/JohnnyVizz/claude-kit
+
+  - name: cc-plugin-you-should-know
+    description: Side agent that surfaces things worth knowing above the prompt
+    marketplace: builtin
+    scope: user
