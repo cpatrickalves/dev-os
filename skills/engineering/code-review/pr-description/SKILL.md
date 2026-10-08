@@ -4,9 +4,8 @@ description: "Use when writing a PR title and body."
 metadata:
   last_synced: "2026-10-08"
   local_changes: "Renamed to pr-description; added Title section; no Mermaid on Azure DevOps remotes."
-  credits:
-    author: Matt Pocock
-    source: "https://github.com/mattpocock/skills/blob/main/skills/engineering/pr/SKILL.md"
+  author: Matt Pocock
+  source: "https://github.com/mattpocock/skills/blob/main/skills/engineering/pr/SKILL.md"
 ---
 
 Write a PR title and a PR body. They are separate fields on every platform (GitHub, Azure DevOps), so never put the title inside the body.
