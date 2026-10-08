@@ -3,6 +3,7 @@ name: playwright-expert
 description: Use when writing E2E tests with Playwright, setting up test infrastructure, or debugging flaky browser tests. Invoke for browser automation, E2E tests, Page Object Model, test flakiness, visual testing.
 license: MIT
 metadata:
+  last_synced: "2026-03-05"
   author: https://github.com/Jeffallan
   source: https://skills.sh/jeffallan/claude-skills/playwright-expert
   version: "1.0.0"

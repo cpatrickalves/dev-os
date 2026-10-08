@@ -3,6 +3,7 @@ name: ce-code-review
 description: "Structured code review for bugs, regressions, tests, and standards. Use before PRs or when asked for review; interactive mode can fix locally, while mode:agent reports only for pipeline callers."
 argument-hint: "[mode:agent] [blank to review current branch, or provide PR link]"
 metadata:
+  last_synced: "2026-07-01"
   source: "https://github.com/EveryInc/compound-engineering-plugin/tree/main/skills/ce-code-review"
 ---
 

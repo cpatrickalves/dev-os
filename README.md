@@ -141,7 +141,7 @@ Third-party assets that are installed, not copied, are declared in two YAML cata
 | `langchain-skills` | [langchain-ai/langchain-skills](https://github.com/langchain-ai/langchain-skills) | project | LangChain, LangGraph and Deep Agents skills |
 | `shadcn-ui` | [shadcn/ui](https://ui.shadcn.com/docs/skills) | project | shadcn/ui skills |
 
-Third-party skills copied by hand into `skills/` (such as `unslop`) are listed in [`docs/vendored-skills.md`](docs/vendored-skills.md).
+Third-party skills copied by hand into `skills/` (such as `unslop`) record their upstream in frontmatter: `metadata.source` (the upstream URL), `metadata.last_synced` (the date of the last copy from upstream) and, when the copy was adapted, `metadata.local_changes` (what to re-apply after a refresh). List them with `grep -rl "source:" skills/`.
 
 ### Agents
 
@@ -192,7 +192,7 @@ dev-os/
 ├── output-styles/         # Output styles
 ├── plugins/               # Dev-OS's own plugin marketplace (thermos)
 ├── scripts/               # Import/install helper scripts
-├── docs/                  # Reference notes (vendored skills, LangGraph practices)
+├── docs/                  # Reference notes (LangGraph practices)
 ├── external-plugins.yaml  # External plugins to install
 ├── external-skills.yaml   # External skill packages to install
 ├── CONTEXT.md             # Domain glossary

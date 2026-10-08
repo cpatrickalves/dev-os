@@ -3,6 +3,7 @@ name: handover
 description: Use when the user asks to create a handover, session handover, or context dump to pass to a fresh Claude session. Triggers on "handover", "session handover", "context dump for another session", or when the current context is getting too long and the user wants to continue elsewhere. Generates a structured summary and saves it to a timestamped file under `.claude/handovers/` so the user can paste it into a fresh session.
 disable-model-invocation: true
 metadata:
+    last_synced: "2026-05-01"
     source: Adapted from https://gist.github.com/vedovelli/6200225227eb0f801517ebd52e825788
 ---
 

@@ -3,6 +3,7 @@ name: planecli
 description: "Manage Plane.so through the planecli CLI — work items, projects, cycles/sprints, modules, labels, states, documents, intake queue, comments. Use when the user mentions Plane, planecli, or a work-item identifier like ABC-123, or asks about tasks, sprints, or backlogs in a project where Plane is the tracker."
 allowed-tools: Bash(planecli *)
 metadata:
+  last_synced: "2026-08-18"
   author: Patrick Alves
   version: "1.6"
   source: https://github.com/cpatrickalves/plane-cli/tree/main/skills
