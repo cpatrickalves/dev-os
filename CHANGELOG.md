@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `sync-third-party-skills.sh`: reports which third-party skills have upstream
+  changes since `metadata.last_synced`, shows the upstream diff, and with
+  `--apply` merges it in (three-way, per file) and bumps `last_synced`.
+
+### Changed
+
+- Third-party skill `metadata.source` values normalized to GitHub `tree/` URLs
+  or gist `#file-` URLs. `ai-agent-security-analysis` and `pr-security-review`
+  now cite their inspiration in `metadata.reference` and are no longer synced.
+
 ## [1.0.0] - 2026-10-06
 
 First versioned release. Dev-OS started as a fork of Agent OS and has since
