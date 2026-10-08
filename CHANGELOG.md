@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `manage-mods.sh` and the `external-mods.yaml` catalog: install/update or
-  uninstall Claude Code mods. Entries: `savvy-progress` and the builtin
+  uninstall Claude Code mods. Entries: `savvy-progress`, `filetree` and the builtin
   `cc-plugin-you-should-know` (builtin mods are enabled/disabled, not installed).
 - `sync-third-party-skills.sh`: reports which third-party skills have upstream
   changes since `metadata.last_synced`, shows the upstream diff, and with

@@ -30,3 +30,10 @@ mods:
     description: Side agent that surfaces things worth knowing above the prompt
     marketplace: builtin
     scope: user
+
+  - name: filetree
+    description: IDE-style file tree pane with git status and files Claude touches
+    marketplace: claude-code-filetree
+    marketplace_source: data-goblin/claude-code-filetree
+    scope: user
+    github: https://github.com/data-goblin/claude-code-filetree
