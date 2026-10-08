@@ -63,7 +63,7 @@ Legend: `/name` = invoked only as a slash command (`disable-model-invocation: tr
 | `/pr-review-to-subtasks` | Create work-item subtasks from a review file |
 | `/pr-review-workflow` | Review an Azure DevOps PR and create subtasks from the review |
 | `pr-security-review` **global** | Security review of an explicit `base...head` revision range |
-| `/pr-summary` | Summarize the current branch's changes |
+| `pr-description` **global** | Write a PR title and description |
 
 #### `engineering/documentation/` — docs, specs, and changelogs
 
@@ -224,4 +224,4 @@ The skills cover the full stack I work with daily — from FastAPI backends and 
    already installed, so rerun them to refresh.
 4. Once per machine, run `~/dev-os/scripts/setup-skill-hook.sh` to log skill usage
 5. Open the project with Claude Code
-6. Use `/create-simple-feature-tasks` to break down a feature, `/pr-summary` to summarize changes, or any other skill
+6. Use `/create-simple-feature-tasks` to break down a feature, `/pr-description` to write a PR description, or any other skill

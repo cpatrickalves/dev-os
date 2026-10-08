@@ -18,3 +18,18 @@ trigger-phrase convention. Re-apply it after any upstream refresh.
 
 Installed globally: listed in `GLOBAL_SKILLS` in `scripts/import-skills.sh`, so
 `import-skills.sh` copies it to `~/.claude/skills/` instead of into the project.
+
+## pr-description
+
+Source: mattpocock/skills, `pr` skill (itself credited to humanlayer's `show-me`).
+
+```bash
+curl -sL https://raw.githubusercontent.com/mattpocock/skills/refs/heads/main/skills/engineering/pr/SKILL.md \
+  -o ~/dev-os/skills/engineering/code-review/pr-description/SKILL.md
+```
+
+Local changes to re-apply after any upstream refresh: `name` is `pr-description`,
+the description and a `Title` section cover the PR title, and a note steers away
+from Mermaid when the remote is Azure DevOps (it does not render in PR descriptions).
+
+Installed globally: listed in `GLOBAL_SKILLS` in `scripts/import-skills.sh`.
