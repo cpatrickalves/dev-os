@@ -3,6 +3,7 @@ name: frontend-code-review
 description: "Reviews frontend files (`.tsx`, `.ts`, `.js`) for code quality, performance, and business logic issues. Use when the user requests a code review of frontend files, when reviewing staged changes before commit, or when checking specific components for best-practice violations."
 metadata:
   last_synced: "2026-03-12"
+  local_changes: "Description rewritten to the repo's trigger-phrase convention; added progress checklist to Review Process; business-logic rules flagged as Dify-specific examples."
   source: https://github.com/langgenius/dify/tree/main/.agents/skills/frontend-code-review
 ---
 

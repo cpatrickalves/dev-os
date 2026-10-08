@@ -4,6 +4,7 @@ description: Use when writing E2E tests with Playwright, setting up test infrast
 license: MIT
 metadata:
   last_synced: "2026-03-05"
+  local_changes: "Replaced the CI/CD Integrate workflow step with Specific Instructions: get a scenario, run steps via Playwright tools, save and run the test until it passes."
   author: https://github.com/Jeffallan
   source: https://skills.sh/jeffallan/claude-skills/playwright-expert
   version: "1.0.0"

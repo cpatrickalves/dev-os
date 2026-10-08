@@ -4,6 +4,7 @@ description: Produce HTML output instead of markdown for any agent task. Four le
 disable-model-invocation: true
 metadata:
   last_synced: "2026-05-12"
+  local_changes: "Added disable-model-invocation so it runs only as /html-it."
   source: https://github.com/robonuggets/html-it
 ---
 

@@ -5,6 +5,7 @@ argument-hint: "<base...head> (e.g. origin/dev...origin/feat-x; three-dot form, 
 allowed-tools: Bash(git diff *) Bash(git log *) Bash(git show *)
 metadata:
   last_synced: "2026-09-11"
+  local_changes: "Takes an explicit base...head range via $ARGUMENTS instead of origin/HEAD; renamed; description and allowed-tools rewritten; added empty-range fallback, no-findings line and no-subagent path."
   source: "https://github.com/anthropics/claude-code-security-review"
   note: "Rubric adapted from Claude Code's bundled /security-review (v2.1.268), which hardcodes `git diff origin/HEAD...` and ignores arguments. This skill takes the range explicitly so a PR whose base is not the default branch (or is not checked out) is reviewed in the right scope."
 ---

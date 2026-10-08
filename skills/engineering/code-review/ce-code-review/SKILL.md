@@ -4,6 +4,7 @@ description: "Structured code review for bugs, regressions, tests, and standards
 argument-hint: "[mode:agent] [blank to review current branch, or provide PR link]"
 metadata:
   last_synced: "2026-07-01"
+  local_changes: "Dropped compound-engineering and ce-* plugin references; deprecated mode tokens folded into one list; never-push rule named the push gate."
   source: "https://github.com/EveryInc/compound-engineering-plugin/tree/main/skills/ce-code-review"
 ---
 

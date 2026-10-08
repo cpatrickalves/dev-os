@@ -3,6 +3,7 @@ name: coupling-analysis
 description: Analyzes coupling between modules using the three-dimensional model (strength, distance, volatility) from "Balancing Coupling in Software Design". Use when asking "are these modules too coupled?", "show me dependencies", "analyze integration quality", "which modules should I decouple?", "coupling report", or evaluating architectural health. Do NOT use for domain boundary analysis (use domain-analysis) or component sizing (use component-identification-sizing).
 metadata:
   last_synced: "2026-04-04"
+  local_changes: "None."
   source: https://github.com/tech-leads-club/agent-skills/blob/main/packages/skills-catalog/skills/(architecture)/coupling-analysis/SKILL.md
 ---
 

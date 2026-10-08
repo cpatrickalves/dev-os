@@ -4,6 +4,7 @@ description: "Manage Plane.so through the planecli CLI — work items, projects,
 allowed-tools: Bash(planecli *)
 metadata:
   last_synced: "2026-08-18"
+  local_changes: "None."
   author: Patrick Alves
   version: "1.6"
   source: https://github.com/cpatrickalves/plane-cli/tree/main/skills
