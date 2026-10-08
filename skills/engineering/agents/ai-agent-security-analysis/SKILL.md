@@ -7,7 +7,7 @@ description: >
   auditing MCP configs, or assessing prompt-injection and exfiltration risk.
 disable-model-invocation: true
 metadata:
-  source: https://webinar.gartner.com/859726/agenda/session/1868315 (Gartner webinar, login required)
+  reference: https://webinar.gartner.com/859726/agenda/session/1868315 (Gartner webinar, login required)
   author: Patrick Alves
 ---
 

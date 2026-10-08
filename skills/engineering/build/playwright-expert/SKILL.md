@@ -6,7 +6,7 @@ metadata:
   last_synced: "2026-03-05"
   local_changes: "Replaced the CI/CD Integrate workflow step with Specific Instructions: get a scenario, run steps via Playwright tools, save and run the test until it passes."
   author: https://github.com/Jeffallan
-  source: https://skills.sh/jeffallan/claude-skills/playwright-expert
+  source: "https://github.com/Jeffallan/claude-skills/tree/main/skills/playwright-expert"
   version: "1.0.0"
   domain: quality
   triggers: Playwright, E2E test, end-to-end, browser testing, automation, UI testing, visual testing

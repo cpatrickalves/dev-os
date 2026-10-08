@@ -5,7 +5,7 @@ metadata:
   last_synced: "2026-10-08"
   local_changes: "Renamed to pr-description; added Title section; no Mermaid on Azure DevOps remotes."
   author: Matt Pocock
-  source: "https://github.com/mattpocock/skills/blob/main/skills/engineering/pr/SKILL.md"
+  source: "https://github.com/mattpocock/skills/tree/main/skills/engineering/pr"
 ---
 
 Write a PR title and a PR body. They are separate fields on every platform (GitHub, Azure DevOps), so never put the title inside the body.

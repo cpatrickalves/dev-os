@@ -4,7 +4,7 @@ description: Cut AI tells from writing and restore human voice. Use when draftin
 metadata:
   last_synced: "2026-08-28"
   local_changes: "Description rewritten to follow the repo's trigger-phrase convention."
-  source: "https://github.com/cursor/plugins/blob/main/pstack/skills/unslop/SKILL.md"
+  source: "https://github.com/cursor/plugins/tree/main/pstack/skills/unslop"
 ---
 
 # Unslop

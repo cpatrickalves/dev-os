@@ -4,7 +4,7 @@ description: Analyzes coupling between modules using the three-dimensional model
 metadata:
   last_synced: "2026-04-04"
   local_changes: "None."
-  source: https://github.com/tech-leads-club/agent-skills/blob/main/packages/skills-catalog/skills/(architecture)/coupling-analysis/SKILL.md
+  source: "https://github.com/tech-leads-club/agent-skills/tree/main/packages/skills-catalog/skills/(architecture)/coupling-analysis"
 ---
 
 # Coupling Analysis Skill

@@ -4,7 +4,7 @@ description: Generates Vitest + React Testing Library tests for frontend compone
 metadata:
   last_synced: "2026-03-12"
   local_changes: "Dify references generalized (title, description, examples); dropped web/docs/test.md and Dify file references; Project Configuration made generic."
-  source: https://github.com/langgenius/dify/blob/main/.agents/skills/frontend-testing # adapted from Dify project
+  source: "https://github.com/langgenius/dify/tree/main/.agents/skills/frontend-testing"
 ---
 
 # Frontend Testing Skill

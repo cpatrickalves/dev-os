@@ -5,7 +5,7 @@ disable-model-invocation: true
 metadata:
     last_synced: "2026-05-01"
     local_changes: "Delivery changed from clipboard + macOS notification to a timestamped file in .claude/handovers/; added ready-to-paste next-session prompt; added disable-model-invocation."
-    source: Adapted from https://gist.github.com/vedovelli/6200225227eb0f801517ebd52e825788
+    source: "https://gist.github.com/vedovelli/6200225227eb0f801517ebd52e825788#file-handover-skill-public-md"
 ---
 
 # Handover
