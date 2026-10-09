@@ -2,6 +2,9 @@
   "env": {
     "ANTHROPIC_DEFAULT_HAIKU_MODEL": "sonnet"
   },
+  "worktree": {
+    "bgIsolation": "none"
+  },
   "permissions": {
     "allow": [
       "Bash(python3:*)",
