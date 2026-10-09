@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Third-party skill `metadata.source` values normalized to GitHub `tree/` URLs
   or gist `#file-` URLs. `ai-agent-security-analysis` and `pr-security-review`
   now cite their inspiration in `metadata.reference` and are no longer synced.
+- `pr-review-to-subtasks` now installs globally into `~/.claude/skills/`.
 
 ## [1.0.0] - 2026-10-06
 
