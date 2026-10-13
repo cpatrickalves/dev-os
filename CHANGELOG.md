@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `manage-mods.sh` and the `external-mods.yaml` catalog: install/update or
   uninstall Claude Code mods. Entries: `savvy-progress`, `filetree`, `reflect-mod` and the builtin
   `cc-plugin-you-should-know` (builtin mods are enabled/disabled, not installed).
+- `tlc-skills` entry in `external-skills.yaml`: six Tech Leads Club skills
+  (`tlc-spec-lean`, `tlc-discover`, `technical-design-doc-creator`,
+  `security-threat-model`, `the-fool`, `the-judge`), installed globally for
+  Claude Code only.
 - `sync-third-party-skills.sh`: reports which third-party skills have upstream
   changes since `metadata.last_synced`, shows the upstream diff, and with
   `--apply` merges it in (three-way, per file) and bumps `last_synced`.
