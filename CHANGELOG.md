@@ -10,8 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `manage-mods.sh` and the `external-mods.yaml` catalog: install/update or
-  uninstall Claude Code mods. Entries: `savvy-progress`, `filetree`, `reflect-mod` and the builtin
-  `cc-plugin-you-should-know` (builtin mods are enabled/disabled, not installed).
+  uninstall Claude Code mods. Entries: `savvy-progress`, `filetree`, `reflect-mod`, `skins` and the
+  builtin `cc-plugin-you-should-know` (builtin mods are enabled/disabled, not installed).
 - `tlc-skills` entry in `external-skills.yaml`: six Tech Leads Club skills
   (`tlc-spec-lean`, `tlc-discover`, `technical-design-doc-creator`,
   `security-threat-model`, `the-fool`, `the-judge`), installed globally for

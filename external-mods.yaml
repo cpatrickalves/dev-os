@@ -44,3 +44,10 @@ mods:
     marketplace_source: bayramannakov/claude-reflect
     scope: user
     github: https://github.com/BayramAnnakov/claude-reflect
+
+  - name: skins
+    description: Transcript skins with tool row icons, diff, table and Mermaid cards, a usage band and themes
+    marketplace: hellosverre-mods
+    marketplace_source: hellosverre/claude-skins
+    scope: user
+    github: https://github.com/hellosverre/claude-skins
