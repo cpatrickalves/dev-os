@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   or gist `#file-` URLs. `ai-agent-security-analysis` and `pr-security-review`
   now cite their inspiration in `metadata.reference` and are no longer synced.
 - `pr-review-to-subtasks` and `html-it` now install globally into `~/.claude/skills/`.
+- `code-review-flow` workflow: a new Setup step resolves the PR once (branches,
+  base/head/merge-base SHAs, saved diff) and every reviewer reviews that exact
+  commit. Final Review checks whether the PR moved and judges findings against
+  the new head when it did.
 
 ## [1.0.0] - 2026-10-06
 
