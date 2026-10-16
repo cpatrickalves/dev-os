@@ -4,6 +4,7 @@ export const meta = {
   whenToUse:
     'Quando quiser revisar um PR existente sem implementar nada. Uso: Workflow({name: "code-review-flow", args: "<PR url ou número>"})',
   phases: [
+    { title: 'Setup', detail: 'resolve o PR uma única vez: branches, commits base/head fixados e diff salvo, compartilhados com todos os revisores', model: 'sonnet' },
     { title: 'Code Review', detail: '5 revisores em paralelo (thermos + ce-code-review + matt-code-review + /code-review embutida + pr-security-review do Dev-OS, todos Opus), consolidação dos relatórios e relatório de avaliação dos revisores' },
     { title: 'Final Review', detail: 'verifica cada achado contra o código do PR e gera o relatório final em markdown + HTML (html-it) na raiz do projeto', model: 'opus' },
     { title: 'Review Eval', detail: 'cruza os vereditos com os achados de cada revisor e fecha o relatório de avaliação (eficácia das skills de review)', model: 'sonnet' },
@@ -16,9 +17,63 @@ if (!prRef) {
   throw new Error('Informe o PR a revisar em args, ex.: args: "https://github.com/org/repo/pull/123" ou args: "123"')
 }
 
+// Sufixo dos relatórios: número do PR — Azure DevOps (.../pullrequest/1234),
+// GitHub (.../pull/1234) ou o número solto. Fallback: última sequência de dígitos.
+const prId = String(prRef).match(/\/(?:pullrequest|pull)\/(\d+)/i)?.[1] ?? String(prRef).match(/\d+/g)?.pop() ?? 'pr'
+
+// ── Setup ────────────────────────────────────────────────────────────────────
+// Fixa o snapshot do PR uma única vez. Sem isso, cada revisor resolvia o PR por
+// conta própria (refs diferentes, 5x o mesmo fetch) e o autor podia publicar
+// commits no meio da revisão: os achados ficavam presos a um head antigo.
+phase('Setup')
+log(`Revisando o PR: ${prRef}`)
+
+const SETUP_SCHEMA = {
+  type: 'object',
+  properties: {
+    title: { type: 'string', description: 'Título do PR' },
+    base_branch: { type: 'string', description: 'Branch alvo, sem refs/heads/' },
+    head_branch: { type: 'string', description: 'Branch de origem, sem refs/heads/' },
+    base_sha: { type: 'string', description: 'SHA completo de origin/<base_branch>' },
+    head_sha: { type: 'string', description: 'SHA completo do head do PR' },
+    merge_base: { type: 'string', description: 'SHA completo de git merge-base base_sha head_sha' },
+    diff_path: { type: 'string', description: 'Path absoluto do diff salvo' },
+  },
+  required: ['title', 'base_branch', 'head_branch', 'base_sha', 'head_sha', 'merge_base', 'diff_path'],
+}
+
+const diffPath = `/tmp/pr-${prId}/diff.patch`
+const pr = await agent(
+  `Fixe o escopo da revisão do PR ${prRef}, a partir do repositório atual. ` +
+    '(1) Leia os metadados do PR: no GitHub `gh pr view <PR> --json title,baseRefName,headRefName,headRefOid`; ' +
+    'no Azure DevOps `az repos pr show --id <número> --org <org da URL> --query ' +
+    '"{title:title,base:targetRefName,head:sourceRefName,headSha:lastMergeSourceCommit.commitId}"` (tire o prefixo refs/heads/ das branches). ' +
+    '(2) Rode `git fetch --no-tags origin <base> <head>`: atualiza origin/<base> e origin/<head> sem trocar de branch nem tocar no working tree. ' +
+    '(3) head_sha = o commit de head informado pelo PR (confirme com `git cat-file -t <sha>`); base_sha = `git rev-parse origin/<base>`; ' +
+    'merge_base = `git merge-base <base_sha> <head_sha>`. ' +
+    `(4) Salve \`git diff <merge_base> <head_sha>\` em "${diffPath}" (crie o diretório). ` +
+    'Use SHAs completos (40 caracteres). Não troque de branch, não altere o working tree e não comente no PR. Retorne os campos pedidos.',
+  { label: 'pr-setup', phase: 'Setup', model: 'sonnet', effort: 'low', schema: SETUP_SCHEMA },
+)
+
+const SHA_RE = /^[0-9a-f]{40}$/
+if (!pr || ![pr.base_sha, pr.head_sha, pr.merge_base].every((sha) => SHA_RE.test(String(sha)))) {
+  throw new Error(`Setup não fixou os commits do PR ${prRef}: ${JSON.stringify(pr)}`)
+}
+const short = (sha) => sha.slice(0, 7)
+const reviewRange = `${pr.base_sha}...${pr.head_sha}`
+log(`Escopo fixado: ${pr.head_branch} → ${pr.base_branch} | head ${short(pr.head_sha)} | merge-base ${short(pr.merge_base)} | diff ${pr.diff_path}`)
+
+// Contexto comum a todos os revisores: o mesmo commit, o mesmo diff.
+const scopeContext =
+  `Escopo fixo desta revisão: PR ${prRef} ("${pr.title}"), ${pr.head_branch} → ${pr.base_branch}. ` +
+  `Revise exatamente o commit ${pr.head_sha} contra o merge-base ${pr.merge_base}. ` +
+  `O diff completo está em "${pr.diff_path}" e os commits já estão no repositório local, então não é preciso consultar o PR nem rodar fetch. ` +
+  `Leia os arquivos do PR com \`git show ${pr.head_sha}:<path>\`: o working tree não está no PR. ` +
+  'Commits publicados depois desse head são tratados na etapa Final Review. '
+
 // ── Code Review ──────────────────────────────────────────────────────────────
 phase('Code Review')
-log(`Revisando o PR: ${prRef}`)
 
 const REPORT_SCHEMA = {
   type: 'object',
@@ -28,15 +83,11 @@ const REPORT_SCHEMA = {
   required: ['report_path'],
 }
 
-// Sufixo dos relatórios: número do PR — Azure DevOps (.../pullrequest/1234),
-// GitHub (.../pull/1234) ou o número solto. Fallback: última sequência de dígitos.
-const prId = String(prRef).match(/\/(?:pullrequest|pull)\/(\d+)/i)?.[1] ?? String(prRef).match(/\d+/g)?.pop() ?? 'pr'
-
 // /code-review (embutida no Claude Code) e pr-security-review (skill do Dev-OS,
 // instalada globalmente) não aceitam uma "tarefa": recebem só argumentos (nível de
-// esforço, alvo) e devolvem os achados; o agente que as invoca resolve as branches
-// do PR e grava o relatório. Sem --fix. Nível "high" amplia a cobertura; os falsos
-// positivos caem nos vereditos.
+// esforço, alvo) e devolvem os achados; o agente que as invoca recebe o range
+// fixado no Setup e grava o relatório. Sem --fix. Nível "high" amplia a cobertura;
+// os falsos positivos caem nos vereditos.
 // A /security-review embutida NÃO serve aqui: ela injeta `git diff origin/HEAD...`
 // fixo e ignora argumentos, ou seja, revisa a branch atual contra a branch default
 // do origin — fora do PR quando a base é outra ou a branch não está no checkout.
@@ -47,8 +98,8 @@ const REVIEWERS = [
   { key: 'thermos', skill: 'thermos:thermos' },
   { key: 'ce-code-review', skill: 'ce-code-review' },
   { key: 'matt-code-review', skill: 'mattpocock-skills:code-review' },
-  { key: 'code-review', skill: 'code-review', args: 'high origin/<base>...origin/<origem>' },
-  { key: 'security-review', skill: 'pr-security-review', args: 'origin/<base>...origin/<origem>' },
+  { key: 'code-review', skill: 'code-review', args: `high ${reviewRange}` },
+  { key: 'security-review', skill: 'pr-security-review', args: reviewRange },
 ]
 const REVIEWER_KEYS = REVIEWERS.map((r) => r.key)
 
@@ -60,16 +111,15 @@ const EVAL_DIR = '~/.claude/review-evals'
 const reviewPrompt = (r) => {
   const reportPath = `/tmp/relatorio-${r.key}-${prId}.md`
   const invoke = r.args
-    ? `Descubra a branch de origem e a branch alvo (base) do PR ${prRef} (ex.: \`gh pr view --json baseRefName,headRefName\` ` +
-      'no GitHub ou `az repos pr show` no Azure DevOps), rode `git fetch origin` e invoque a skill ' +
-      `"${r.skill}" (via Skill tool) com os argumentos "${r.args}" preenchidos com essas branches. ` +
+    ? `Invoque a skill "${r.skill}" (via Skill tool) com os argumentos "${r.args}". ` +
       `Ela apenas devolve a lista de achados, sem gravar arquivo: escreva-os em "${reportPath}" detalhando, ` +
       'para cada um, arquivo, trecho, problema e correção sugerida. ' +
       'Não altere o código nem comente no PR — apenas gere o relatório. '
     : `Invoque a skill "${r.skill}" (via Skill tool) com a seguinte tarefa: ` +
-      `revise o PR ${prRef} e gere um relatório detalhando os achados e possíveis correções ` +
-      `em "${reportPath}". `
+      `revise o PR ${prRef} no commit ${pr.head_sha} (merge-base ${pr.merge_base}, diff em "${pr.diff_path}") ` +
+      `e gere um relatório detalhando os achados e possíveis correções em "${reportPath}". `
   return (
+    scopeContext +
     invoke +
     'Não troque de branch nem altere o working tree: outros revisores rodam em paralelo no mesmo checkout. ' +
     'Como resultado, retorne o path do relatório gerado.'
@@ -125,10 +175,10 @@ const consolidated = await agent(
     'Preserve todos os achados, agrupe os duplicados (citando quais revisores apontaram) e mantenha as correções sugeridas. ' +
     'Atribua a cada achado consolidado um ID sequencial (F01, F02, ...) e registre em cada um quais revisores o apontaram ' +
     `(use as chaves ${REVIEWER_KEYS.join(', ')} — os relatórios de origem estão nomeados por elas). ` +
-    `Salve o relatório consolidado em "/tmp/relatorio-consolidado-${prId}.md". ` +
+    `Salve o relatório consolidado em "/tmp/relatorio-consolidado-${prId}.md", com o commit revisado (head ${short(pr.head_sha)}, merge-base ${short(pr.merge_base)}) no cabeçalho. ` +
     'Em seguida crie um breve relatório de avaliação dos revisores em markdown, usado para medir no longo prazo a eficácia de cada skill de review, ' +
     `salvo em "${EVAL_DIR}/<repo>-pr-${prId}.md" (<repo> = basename de \`git rev-parse --show-toplevel\`; crie o diretório se não existir), contendo: ` +
-    '(1) cabeçalho com PR, data (`date +%Y-%m-%d`), workflow (code-review-flow), revisores e paths dos relatórios de origem; ' +
+    `(1) cabeçalho com PR, commit revisado (${short(pr.head_sha)}), data (\`date +%Y-%m-%d\`), workflow (code-review-flow), revisores e paths dos relatórios de origem; ` +
     '(2) tabela com todos os achados: ID, título curto, severidade, arquivo, revisores e tipo (comum = apontado por 2+ revisores; único = por 1); ' +
     '(3) seção "Achados em comum" com os achados apontados por mais de um revisor; ' +
     '(4) seção "Achados únicos" agrupada por revisor. ' +
@@ -163,6 +213,12 @@ const finalReview = await agent(
   `Você executa a etapa "Final Review" do workflow code-review-flow, que o usuário pediu para ` +
     `rodar sobre o PR ${prRef}. ${REVIEWERS.length} revisores independentes produziram o relatório consolidado ` +
     `em ${consolidated.report_path}. ` +
+    `Os revisores analisaram o commit ${pr.head_sha} (merge-base ${pr.merge_base}; diff em "${pr.diff_path}"). ` +
+    'Antes de julgar, consulte o head atual do PR (`gh pr view --json headRefOid` ou `az repos pr show`, campo lastMergeSourceCommit.commitId). ' +
+    `Se ainda for ${short(pr.head_sha)}, julgue contra ele, lendo os arquivos com \`git show ${pr.head_sha}:<path>\`. ` +
+    `Se o PR avançou, rode \`git fetch --no-tags origin ${pr.head_branch}\`, liste os commits novos (\`git log ${short(pr.head_sha)}..<novo head>\`) ` +
+    'e julgue cada achado contra o head novo: o achado que um commit novo resolveu é procedente, com o motivo "já corrigido em <commit>". ' +
+    'Informe no cabeçalho do relatório final o commit revisado e, se diferente, o commit julgado. ' +
     'Julgue cada achado como procedente ou improcedente, verificando-o contra o código real antes de aceitar. Para cada achado: ' +
     '(1) abra o diff/arquivos do PR referenciados e verifique se a premissa procede no código real; ' +
     '(2) verifique se a correção sugerida quebraria funcionalidade existente ou ignora uma razão legítima da implementação atual; ' +
@@ -187,6 +243,7 @@ const finalReview = await agent(
         markdown_path: { type: 'string', description: 'Path do relatório final em markdown na raiz do projeto' },
         html_path: { type: 'string', description: 'Path da versão HTML gerada pela skill html-it' },
         summary: { type: 'string', description: 'Resumo do julgamento dos achados (procedentes vs. descartados)' },
+        judged_sha: { type: 'string', description: 'SHA completo do commit contra o qual os achados foram julgados' },
         verdicts: VERDICTS_SCHEMA,
       },
       required: ['markdown_path', 'verdicts'],
@@ -282,6 +339,15 @@ if (!evalReport?.report_path) {
 
 return {
   pr: prRef,
+  pr_snapshot: {
+    base_branch: pr.base_branch,
+    head_branch: pr.head_branch,
+    base_sha: pr.base_sha,
+    head_sha: pr.head_sha,
+    merge_base: pr.merge_base,
+    diff_path: pr.diff_path,
+    judged_sha: finalReview?.judged_sha ?? null,
+  },
   review_reports: reportPaths,
   consolidated_report: consolidated.report_path,
   final_review: finalReview,
