@@ -1,10 +1,9 @@
 ---
 name: html-it
 description: Produce HTML output instead of markdown for any agent task. Four levels — Static Doc, Visual Artifact, Two-Way Interactive, Throwaway Tool. Based on Thariq Shihipar's "Unreasonable Effectiveness of HTML" framework. Triggers on "/html-it", "html-it", "html this", "render as html", "build me an html", "make an html artifact".
-disable-model-invocation: true
 metadata:
   last_synced: "2026-05-12"
-  local_changes: "Added disable-model-invocation so it runs only as /html-it."
+  local_changes: "None."
   source: "https://github.com/robonuggets/html-it/tree/main"
 ---
 
