@@ -4,7 +4,7 @@ description: Set up or audit a project's deterministic checks (lint, format, typ
 argument-hint: "[optional: audit | python | typescript | ci | hooks | standards]"
 disable-model-invocation: true
 metadata:
-  reference: "Matt Pocock, 'Fixing the PR Bottleneck' (AI Engineer Paris 2025): https://ai.engineer/talks/LlgiOCmFG_w-youtube-40c0a903db79223717ca; https://github.com/mattpocock/skills"
+  reference: "Matt Pocock, 'Fixing the PR Bottleneck' (AI Engineer Paris 2025): https://ai.engineer/talks/LlgiOCmFG_w-youtube-40c0a903db79223717ca
 ---
 
 # Setup Automated Checks
@@ -71,7 +71,7 @@ Done when each canonical command runs and its exit status is understood (green, 
 
 Read `references/hooks-and-makefile.md`. Hooks split by speed: staged-file lint and format on **pre-commit**, the full `make check` on **pre-push**. A slow pre-commit gets bypassed with `--no-verify`, and a bypassed hook protects nothing.
 
-The Makefile is the single entry point: `check` (the gate), `lint`, `fmt`, `typecheck`, `test`, `lint-infra`, `setup` (installs dependencies and hooks). CI calls the same targets, so what passes locally passes in CI. Follow the self-documenting format of the `/create-update-makefile` skill; when a Makefile already exists, add the missing targets and keep the working ones.
+The Makefile is the single entry point: `check` (the gate), `lint`, `format`, `typecheck`, `test`, `lint-infra`, `setup` (installs dependencies and hooks). CI calls the same targets, so what passes locally passes in CI. Follow the self-documenting format of the `/create-update-makefile` skill; when a Makefile already exists, add the missing targets and keep the working ones.
 
 Hooks are per clone, so `make setup` installs them and the README says so. CI remains the real gate.
 

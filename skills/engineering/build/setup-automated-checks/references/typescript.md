@@ -115,7 +115,7 @@ Vitest already refuses `.only` when `CI` is set (`allowOnly` defaults to `!proce
 {
   "scripts": {
     "lint": "biome check .",
-    "fmt": "biome check --write .",
+    "format": "biome check --write .",
     "typecheck": "tsc -b --noEmit",
     "test": "vitest run --coverage",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
@@ -131,7 +131,7 @@ Vitest already refuses `.only` when `CI` is set (`allowOnly` defaults to `!proce
 | Purpose | Command |
 |---|---|
 | lint + format check | `pnpm lint` |
-| fix + format (mutates) | `pnpm fmt` |
+| fix + format (mutates) | `pnpm format` |
 | types | `pnpm typecheck` |
 | tests + coverage | `pnpm test` |
 | lockfile in sync (CI) | `pnpm install --frozen-lockfile` |

@@ -120,8 +120,8 @@ Follow the `/create-update-makefile` format (`.PHONY` first, `help` default targ
 
 ```makefile
 ##@ Qualidade de Código
-# lint, typecheck e test não alteram arquivos; fmt ALTERA.
-# Fluxo: make fmt && make check && git commit
+# lint, typecheck e test não alteram arquivos; format ALTERA.
+# Fluxo: make format && make check && git commit
 
 check: lint typecheck test lint-infra ## Roda todas as checagens (o mesmo que a CI)
 
@@ -129,9 +129,9 @@ lint: ## Lint e formatação — não altera arquivos
 	cd api && uv run ruff check . && uv run ruff format --check .
 	cd web && pnpm lint
 
-fmt: ## Formata e aplica correções automáticas — ALTERA arquivos
+format: ## Formata e aplica correções automáticas — ALTERA arquivos
 	cd api && uv run ruff check --fix . && uv run ruff format .
-	cd web && pnpm fmt
+	cd web && pnpm format
 
 typecheck: ## Verifica tipos (mypy strict, tsc)
 	cd api && uv run mypy .
