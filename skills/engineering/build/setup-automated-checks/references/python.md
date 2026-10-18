@@ -37,16 +37,22 @@ select = [
   "RUF",           # ruff's own rules (unused noqa, implicit Optional…)
   "ARG",           # unused arguments
   "T20",           # print() left behind — services log, they do not print
-  "ERA",           # commented-out code
-  "S",             # bandit subset: subprocess shell, hardcoded passwords, assert in prod code
-  "TC",            # type-checking imports
-  "N",             # pep8 naming (drop if the project's domain naming conflicts)
+  "S",             # bandit subset: shell=True, hardcoded passwords, pickle, SQL built from strings
+  "N",             # pep8 naming
 ]
-ignore = ["E501"]  # formatter owns line length
+ignore = [
+  "E501",          # formatter owns line length
+  "S104",          # binding 0.0.0.0 is how every container serves
+  "S311",          # random for non-crypto purposes
+  "S603", "S607",  # subprocess.run([...]) without shell=True is fine
+  "PT011",         # pytest.raises without match= — routinely waived, low value
+  "RUF012",        # ClassVar on class-level dicts fires on SQLAlchemy models and settings classes
+]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101", "S106", "ARG"]   # asserts, fake passwords and unused fixture args are fine in tests
+"tests/**" = ["S101", "S105", "S106", "ARG"]   # asserts, fake tokens/passwords and unused fixture args are fine in tests
 "**/conftest.py" = ["ARG"]
+"scripts/**" = ["T20"]                 # CLIs print
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]            # adapt: the package name
@@ -64,6 +70,11 @@ pretty = true
 [[tool.mypy.overrides]]
 module = ["tests.*"]
 disallow_untyped_decorators = false    # pytest decorators are untyped; everything else stays strict
+# disallow_untyped_defs = false        # existing suites: hundreds of `def test_x():` without `-> None`
+
+[[tool.mypy.overrides]]
+module = ["somelib.*"]                 # libraries that ship no types and have no types-* package
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -86,6 +97,16 @@ skip_covered = true
 ```
 
 Why the pytest block matters: `--strict-markers` rejects misspelled markers that would silently deselect tests, `--strict-config` rejects typos in this very section, `xfail_strict` and `filterwarnings = error` turn two common ways of hiding failures into failures. In an existing suite, `filterwarnings = ["error"]` is the line most likely to go red; see `existing-projects.md` before loosening it.
+
+Rules that bite in practice, and the convention that avoids a `noqa`:
+
+- `filterwarnings = error`: a dependency bump can turn the suite red with a `DeprecationWarning` raised inside pydantic, SQLAlchemy or httpx, in a PR that touched none of them. Add `ignore::DeprecationWarning:<lib>.*` in the bump PR, per library, never a global ignore. Real-database tests can surface `ResourceWarning` nondeterministically; add `ignore::ResourceWarning` only when that flakiness shows up.
+- `ARG`: fires on every interface you implement (`__exit__(self, exc_type, exc, tb)`, SQLAlchemy listeners, Starlette middleware). Rename the unused parameter to `_exc` instead of adding `noqa`.
+- `N`: `N818` wants exception classes named `…Error`; `N815` / `N803` fire on fields that mirror external JSON (`createdAt`). Rename when the name is yours; add the rule to `ignore` when the name is dictated by an external contract. Drop `N` entirely if it conflicts with the project's domain naming.
+- `RUF001`–`RUF003` flag en dashes and curly quotes in Portuguese docstrings; add them to `ignore` when the team writes prose in docstrings.
+- mypy `strict` includes `no_implicit_reexport`: a name re-exported from `__init__.py` needs `__all__` or `import x as x`.
+
+`ERA` (commented-out code) and `TC` (type-checking imports) are left out on purpose: `ERA001` flags prose comments that look like code, and `TC` fixes break FastAPI and SQLAlchemy at runtime unless `runtime-evaluated-base-classes` is configured. Both live in `extra-checks.md` for teams that want them.
 
 ## Canonical commands
 

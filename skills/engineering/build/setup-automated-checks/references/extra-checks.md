@@ -14,6 +14,9 @@ Checks cost CPU, so the default set is a floor. Each entry says what lie or defe
 | Dependency audit | known CVEs in locked dependencies | `uv run pip-audit` (dev dep) or `uvx pip-audit -r <(uv export --no-dev)` | `pnpm audit --prod --audit-level high` | CI, non-blocking at first |
 | Dockerfile lint | broken layer caching, unpinned base images, root user | `hadolint` via `docker run --rm -i hadolint/hadolint:<ver> < Dockerfile` | same | `make lint-infra` |
 | Spelling | typos in identifiers and docs | `codespell` pre-commit hook (`repo: https://github.com/codespell-project/codespell`) with `--ignore-words-list` for domain terms | same | pre-commit |
+| Commented-out code | dead code kept "just in case" | ruff `ERA` group; expect `ERA001` false positives on prose comments that look like code (`# key: value`) | — | `make lint` |
+| Type-only imports | import cycles and slower startup from imports used only in annotations | ruff `TC` group, **only** with `[tool.ruff.lint.flake8-type-checking] runtime-evaluated-base-classes = ["pydantic.BaseModel", "sqlalchemy.orm.DeclarativeBase"]` and `runtime-evaluated-decorators`; without them the fix breaks FastAPI/SQLAlchemy at runtime | — | `make lint` |
+| Exact optional props | `{ a: undefined }` passed where `a?: string` was meant to be absent | — | tsc `exactOptionalPropertyTypes`; measure first, most React apps pay more in `\| undefined` annotations than they gain | `pnpm typecheck` |
 | File length | 1,000-line files nobody can review | `ruff` has no rule; add a local hook: `git ls-files '*.py' '*.ts' '*.tsx' \| xargs wc -l \| awk '$1 > 1000 && $2 != "total" {print; bad=1} END {exit bad}'` | same | pre-commit |
 
 ## Tier 2: offer when the shape matches

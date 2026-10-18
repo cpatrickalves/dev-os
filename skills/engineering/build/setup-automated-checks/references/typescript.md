@@ -51,14 +51,22 @@ Edit the generated `biome.json` so it contains (keep whatever shape `init` produ
         "noSkippedTests": "warn",
         "noConsole": { "level": "warn", "options": { "allow": ["warn", "error"] } }
       },
-      "style": { "useImportType": "error", "noNonNullAssertion": "error" }
+      "style": { "useImportType": "error", "noNonNullAssertion": "warn" }
     }
   },
+  "overrides": [
+    {
+      "includes": ["**/*.test.ts", "**/*.test.tsx", "src/test/**"],
+      "linter": { "rules": { "suspicious": { "noExplicitAny": "warn" } } }
+    }
+  ],
   "assist": { "actions": { "source": { "organizeImports": "on" } } }
 }
 ```
 
 `noFocusedTests` and `noSkippedTests` are lie detectors: a `.only` left behind silently shrinks the suite to one test, a `.skip` hides a failure. `useIgnoreFile` keeps `.gitignore` as the single list of generated paths.
+
+`noNonNullAssertion` stays a warning on purpose: with `noUncheckedIndexedAccess` on (below), `!` is the one cheap, greppable escape from `T | undefined`. Making it an error pushes agents toward `?? ""` and `?.` chains that hide the bug tsc found. `noExplicitAny` is an error in `src/` and a warning in tests, where `vi.fn() as any` and loose fixtures are the norm.
 
 Migrating from ESLint + Prettier is deterministic: `pnpm biome migrate eslint --write` and `pnpm biome migrate prettier --write` translate the old configs; remove the old packages in the same PR.
 
@@ -80,7 +88,7 @@ In `tsconfig.json` (`tsconfig.app.json` in Vite templates, which split app and n
 }
 ```
 
-`noUncheckedIndexedAccess` is the flag with the best bug-per-complaint ratio (`arr[0]` is `T | undefined`). `exactOptionalPropertyTypes` is stricter still; enable it in new projects, measure it in existing ones.
+`noUncheckedIndexedAccess` is the flag with the best bug-per-complaint ratio (`arr[0]` is `T | undefined`). `exactOptionalPropertyTypes` is left out: third-party types are not written for it, so `<Comp title={maybeTitle} />` with `title?: string` becomes an error and every spread of partial state into optional props needs `| undefined` added by hand. It is in `extra-checks.md` for projects that measure it and find the noise acceptable.
 
 Type checking is its own script because Vite does not type check during `dev` or `build`: `tsc --noEmit -p tsconfig.json`, or `tsc -b --noEmit` when the project uses project references (Vite templates do).
 
@@ -95,7 +103,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",            // "node" for non-UI packages
     setupFiles: ["./src/test/setup.ts"],   // jest-dom matchers; delete when not React
-    passWithNoTests: false,          // an empty suite is a failure, not a pass
+    passWithNoTests: false,          // Vitest's default, stated so nobody flips it: an empty suite is a failure
     coverage: {
       provider: "v8",
       reporter: ["text", "json-summary"],
@@ -108,6 +116,8 @@ export default defineConfig({
 ```
 
 Vitest already refuses `.only` when `CI` is set (`allowOnly` defaults to `!process.env.CI`); Biome catches it before the commit.
+
+In a new project `pnpm test` is red until the first test exists. Scaffold one smoke test with the setup (a render of the root component, or one pure function) so `make check` is green from the first commit.
 
 ## `package.json` scripts
 
