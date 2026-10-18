@@ -26,3 +26,9 @@ skills:
     source: tech-leads-club/agent-skills
     skills: tlc-spec-lean, tlc-discover, technical-design-doc-creator, security-threat-model, the-fool, the-judge
     scope: global
+
+  - name: tlc-playwright
+    description: Tech Leads Club Playwright skill for browser automation and testing
+    source: tech-leads-club/agent-skills
+    skills: playwright-skill
+    scope: project

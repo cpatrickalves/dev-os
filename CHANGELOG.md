@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`tlc-spec-lean`, `tlc-discover`, `technical-design-doc-creator`,
   `security-threat-model`, `the-fool`, `the-judge`), installed globally for
   Claude Code only.
+- `tlc-playwright` entry in `external-skills.yaml`: the Tech Leads Club
+  `playwright-skill`, installed per project.
 - `sync-third-party-skills.sh`: reports which third-party skills have upstream
   changes since `metadata.last_synced`, shows the upstream diff, and with
   `--apply` merges it in (three-way, per file) and bumps `last_synced`.
