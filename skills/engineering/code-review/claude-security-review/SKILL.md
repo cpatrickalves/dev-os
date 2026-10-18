@@ -5,7 +5,7 @@ argument-hint: "<base...head> (e.g. origin/dev...origin/feat-x; three-dot form, 
 allowed-tools: Bash(git diff *) Bash(git log *) Bash(git show *)
 metadata:
   reference: "https://github.com/anthropics/claude-code-security-review"
-  note: "Rubric adapted from Claude Code's bundled /security-review (v2.1.268), which hardcodes `git diff origin/HEAD...` and ignores arguments. This skill takes the range explicitly so a PR whose base is not the default branch (or is not checked out) is reviewed in the right scope."
+  note: "Rubric adapted from Claude Code's bundled /security-review (v2.1.302), which hardcodes `git diff origin/HEAD...` and ignores arguments. This skill takes the range explicitly so a PR whose base is not the default branch (or is not checked out) is reviewed in the right scope."
 ---
 
 You are a senior security engineer conducting a focused security review of the changes in the target revision range.
