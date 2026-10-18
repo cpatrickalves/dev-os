@@ -57,7 +57,12 @@ Edit the generated `biome.json` so it contains (keep whatever shape `init` produ
   "overrides": [
     {
       "includes": ["**/*.test.ts", "**/*.test.tsx", "src/test/**"],
-      "linter": { "rules": { "suspicious": { "noExplicitAny": "warn" } } }
+      "linter": {
+        "rules": {
+          "suspicious": { "noExplicitAny": "warn" },
+          "style": { "noNonNullAssertion": "warn" }
+        }
+      }
     }
   ],
   "assist": { "actions": { "source": { "organizeImports": "on" } } }
@@ -66,7 +71,7 @@ Edit the generated `biome.json` so it contains (keep whatever shape `init` produ
 
 `noFocusedTests` and `noSkippedTests` are lie detectors: a `.only` left behind silently shrinks the suite to one test, a `.skip` hides a failure. `useIgnoreFile` keeps `.gitignore` as the single list of generated paths.
 
-Biome exits 0 on warnings, so a rule that must gate is set to `"error"`; `"warn"` is advice the hook and CI let through. That is why the lie detectors and `noConsole` are errors here, and why `noExplicitAny` is a warning only in tests, where `vi.fn() as any` and loose fixtures are the norm.
+Biome exits 0 on warnings, so a rule that must gate is set to `"error"`; `"warn"` is advice the hook and CI let through. That is why the lie detectors and `noConsole` are errors here, and why `noExplicitAny` and `noNonNullAssertion` are warnings only in tests, where `vi.fn() as any`, loose fixtures and `result[0]!` on a value the test just created are the norm.
 
 `noNonNullAssertion` is an error because `!` is a one-character way around `noUncheckedIndexedAccess` (below): `xs[0]!` turns the `T | undefined` that tsc just found back into `T`. Narrow instead (`if (!x) throw …`, `?? fallback` when a fallback is correct). The stock Vite `main.tsx` trips it once; replace the assertion with a guard:
 
