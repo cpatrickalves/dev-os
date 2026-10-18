@@ -25,7 +25,7 @@ uv run ruff format .
 pnpm biome check --write .
 ```
 
-Commit as `chore: aplica correções automáticas do ruff e biome` (in the project's language) before any manual change, so the review of the real work is not buried under reformatting. `ruff check --fix --unsafe-fixes` is a second, separate commit, after reading what it would change (`--diff`).
+When the user chose commits, commit as `chore: aplica correções automáticas do ruff e biome` (in the project's language) before any manual change. `ruff check --fix --unsafe-fixes` is a second, separate commit, after reading what it would change (`--diff`).
 
 ## 3. Baseline what remains
 
