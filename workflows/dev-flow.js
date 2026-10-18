@@ -4,7 +4,7 @@ export const meta = {
   whenToUse: 'Quando existir um plano de implementação em markdown pronto para executar de ponta a ponta. Uso: Workflow({name: "dev-flow", args: "/path/do/plano.md"})',
   phases: [
     { title: 'Development', detail: 'implementa o plano, commita e abre PR para a branch dev', model: 'sonnet' },
-    { title: 'Code Review', detail: '5 revisores em paralelo (thermos + ce-code-review + matt-code-review + /code-review embutida + pr-security-review do Dev-OS, todos Opus), consolidação dos relatórios e relatório de avaliação dos revisores' },
+    { title: 'Code Review', detail: '5 revisores em paralelo (thermos + ce-code-review + matt-code-review + /code-review embutida + claude-security-review do Dev-OS, todos Opus), consolidação dos relatórios e relatório de avaliação dos revisores' },
     { title: 'PR Fixes', detail: 'verifica cada achado contra o código do PR, aplica as correções procedentes e atualiza o PR', model: 'opus' },
     { title: 'Review Eval', detail: 'cruza os vereditos com os achados de cada revisor e fecha o relatório de avaliação (eficácia das skills de review)', model: 'sonnet' },
     { title: 'Docs Audit', detail: 'auditoria de documentação da branch com a skill docs-generator (sincronia /docs + ADRs/guides)', model: 'opus' },
@@ -71,14 +71,14 @@ const REPORT_SCHEMA = {
 const prId =
   String(dev.pr_url).match(/\/(?:pullrequest|pull)\/(\d+)/i)?.[1] ?? String(dev.pr_url).match(/\d+/g)?.pop() ?? 'pr'
 
-// /code-review (embutida no Claude Code) e pr-security-review (skill do Dev-OS,
+// /code-review (embutida no Claude Code) e claude-security-review (skill do Dev-OS,
 // instalada globalmente) não aceitam uma "tarefa": recebem só argumentos (nível de
 // esforço, alvo) e devolvem os achados; o agente que as invoca grava o relatório.
 // Sem --fix, quem aplica é a etapa PR Fixes. Nível "high" amplia a cobertura; os
 // falsos positivos caem nos vereditos.
 // A /security-review embutida NÃO serve aqui: ela injeta `git diff origin/HEAD...`
 // fixo e ignora argumentos, ou seja, revisa a branch atual contra a branch default
-// do origin — fora do PR quando a base é dev. A pr-security-review usa a mesma
+// do origin — fora do PR quando a base é dev. A claude-security-review usa a mesma
 // rubrica com o range explícito.
 // A /code-review embutida tem o mesmo nome da skill do plugin mattpocock, por isso
 // a do plugin é referenciada com o namespace.
@@ -87,7 +87,7 @@ const REVIEWERS = [
   { key: 'ce-code-review', skill: 'ce-code-review' },
   { key: 'matt-code-review', skill: 'mattpocock-skills:code-review' },
   { key: 'claude-code-review', skill: 'code-review', args: `high origin/dev...origin/${dev.branch}` },
-  { key: 'security-review', skill: 'pr-security-review', args: `origin/dev...origin/${dev.branch}` },
+  { key: 'claude-security-review', skill: 'claude-security-review', args: `origin/dev...origin/${dev.branch}` },
 ]
 const REVIEWER_KEYS = REVIEWERS.map((r) => r.key)
 

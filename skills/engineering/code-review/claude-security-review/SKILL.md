@@ -1,5 +1,5 @@
 ---
-name: pr-security-review
+name: claude-security-review
 description: "Security review of the changes in an explicit git revision range (base...head), such as a PR branch against its real base. Reports only high-confidence vulnerabilities introduced by those changes (injection, auth bypass, secrets, unsafe deserialization, XSS, data exposure) with severity, exploit scenario and fix. Use when asked for a security review of a PR, branch or diff, or when the bundled /security-review is the wrong tool because it always diffs the current branch against origin's default branch."
 argument-hint: "<base...head> (e.g. origin/dev...origin/feat-x; three-dot form, required)"
 allowed-tools: Bash(git diff *) Bash(git log *) Bash(git show *)

@@ -59,10 +59,10 @@ Legend: `/name` = invoked only as a slash command (`disable-model-invocation: tr
 | Skill | Description |
 |-------|-------------|
 | `ce-code-review` **global** | Structured review for bugs, regressions, tests, and standards |
+| `claude-security-review` **global** | Security review of an explicit `base...head` revision range |
 | `frontend-code-review` | Review `.tsx`/`.ts`/`.js` files for quality, performance, and business logic |
 | `/pr-review-to-subtasks` **global** | Create work-item subtasks from a review file |
 | `/pr-review-workflow` | Review an Azure DevOps PR and create subtasks from the review |
-| `pr-security-review` **global** | Security review of an explicit `base...head` revision range |
 | `pr-description` **global** | Write a PR title and description |
 
 #### `engineering/documentation/` — docs, specs, and changelogs
@@ -172,7 +172,7 @@ Multi-agent workflow scripts in `workflows/`, installed globally into `~/.claude
 | `dev-flow` | Implement a markdown plan, open a PR, review it with 5 reviewers, apply the fixes, and audit the docs |
 | `code-review-flow` | Review an existing PR with 5 reviewers and produce a verified final report |
 
-Both rely on the `thermos` and `mattpocock-skills` plugins and on the `ce-code-review` and `pr-security-review` skills.
+Both rely on the `thermos` and `mattpocock-skills` plugins and on the `ce-code-review` and `claude-security-review` skills.
 
 ### Output Styles
 

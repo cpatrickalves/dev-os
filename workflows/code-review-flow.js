@@ -1,11 +1,11 @@
 export const meta = {
   name: 'code-review-flow',
-  description: 'Code review com 5 revisores (thermos + ce-code-review + matt-code-review + /code-review + pr-security-review, todos Opus) de um PR e consolidação dos relatórios',
+  description: 'Code review com 5 revisores (thermos + ce-code-review + matt-code-review + /code-review + claude-security-review, todos Opus) de um PR e consolidação dos relatórios',
   whenToUse:
     'Quando quiser revisar um PR existente sem implementar nada. Uso: Workflow({name: "code-review-flow", args: "<PR url ou número>"})',
   phases: [
     { title: 'Setup', detail: 'resolve o PR uma única vez: branches, commits base/head fixados e diff salvo, compartilhados com todos os revisores', model: 'sonnet' },
-    { title: 'Code Review', detail: '5 revisores em paralelo (thermos + ce-code-review + matt-code-review + /code-review embutida + pr-security-review do Dev-OS, todos Opus), consolidação dos relatórios e relatório de avaliação dos revisores' },
+    { title: 'Code Review', detail: '5 revisores em paralelo (thermos + ce-code-review + matt-code-review + /code-review embutida + claude-security-review do Dev-OS, todos Opus), consolidação dos relatórios e relatório de avaliação dos revisores' },
     { title: 'Final Review', detail: 'verifica cada achado contra o código do PR e gera o relatório final em markdown + HTML (html-it) na raiz do projeto', model: 'opus' },
     { title: 'Review Eval', detail: 'cruza os vereditos com os achados de cada revisor e fecha o relatório de avaliação (eficácia das skills de review)', model: 'sonnet' },
   ],
@@ -83,7 +83,7 @@ const REPORT_SCHEMA = {
   required: ['report_path'],
 }
 
-// /code-review (embutida no Claude Code) e pr-security-review (skill do Dev-OS,
+// /code-review (embutida no Claude Code) e claude-security-review (skill do Dev-OS,
 // instalada globalmente) não aceitam uma "tarefa": recebem só argumentos (nível de
 // esforço, alvo) e devolvem os achados; o agente que as invoca recebe o range
 // fixado no Setup e grava o relatório. Sem --fix. Nível "high" amplia a cobertura;
@@ -91,7 +91,7 @@ const REPORT_SCHEMA = {
 // A /security-review embutida NÃO serve aqui: ela injeta `git diff origin/HEAD...`
 // fixo e ignora argumentos, ou seja, revisa a branch atual contra a branch default
 // do origin — fora do PR quando a base é outra ou a branch não está no checkout.
-// A pr-security-review usa a mesma rubrica com o range explícito.
+// A claude-security-review usa a mesma rubrica com o range explícito.
 // A /code-review embutida tem o mesmo nome da skill do plugin mattpocock, por isso
 // a do plugin é referenciada com o namespace.
 const REVIEWERS = [
@@ -99,7 +99,7 @@ const REVIEWERS = [
   { key: 'ce-code-review', skill: 'ce-code-review' },
   { key: 'matt-code-review', skill: 'mattpocock-skills:code-review' },
   { key: 'claude-code-review', skill: 'code-review', args: `high ${reviewRange}` },
-  { key: 'security-review', skill: 'pr-security-review', args: reviewRange },
+  { key: 'claude-security-review', skill: 'claude-security-review', args: reviewRange },
 ]
 const REVIEWER_KEYS = REVIEWERS.map((r) => r.key)
 
