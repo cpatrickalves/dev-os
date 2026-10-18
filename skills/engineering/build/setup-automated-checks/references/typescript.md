@@ -48,10 +48,10 @@ Edit the generated `biome.json` so it contains (keep whatever shape `init` produ
       "suspicious": {
         "noExplicitAny": "error",
         "noFocusedTests": "error",
-        "noSkippedTests": "warn",
-        "noConsole": { "level": "warn", "options": { "allow": ["warn", "error"] } }
+        "noSkippedTests": "error",
+        "noConsole": { "level": "error", "options": { "allow": ["warn", "error"] } }
       },
-      "style": { "useImportType": "error", "noNonNullAssertion": "warn" }
+      "style": { "useImportType": "error", "noNonNullAssertion": "error" }
     }
   },
   "overrides": [
@@ -66,7 +66,15 @@ Edit the generated `biome.json` so it contains (keep whatever shape `init` produ
 
 `noFocusedTests` and `noSkippedTests` are lie detectors: a `.only` left behind silently shrinks the suite to one test, a `.skip` hides a failure. `useIgnoreFile` keeps `.gitignore` as the single list of generated paths.
 
-`noNonNullAssertion` stays a warning on purpose: with `noUncheckedIndexedAccess` on (below), `!` is the one cheap, greppable escape from `T | undefined`. Making it an error pushes agents toward `?? ""` and `?.` chains that hide the bug tsc found. `noExplicitAny` is an error in `src/` and a warning in tests, where `vi.fn() as any` and loose fixtures are the norm.
+Biome exits 0 on warnings, so a rule that must gate is set to `"error"`; `"warn"` is advice the hook and CI let through. That is why the lie detectors and `noConsole` are errors here, and why `noExplicitAny` is a warning only in tests, where `vi.fn() as any` and loose fixtures are the norm.
+
+`noNonNullAssertion` is an error because `!` is a one-character way around `noUncheckedIndexedAccess` (below): `xs[0]!` turns the `T | undefined` that tsc just found back into `T`. Narrow instead (`if (!x) throw …`, `?? fallback` when a fallback is correct). The stock Vite `main.tsx` trips it once; replace the assertion with a guard:
+
+```ts
+const root = document.getElementById("root");
+if (!root) throw new Error("#root not found");
+createRoot(root).render(<App />);
+```
 
 Migrating from ESLint + Prettier is deterministic: `pnpm biome migrate eslint --write` and `pnpm biome migrate prettier --write` translate the old configs; remove the old packages in the same PR.
 
@@ -82,13 +90,12 @@ In `tsconfig.json` (`tsconfig.app.json` in Vite templates, which split app and n
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
     "verbatimModuleSyntax": true,
-    "isolatedModules": true,
     "skipLibCheck": true
   }
 }
 ```
 
-`noUncheckedIndexedAccess` is the flag with the best bug-per-complaint ratio (`arr[0]` is `T | undefined`). `exactOptionalPropertyTypes` is left out: third-party types are not written for it, so `<Comp title={maybeTitle} />` with `title?: string` becomes an error and every spread of partial state into optional props needs `| undefined` added by hand. It is in `extra-checks.md` for projects that measure it and find the noise acceptable.
+`noUncheckedIndexedAccess` is the flag with the best bug-per-complaint ratio (`arr[0]` is `T | undefined`). `verbatimModuleSyntax` already implies `isolatedModules`, so the latter is not listed. `exactOptionalPropertyTypes` is left out: third-party types are not written for it, so `<Comp title={maybeTitle} />` with `title?: string` becomes an error and every spread of partial state into optional props needs `| undefined` added by hand. It is in `extra-checks.md` for projects that measure it and find the noise acceptable.
 
 Type checking is its own script because Vite does not type check during `dev` or `build`: `tsc --noEmit -p tsconfig.json`, or `tsc -b --noEmit` when the project uses project references (Vite templates do).
 

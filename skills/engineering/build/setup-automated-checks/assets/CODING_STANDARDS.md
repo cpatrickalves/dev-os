@@ -6,7 +6,7 @@ and delete any rule a check (ruff, mypy, Biome, tsc, pytest, Vitest) already enf
 
 # Coding standards
 
-This file is read by the **review agent** (`code-review`, `retro`) after implementation, not by the implementer. `AGENTS.md` only points here. Implementation makes it work; review makes it good.
+This file is read by **review agents** (`code-review`, `retro`, any reviewer in the code-review flow) after implementation, not by the implementer. A review agent applies these rules; the implementer does not need to read them. `AGENTS.md` only points here. Implementation makes it work; review makes it good.
 
 A rule lives here only when it needs judgement. Anything mechanical (a banned API, an import shape, formatting, a file location) is a check in `make check`, and rules the tooling enforces are not repeated here. When a review comment recurs, the retro decides whether it becomes a check or a line in this file: the same comment is never written twice.
 
@@ -18,6 +18,7 @@ Each rule states the rule and the reason. Examples only where the rule is easy t
 - **Test through the interface.** Tests call the module's public entry points, never its internals. A test that breaks when a private function is renamed, without any behaviour change, is structure-sensitive and gets rewritten.
 - **Functional core, imperative shell.** Business rules are pure functions (no I/O, no clock, no database) tested without fixtures; orchestration (database, HTTP, queues) lives in a thin shell around them. <!-- adapt: in this project the core is `rules.py`, the shell is `service.py`/`router.py` -->
 - **One reason to change per module.** A module touched by every unrelated feature (shotgun surgery) or one that changes for several unrelated reasons (divergent change) gets split or merged.
+- **No commented-out code.** Dead code is deleted; git keeps the history. A comment says why the code is the way it is, not what used to be there. <!-- adapt: delete if ruff `ERA` is enabled -->
 - **Seams are explicit.** Dependencies that tests replace (clock, external APIs, random) are injected at one seam, named for what they do, never patched by module path from inside a test.
 
 ## Tests
@@ -71,7 +72,7 @@ Further rules:
 - API types come from the generated OpenAPI client, never written by hand; a hand-written mirror of a server type is a review failure.
 - Server state lives in TanStack Query (cache, retry, polling); component state holds only UI state.
 - Each area (`src/areas/<area>/`) is lazy-loaded and owns its routes; shared code lives in `src/shared/` and never imports from an area.
-- No `any`, no non-null assertions (`!`); narrow the type or handle the case.
+- Narrow the type or handle the case; a type assertion (`as T`) that only silences the compiler is a review failure. Biome already blocks `any` and `!`.
 
 ## Commits and PRs
 

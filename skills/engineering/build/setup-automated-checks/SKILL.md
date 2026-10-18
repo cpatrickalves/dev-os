@@ -16,7 +16,7 @@ Checks cost CPU, not tokens or reviewer attention, so stack many of them. A gree
 Three rules decide where every finding of this skill goes:
 
 - A **mechanical** rule (a banned API, an import shape, a file location, formatting) becomes a check. Building the check beats writing the rule.
-- A **judgement** rule (cross-file consistency, naming in context, module depth) goes to `CODING_STANDARDS.md`, which the review agent reads. Rules that tooling already enforces are left out of it.
+- A **judgement** rule (cross-file consistency, naming in context, module depth) goes to `CODING_STANDARDS.md`, which review agents read. Rules that tooling already enforces are left out of it.
 - `AGENTS.md` / `CLAUDE.md` carries **navigation pointers** only. Standards placed there crowd out the implementer, who may or may not read them.
 
 The `CODING_STANDARDS.md` name matters: the `code-review`, `retro` and `code-review-flow` skills look for it at the repo root.
@@ -54,6 +54,7 @@ Show the gap table and ask one question at a time with `AskUserQuestion`, only w
 - **Tool conflicts** (ESLint + Prettier where Biome is proposed, black / flake8 / isort where ruff is proposed, Jest where Vitest is proposed, pyright where mypy is proposed). Default in an existing project: keep a working tool that already gates the same thing, and tighten its config. Migrate only when the user picks it; `references/existing-projects.md` has the migration recipes.
 - **Extras**: offer the tier-1 list from `references/extra-checks.md` as a multi-select. Tier 2 only when the project's shape calls for it (migrations, generated API types, a bundle budget).
 - **Strictness in an existing codebase**: fix now, or baseline and ratchet. Decide after measuring (Step 3 records the counts).
+- **Moving standards out of `AGENTS.md` / `CLAUDE.md`**: when the audit flags detailed standards there, list the sections you would move to `CODING_STANDARDS.md` and ask before moving any of them. The user may keep a rule in the agent file on purpose (a guardrail the implementer must see), so nothing moves without a yes.
 
 New projects skip most of this: install the full default set.
 
@@ -90,10 +91,10 @@ Validate the workflow with actionlint before committing it. When the remote is n
   ```markdown
   ## Checks
   - `make check` runs every automated check (lint, format, types, tests). Run it before opening a PR; CI runs the same targets.
-  - `CODING_STANDARDS.md` holds the coding standards. The review agent applies them; implementation does not need to read it.
+  - `CODING_STANDARDS.md` holds the coding standards. A review agent applies them; implementation does not need to read it.
   ```
 
-  If the file already holds detailed standards, move them to `CODING_STANDARDS.md` and leave the pointer. Tell the user what moved.
+  If the file already holds detailed standards, move the ones the user approved in Step 2 to `CODING_STANDARDS.md` and leave the pointer. Tell the user what moved.
 
 ## Step 7: Verify and report
 

@@ -67,10 +67,10 @@ pretty = true
 # plugins = ["pydantic.mypy"]          # when pydantic is a dependency
 # exclude = ["^migrations/"]
 
-[[tool.mypy.overrides]]
-module = ["tests.*"]
-disallow_untyped_decorators = false    # pytest decorators are untyped; everything else stays strict
-# disallow_untyped_defs = false        # existing suites: hundreds of `def test_x():` without `-> None`
+# Existing suites only: hundreds of `def test_x():` without `-> None`. pytest's decorators are typed, so new suites need no override.
+# [[tool.mypy.overrides]]
+# module = ["tests.*"]
+# disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
 module = ["somelib.*"]                 # libraries that ship no types and have no types-* package
@@ -101,8 +101,8 @@ Why the pytest block matters: `--strict-markers` rejects misspelled markers that
 Rules that bite in practice, and the convention that avoids a `noqa`:
 
 - `filterwarnings = error`: a dependency bump can turn the suite red with a `DeprecationWarning` raised inside pydantic, SQLAlchemy or httpx, in a PR that touched none of them. Add `ignore::DeprecationWarning:<lib>.*` in the bump PR, per library, never a global ignore. Real-database tests can surface `ResourceWarning` nondeterministically; add `ignore::ResourceWarning` only when that flakiness shows up.
-- `ARG`: fires on every interface you implement (`__exit__(self, exc_type, exc, tb)`, SQLAlchemy listeners, Starlette middleware). Rename the unused parameter to `_exc` instead of adding `noqa`.
-- `N`: `N818` wants exception classes named `…Error`; `N815` / `N803` fire on fields that mirror external JSON (`createdAt`). Rename when the name is yours; add the rule to `ignore` when the name is dictated by an external contract. Drop `N` entirely if it conflicts with the project's domain naming.
+- `ARG`: fires on every interface you implement (`__exit__(self, exc_type, exc, tb)`, SQLAlchemy listeners, Starlette middleware). Rename the unused parameter to `_exc` instead of adding `noqa`. A FastAPI dependency used only for its side effect (an auth guard) goes in the route or router, `dependencies=[Depends(require_user)]`, not in an unused parameter.
+- `N`: `N818` wants exception classes named `…Error`; `N815` / `N803` fire on fields that mirror external JSON (`createdAt`). In pydantic schemas keep the fields snake_case and set `model_config = ConfigDict(alias_generator=to_camel)` (`from pydantic.alias_generators import to_camel`), so the JSON stays camelCase without the finding. Elsewhere, rename when the name is yours; add the rule to `ignore` when the name is dictated by an external contract. Drop `N` entirely if it conflicts with the project's domain naming.
 - `RUF001`–`RUF003` flag en dashes and curly quotes in Portuguese docstrings; add them to `ignore` when the team writes prose in docstrings.
 - mypy `strict` includes `no_implicit_reexport`: a name re-exported from `__init__.py` needs `__all__` or `import x as x`.
 

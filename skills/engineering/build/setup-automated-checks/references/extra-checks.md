@@ -37,4 +37,4 @@ Checks cost CPU, so the default set is a floor. Each entry says what lie or defe
 
 ## What does not go here
 
-Anything that needs judgement (naming in context, whether a module is deep enough, whether a mock hides an error path) belongs in `CODING_STANDARDS.md`, where the review agent reads it. A check that produces false positives the team ignores is worse than no check: when a rule's findings are routinely waived, delete the rule or move it to the standards file.
+Anything that needs judgement (naming in context, whether a module is deep enough, whether a mock hides an error path) belongs in `CODING_STANDARDS.md`, where review agents read it. A check that produces false positives the team ignores is worse than no check: when a rule's findings are routinely waived, delete the rule or move it to the standards file.
