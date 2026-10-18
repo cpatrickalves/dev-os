@@ -45,6 +45,7 @@ Legend: `/name` = invoked only as a slash command (`disable-model-invocation: tr
 | Skill | Description |
 |-------|-------------|
 | `/create-update-makefile` | Create or update a self-documenting Makefile |
+| `/setup-automated-checks` | Set up or audit deterministic checks (lint, types, tests, hooks, CI) and the review files (`CODING_STANDARDS.md`, PR template) for Python and TypeScript projects |
 | `frontend-design` | Create distinctive, production-grade frontend interfaces |
 | `frontend-testing` | Generate Vitest + React Testing Library tests |
 | `playwright-expert` | Write and debug Playwright E2E tests |
