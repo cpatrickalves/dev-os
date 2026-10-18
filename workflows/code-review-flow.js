@@ -98,7 +98,7 @@ const REVIEWERS = [
   { key: 'thermos', skill: 'thermos:thermos' },
   { key: 'ce-code-review', skill: 'ce-code-review' },
   { key: 'matt-code-review', skill: 'mattpocock-skills:code-review' },
-  { key: 'code-review', skill: 'code-review', args: `high ${reviewRange}` },
+  { key: 'claude-code-review', skill: 'code-review', args: `high ${reviewRange}` },
   { key: 'security-review', skill: 'pr-security-review', args: reviewRange },
 ]
 const REVIEWER_KEYS = REVIEWERS.map((r) => r.key)
