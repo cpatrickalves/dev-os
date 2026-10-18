@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `setup-automated-checks` skill (`engineering/build/`): sets up or audits a
   project's deterministic checks (ruff, mypy, pytest; Biome, tsc, Vitest; hooks,
   Makefile `check`, GitHub Actions) and the files the review layer reads
-  (`CODING_STANDARDS.md`, `AGENTS.md` pointers, PR template with merge danger),
+  (`CODING_STANDARDS.md`, `AGENTS.md` pointers),
   for new and existing Python/TypeScript projects. Based on Matt Pocock's
   "Fixing the PR Bottleneck" talk; ships an `audit-checks.sh` detector.
 - `manage-mods.sh` and the `external-mods.yaml` catalog: install/update or

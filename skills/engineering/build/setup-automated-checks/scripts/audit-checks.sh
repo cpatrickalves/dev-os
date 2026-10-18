@@ -172,7 +172,7 @@ echo "## Repository files"
 echo
 echo "| File | Found |"
 echo "|---|---|"
-for f in CODING_STANDARDS.md CONTRIBUTING.md AGENTS.md CLAUDE.md GLOSSARY.md .editorconfig Makefile README.md .env.example .github/pull_request_template.md .github/PULL_REQUEST_TEMPLATE.md compose.yaml docker-compose.yml Dockerfile; do
+for f in CODING_STANDARDS.md CONTRIBUTING.md AGENTS.md CLAUDE.md GLOSSARY.md .editorconfig Makefile README.md .env.example compose.yaml docker-compose.yml Dockerfile; do
   if [ -f "$f" ]; then
     row "$f" "yes ($(wc -l < "$f" | tr -d ' ') lines)"
   else

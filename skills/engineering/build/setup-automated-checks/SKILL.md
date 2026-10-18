@@ -1,6 +1,6 @@
 ---
 name: setup-automated-checks
-description: Set up or audit a project's deterministic checks (lint, format, types, tests, hooks, CI) and the repository files that feed code review (CODING_STANDARDS.md, AGENTS.md pointers, PR template) for Python and TypeScript, in new or existing projects.
+description: Set up or audit a project's deterministic checks (lint, format, types, tests, hooks, CI) and the repository files that feed code review (CODING_STANDARDS.md, AGENTS.md pointers) for Python and TypeScript, in new or existing projects.
 argument-hint: "[optional: audit | python | typescript | ci | hooks | standards]"
 disable-model-invocation: true
 metadata:
@@ -42,7 +42,7 @@ Done when you can classify every item of the catalog below as *present*, *missin
 | Hooks | pre-commit framework | Husky + lint-staged (TS-only) or pre-commit (mixed) | fast on commit, full on push |
 | Entry point | | | `make check` (Makefile) |
 | CI | | | GitHub Actions, same commands as `make check` |
-| Review files | | | `CODING_STANDARDS.md`, `AGENTS.md` pointers, PR template |
+| Review files | | | `CODING_STANDARDS.md`, `AGENTS.md` pointers |
 | Extras | see `references/extra-checks.md` | | actionlint, shellcheck, secrets |
 
 When `$ARGUMENTS` is `audit`, stop here and present the gap table with a recommendation per row.
@@ -94,7 +94,6 @@ Validate the workflow with actionlint before committing it. When the remote is n
   ```
 
   If the file already holds detailed standards, move them to `CODING_STANDARDS.md` and leave the pointer. Tell the user what moved.
-- `.github/pull_request_template.md` from `assets/pull_request_template.md`, when the project has none. Its last section is the **merge danger** (one-way or two-way door, blast radius), which tells the human how much attention the PR deserves.
 
 ## Step 7: Verify and report
 
