@@ -46,6 +46,16 @@ Read `.claude/logbook.md` right before writing — another session may have upda
 
 where `<project name>` is the basename of the project root.
 
+Right below the title goes the issue tracker line, which saves the lookup in later runs (see "Linking issue keys"):
+
+```markdown
+# Logbook — acai-user-guide
+
+Issue Tracker: http://plane.tce.pa/setin/browse/USERAPI-XXX/
+```
+
+It is the URL of one of the project's issues with the number replaced by `XXX`. If the project uses more than one key prefix, add one `Issue Tracker:` line per prefix. Leave the line out until you know the tracker, and add it to an existing logbook as soon as you find it.
+
 ## Step 4: Write today's entry
 
 File layout: one `## YYYY-MM-DD` heading per day, no month headings, oldest first and newest at the bottom, the same order as the user's Notion logbook:
@@ -53,13 +63,15 @@ File layout: one `## YYYY-MM-DD` heading per day, no month headings, oldest firs
 ```markdown
 # Logbook — acai-chatcontas-api
 
+Issue Tracker: http://plane.tce.pa/setin/browse/CHATCONTAS-XXX/
+
 ## 2026-08-31
-- Finalizei a implementação da CHATCONTAS-125 (compactação de versões de checkpoint)
+- Finalizei a implementação da [CHATCONTAS-125](http://plane.tce.pa/setin/browse/CHATCONTAS-125/) (compactação de versões de checkpoint)
   - Regra de retenção em três `DELETE` numa transação, agendada como `BackgroundTask` após o stream
   - ADR 0015 e guia `docs/guias/limpeza-de-checkpoints.md`
 
 ## 2026-09-08
-- Finalizei o grill da CHATCONTAS-130 (exportar conversas em PDF) e iniciei a implementação
+- Finalizei o grill da [CHATCONTAS-130](http://plane.tce.pa/setin/browse/CHATCONTAS-130/) (exportar conversas em PDF) e iniciei a implementação
 - [ ] Aprovar o PR 1350
 ```
 
@@ -81,9 +93,29 @@ Match the user's own logbook voice:
 - **Sub-bullets only when they carry something worth remembering**: a decision and its reason, a root cause, a key number, the main files/ADRs produced. At most ~3 per item, one line each.
 - **Keep identifiers**: issue keys, PR numbers, commit hashes, branch or session names, and file paths, in backticks where they're code. They're what the user searches for later. Section or item numbers inside a document are not identifiers in this sense (see "Say what changed, not where").
 - **Every issue key carries its title**: write `FRONTACAI-646 (Corrigir paginação do extrato)`, never the bare key — a week later the user won't remember what the number was about. Take the title from the conversation, the branch or commit messages, or the issue tracker (e.g. `planecli`, `gh issue view`) if one is available. If none of these gives it, use a short description of what the issue is about instead. Only the first mention in a day's block needs the title; later mentions in the same block can use the bare key.
+- **Issue keys are Markdown links** whenever you can find the tracker's URL: `[FRONTACAI-646](http://plane.tce.pa/setin/browse/FRONTACAI-646/) (Corrigir paginação do extrato)`. This applies to every mention, not just the first. See "Linking issue keys" below.
 - **Say what changed, not where.** Section numbers, clause letters, line numbers and function names are addresses, not content: "TR 7.1.1 'd', 11.8.1 'g', 15.1" tells the reader nothing without opening the file. Describe the change in plain words ("reservas de capacidade com pagamento antecipado", "nota fiscal única mensal") and add the number only as a complement, in parentheses, when it helps find the spot. A bullet that is mostly a list of numbers is wrong.
 - **Open items as checkboxes**: `- [ ] Aprovar o PR 1350`. Only real pending actions, not vague "next steps".
 - **Leave out** tool mechanics (read files, ran grep), routine test runs unless they revealed something, and assistant-speak ("com sucesso", "de forma robusta").
+
+### Linking issue keys
+
+Issue keys look like `PIPERAG-383`, `DEV-125`, `CHATCONTAS-123` or `GESTAOPROJ-150`, from Plane or Linear. The URL is built from the key and the tracker's base address:
+
+| Tracker | URL shape | Example |
+| --- | --- | --- |
+| Plane | `<host>/<workspace>/browse/<KEY>/` | `[PIPERAG-368](http://plane.tce.pa/setin/browse/PIPERAG-368/)` |
+| Linear | `https://linear.app/<workspace>/issue/<KEY>` | `[DEV-281](https://linear.app/cognicode/issue/DEV-281)` |
+
+Find which tracker and workspace the project uses, in this order, and stop at the first hit:
+
+1. The `Issue Tracker:` line at the top of the logbook: replace `XXX` with the issue number. When the prefix matches, nothing else needs to be looked up.
+2. Links already in the logbook for the same key prefix: reuse that base.
+3. The conversation, or a URL the tracker returned when you fetched the issue title (`planecli`, the Linear MCP `get_issue`, which returns a `url`).
+4. Project docs (`CLAUDE.md`, `AGENTS.md`, `README.md`) or the git remote/commit messages mentioning a Plane or Linear URL.
+5. The known workspaces in the table above: `plane.tce.pa/setin` for the TCE projects (`PIPERAG`, `CHATCONTAS`, `GESTAOPROJ`, `FRONTACAI` and siblings), `linear.app/cognicode` for `DEV`. Use them only when the key prefix fits one of these.
+
+When steps 2–5 give you the base, write it to the `Issue Tracker:` line (Step 3) so the next run starts from step 1. If none of these tells you where the key lives, leave it as plain text. A wrong link is worse than no link.
 
 Before saving, reread each bullet and ask: would the user understand it a week from now without opening the file it mentions? If not, rewrite it.
 
