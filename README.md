@@ -149,6 +149,7 @@ Third-party assets that are installed, not copied, are declared in two YAML cata
 | `shadcn-ui` | [shadcn/ui](https://ui.shadcn.com/docs/skills) | project | shadcn/ui skills |
 | `tlc-skills` | [tech-leads-club/agent-skills](https://github.com/tech-leads-club/agent-skills) | global | Tech Leads Club skills: `tlc-spec-lean`, `tlc-discover`, `technical-design-doc-creator`, `security-threat-model`, `the-fool`, `the-judge` |
 | `tlc-playwright` | [tech-leads-club/agent-skills](https://github.com/tech-leads-club/agent-skills) | project | Tech Leads Club skill: `playwright-skill` (browser automation and testing) |
+| `show-me` | [humanlayer/skills](https://github.com/humanlayer/skills) | global | HumanLayer skill: `show-me` (visual explanations with diagrams and HTML artifacts) |
 
 Third-party skills copied into `skills/` (such as `unslop`) record their upstream in frontmatter: `metadata.source` (a GitHub `tree/<ref>/<dir>` URL of the skill directory, or a gist URL with a `#file-<name>` anchor), `metadata.last_synced` (the date of the last copy from upstream, which is what marks a skill as third-party) and `metadata.local_changes` (what was adapted locally, or `"None."`). Own skills that are only inspired by external material cite it in `metadata.reference` instead.
 

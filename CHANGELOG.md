@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Claude Code only.
 - `tlc-playwright` entry in `external-skills.yaml`: the Tech Leads Club
   `playwright-skill`, installed per project.
+- `show-me` entry in `external-skills.yaml`: the HumanLayer `show-me` skill,
+  installed globally for Claude Code only.
 - `sync-third-party-skills.sh`: reports which third-party skills have upstream
   changes since `metadata.last_synced`, shows the upstream diff, and with
   `--apply` merges it in (three-way, per file) and bumps `last_synced`.

@@ -32,3 +32,9 @@ skills:
     source: tech-leads-club/agent-skills
     skills: playwright-skill
     scope: project
+
+  - name: show-me
+    description: HumanLayer show-me skill for visual explanations (diagrams, code-shape sketches, HTML artifacts)
+    source: humanlayer/skills
+    skills: show-me
+    scope: global
