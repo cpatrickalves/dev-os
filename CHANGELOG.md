@@ -26,12 +26,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `playwright-skill`, installed per project.
 - `show-me` entry in `external-skills.yaml`: the HumanLayer `show-me` skill,
   installed globally for Claude Code only.
+- `tlc-code-review-flow` workflow: a shortcut for `code-review-flow` on
+  `tlc-spec-lean` PRs. It takes `args: {pr, plan, issue}`; without `plan`, the
+  Setup finds the feature plan in `.specs/features/*/plan.md` by the issue ID.
 - `sync-third-party-skills.sh`: reports which third-party skills have upstream
   changes since `metadata.last_synced`, shows the upstream diff, and with
   `--apply` merges it in (three-way, per file) and bumps `last_synced`.
 
 ### Changed
 
+- `code-review-flow` workflow: the Setup finds the PR's issue, detects the
+  project's tracker (Linear, Plane, GitHub Issues, Jira, Azure Boards), and saves
+  the issue with all its comments once; every reviewer and the Final Review read
+  it. It now takes `args: {pr, issue, plan, called_by}`, where `issue` pins the
+  issue, `plan` is a plan path or `"auto"`, and `called_by` names the calling
+  workflow in the reviewer evaluation.
+- `dev-flow` workflow: its Code Review runs `code-review-flow` as a sub-workflow
+  instead of a copy of it. PR Fixes applies the findings that the Final Review
+  marked valid, and the reviewer evaluation comes from `code-review-flow`.
 - Third-party skill `metadata.source` values normalized to GitHub `tree/` URLs
   or gist `#file-` URLs. `ai-agent-security-analysis` and `claude-security-review`
   now cite their inspiration in `metadata.reference` and are no longer synced.
