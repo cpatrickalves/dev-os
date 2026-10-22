@@ -2,9 +2,6 @@
   "env": {
     "ANTHROPIC_DEFAULT_HAIKU_MODEL": "sonnet"
   },
-  "worktree": {
-    "bgIsolation": "none"
-  },
   "permissions": {
     "allow": [
       "Bash(python3:*)",
@@ -16,10 +13,11 @@
       "Bash(echo:*)"
     ]
   },
+  "worktree": {
+    "bgIsolation": "none"
+  },
   "enabledPlugins": {
-    "feature-dev@claude-plugins-official": true,
     "claude-md-management@claude-plugins-official": true,
-    "pr-review-toolkit@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true
