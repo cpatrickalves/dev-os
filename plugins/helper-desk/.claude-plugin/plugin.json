@@ -1,0 +1,10 @@
+{
+  "name": "helper-desk",
+  "version": "0.4.0",
+  "description": "Helper Desk: a purple task progress bar above the prompt that moves as each to-do item is done, and a side pane with one live card per subagent",
+  "author": {
+    "name": "Ben AI",
+    "url": "https://www.benai.co"
+  },
+  "types": "./types/index.d.ts"
+}

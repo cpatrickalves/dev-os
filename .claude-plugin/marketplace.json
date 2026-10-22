@@ -15,6 +15,11 @@
       "name": "brain-dump",
       "source": "./plugins/brain-dump",
       "description": "Mod: oferece transformar um prompt longo e solto num brief de quatro partes (o trabalho, o porquê, os limites, o que é pronto), com até três perguntas sobre lacunas antes."
+    },
+    {
+      "name": "helper-desk",
+      "source": "./plugins/helper-desk",
+      "description": "Mod: barra de progresso da lista de tarefas acima do prompt e um painel lateral com um card ao vivo por subagente (/helpers)."
     }
   ]
 }

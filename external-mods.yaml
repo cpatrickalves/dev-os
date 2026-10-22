@@ -19,13 +19,6 @@
 #   github              optional; GitHub URL of the mod, printed after install
 
 mods:
-  - name: savvy-progress
-    description: Progress bar above the prompt and subagents panel
-    marketplace: claude-kit
-    marketplace_source: johnnyvizz/claude-kit
-    scope: user
-    github: https://github.com/JohnnyVizz/claude-kit
-
   - name: cc-plugin-you-should-know
     description: Side agent that surfaces things worth knowing above the prompt
     marketplace: builtin
@@ -54,6 +47,12 @@ mods:
 
   - name: brain-dump
     description: Shapes a long, loose prompt into a four-part brief (Dev-OS marketplace, from Ben AI)
+    marketplace: dev-os
+    marketplace_source: .
+    scope: user
+
+  - name: helper-desk
+    description: Task progress bar above the prompt and live subagent cards (Dev-OS marketplace, from Ben AI)
     marketplace: dev-os
     marketplace_source: .
     scope: user
