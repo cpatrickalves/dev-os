@@ -527,8 +527,9 @@ const MIRRORED = new Set(['TodoWrite', 'TaskCreate', 'TaskUpdate'])
 const PLAN_PROMPT =
   'The mcp__helper-desk__plan tool shows a to-do list as a progress bar the user watches. ' +
   'TodoWrite, TaskCreate and TaskUpdate feed the same bar, so if you already track the task with them, keep using them and do not keep two lists. ' +
-  'Use a list only when the task has several distinct steps the user would want to follow, such as a feature with parts to build or a multi-stage change. ' +
-  'Reading, searching, answering a question or a small edit needs no list, however many tool calls it takes; never add a list just to fill the bar. ' +
+  'Use a list when the task has several distinct steps the user would want to follow, for example: opening a PR (sync the branch, run lint and tests, write the description, create it), ' +
+  'implementing a feature with parts to build, a migration, a release, or fixing a bug that needs a reproduction, a fix and a check. ' +
+  'Answering a question, investigating or reading code, or a small edit needs no list, however many tool calls it takes; never add a list just to fill the bar. ' +
   'When you do keep one, send the full list each time a step finishes or a new one starts, and mark the last step completed before your final answer. ' +
   'A step that launches subagents is one step.'
 // Main-chat tool calls in a turn before the nudge to make a plan; short tasks never see it.

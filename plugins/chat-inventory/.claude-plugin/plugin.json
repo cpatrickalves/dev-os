@@ -1,6 +1,6 @@
 {
   "name": "chat-inventory",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A side pane, In this chat, that lists the to-do list, connectors, context files and skills this chat used",
   "author": {
     "name": "Ben AI",

@@ -15,7 +15,7 @@ const FILE_WINDOW = 10
 const FILE_STEP = 5
 const SECTIONS = ['todo', 'connectors', 'files', 'skills'] as const
 const OFF_LINE = 'Turned off. Open /mods to turn it on.'
-const NO_PLAN = 'No to-do list yet. Claude makes one for jobs with 3 or more steps.'
+const NO_PLAN = 'No to-do list yet. Claude makes one for jobs with several distinct steps.'
 // The plan tool helper-desk registers, and Claude's built-in list tools, all feed the To-do section.
 const PLAN_TOOL = 'mcp__helper-desk__plan'
 const PLAN_TOOLS = new Set([PLAN_TOOL, 'TodoWrite', 'TaskCreate', 'TaskUpdate'])
