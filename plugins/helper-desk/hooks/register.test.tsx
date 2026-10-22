@@ -516,10 +516,14 @@ test('the plan tool sits in front, and work without a plan gets one nudge', { ti
   expect(specs[0]?.isDeferred, 'not behind ToolSearch').toBe(false)
 
   const callTool = $.tool.call as unknown as (input: unknown) => Promise<{ result?: unknown; context?: string[] }>
-  const first = await callTool({ tool: 'Bash', tool_use_id: 'b1', command: 'ls' })
-  expect((first.context ?? []).join(' '), 'no plan yet: nudge').toContain('mcp__helper-desk__plan')
-  const second = await callTool({ tool: 'Bash', tool_use_id: 'b2', command: 'ls' })
-  expect(second.context ?? [], 'only once a turn').toHaveLength(0)
+  for (const id of ['b1', 'b2']) {
+    const quick = await callTool({ tool: 'Bash', tool_use_id: id, command: 'ls' })
+    expect(quick.context ?? [], 'a short task gets no nudge').toHaveLength(0)
+  }
+  const third = await callTool({ tool: 'Bash', tool_use_id: 'b3', command: 'ls' })
+  expect((third.context ?? []).join(' '), 'no plan yet: nudge').toContain('mcp__helper-desk__plan')
+  const fourth = await callTool({ tool: 'Bash', tool_use_id: 'b4', command: 'ls' })
+  expect(fourth.context ?? [], 'only once a turn').toHaveLength(0)
 
   await callTool({ tool: 'mcp__helper-desk__plan', tool_use_id: 'p1', steps: steps4(0, true) })
   const after = await callTool({ tool: 'Read', tool_use_id: 'r1', file_path: '/x' })
