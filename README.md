@@ -85,6 +85,7 @@ Legend: `/name` = invoked only as a slash command (`disable-model-invocation: tr
 | Skill | Description |
 |-------|-------------|
 | `/create-commit-message` | Create a commit message from the current diff |
+| `/post-merge-cleanup` | After a merge, delete merged branches and their worktrees, then link the PR on the issue and mark it done |
 
 #### `engineering/integrations/` — platform CLIs
 
