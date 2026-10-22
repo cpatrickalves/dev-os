@@ -10,6 +10,11 @@
       "name": "thermos",
       "source": "./plugins/thermos",
       "description": "Revisão thermo-nuclear de branch: dois subagentes em paralelo (bugs/segurança e qualidade de código) com síntese final via /thermos."
+    },
+    {
+      "name": "brain-dump",
+      "source": "./plugins/brain-dump",
+      "description": "Mod: oferece transformar um prompt longo e solto num brief de quatro partes (o trabalho, o porquê, os limites, o que é pronto), com até três perguntas sobre lacunas antes."
     }
   ]
 }

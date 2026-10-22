@@ -51,3 +51,9 @@ mods:
     marketplace_source: hellosverre/claude-skins
     scope: user
     github: https://github.com/hellosverre/claude-skins
+
+  - name: brain-dump
+    description: Shapes a long, loose prompt into a four-part brief (Dev-OS marketplace, from Ben AI)
+    marketplace: dev-os
+    marketplace_source: .
+    scope: user

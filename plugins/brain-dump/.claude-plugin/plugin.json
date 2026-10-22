@@ -1,0 +1,10 @@
+{
+  "name": "brain-dump",
+  "version": "0.2.0",
+  "description": "Offers to shape a long, loose prompt into a four-part brief (the job, the why, the guardrails, done means), asking up to three questions about real gaps first",
+  "author": {
+    "name": "Ben AI",
+    "url": "https://www.benai.co"
+  },
+  "types": "./types/index.d.ts"
+}
