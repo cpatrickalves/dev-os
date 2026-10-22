@@ -1,0 +1,10 @@
+{
+  "name": "chat-inventory",
+  "version": "0.2.0",
+  "description": "A side pane, In this chat, that lists the to-do list, connectors, context files and skills this chat used",
+  "author": {
+    "name": "Ben AI",
+    "url": "https://www.benai.co"
+  },
+  "types": "./types/index.d.ts"
+}

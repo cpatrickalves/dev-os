@@ -56,3 +56,9 @@ mods:
     marketplace: dev-os
     marketplace_source: .
     scope: user
+
+  - name: chat-inventory
+    description: Side pane with the to-do list, connectors, context files and skills this chat used (Dev-OS marketplace, from Ben AI)
+    marketplace: dev-os
+    marketplace_source: .
+    scope: user

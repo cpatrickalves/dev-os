@@ -20,6 +20,11 @@
       "name": "helper-desk",
       "source": "./plugins/helper-desk",
       "description": "Mod: barra de progresso da lista de tarefas acima do prompt e um painel lateral com um card ao vivo por subagente (/helpers)."
+    },
+    {
+      "name": "chat-inventory",
+      "source": "./plugins/chat-inventory",
+      "description": "Mod: painel lateral In this chat (/inventory) com a lista de tarefas, os conectores, os arquivos de contexto e as skills que o chat usou."
     }
   ]
 }
