@@ -73,7 +73,7 @@ let off = false
 async function readSwitch($: EngineInterface) {
   let now = false
   try {
-    const path = `${$.plugin.root.split('/.claude/')[0] ?? ''}/.claude/mods/switches.json`
+    const path = `${home}/.claude/mods/switches.json`
     if (await $.fs.exists(path)) {
       const json = JSON.parse(String(await $.fs.read(path))) as Record<string, unknown>
       now = json[NAME] === false
@@ -251,7 +251,8 @@ async function shape($: EngineInterface, dump: string, qa: QA[]): Promise<string
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     const result = await next(e)
-    home = $.plugin.root.split('/.claude/')[0] ?? ''
+    // HOME first: a plugin read from a directory marketplace has no /.claude/ in its root.
+    home = (await $.env.get('HOME')) || ($.plugin.root.split('/.claude/')[0] ?? '')
     await $.command.register({ name: CMD, description: 'Turn brain dump shaping on or off' })
     await $.state.set(ENABLED, await isOn($))
     await readSwitch($).catch(() => undefined)

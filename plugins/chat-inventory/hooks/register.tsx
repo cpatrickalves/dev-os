@@ -597,7 +597,8 @@ const KNOWN_KEYS = [...new Set([...CONNECTOR_NAMES, ...Object.values(GWS), ...Ob
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
-    home = $.plugin.root.split('/.claude/')[0] ?? ''
+    // HOME first: a plugin read from a directory marketplace has no /.claude/ in its root.
+    home = (await $.env.get('HOME')) || ($.plugin.root.split('/.claude/')[0] ?? '')
     await $.command.register({ name: 'inventory', description: 'Show the connectors, files and skills this chat used', immediate: true })
     await readSwitch($)
     if (!switchTimer)

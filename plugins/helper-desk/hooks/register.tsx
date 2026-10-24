@@ -939,7 +939,8 @@ ${body}
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
-    home = $.plugin.root.split('/.claude/')[0] ?? ''
+    // HOME first: a plugin read from a directory marketplace has no /.claude/ in its root.
+    home = (await $.env.get('HOME')) || ($.plugin.root.split('/.claude/')[0] ?? '')
     sessionId = await $.session.id().catch(() => '')
     await $.command.register({ name: 'helpers', description: 'Show the Helper Desk: the task progress bar and one live card per subagent', immediate: true })
     await $.tool.register({

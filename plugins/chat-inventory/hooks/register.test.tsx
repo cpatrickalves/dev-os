@@ -8,9 +8,8 @@ const MEMORY = [
 ]
 
 /**
- * The fake disk's key for a path. The mod finds the home folder as the part of its own folder before
- * /.claude/ (the whole folder when run from anywhere else), so everything under home/.claude/ is keyed
- * as ~/.claude/... and the tests pass wherever the package sits.
+ * The fake disk's key for a path. The mod reads the home folder from HOME (mocked as /Users/test), so
+ * everything under home/.claude/ is keyed as ~/.claude/....
  */
 const disk = (p: string) => {
   const at = p.indexOf('/.claude/')
@@ -20,6 +19,7 @@ const disk = (p: string) => {
 /** Mocks every $ call the mod makes. `files` is the fake disk. */
 function setup(on: On, files: Record<string, string>, opened: string[], runs: string[][]) {
   on('session.start', async ($, e) => ({ cwd: e.cwd }) as never)
+  on('env.get', async () => ({ value: '/Users/test' }) as never)
   on('command.register', async () => ({ value: undefined }) as never)
   on('command.list', async () => ({ value: [] }) as never)
   const clock = mock.clock(on, { now: 1_000_000 })

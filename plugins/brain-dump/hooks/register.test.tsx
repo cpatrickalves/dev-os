@@ -33,6 +33,7 @@ for (const surface of ['desktop', 'terminal'] as const) {
     const passed: string[] = []
 
     on('session.start', async ($, e) => ({ cwd: e.cwd }) as never)
+    on('env.get', async () => ({ value: '/Users/test' }) as never)
     on('command.register', async () => ({ value: undefined }) as never)
     on('store.get', async ($, e) => ({ value: store[(e as { key: string }).key] }) as never)
     on('store.set', async ($, e) => {
@@ -123,6 +124,7 @@ for (const surface of ['desktop', 'terminal'] as const) {
     const passed: string[] = []
     const isSwitches = (e: unknown) => (e as { path: string }).path.endsWith('/.claude/mods/switches.json')
     on('session.start', async ($, e) => ({ cwd: e.cwd }) as never)
+    on('env.get', async () => ({ value: '/Users/test' }) as never)
     on('command.register', async () => ({ value: undefined }) as never)
     const clock = mock.clock(on, { now: 0 })
     on('store.get', async () => ({ value: undefined }) as never)
@@ -169,6 +171,7 @@ function rig(on: On, replies: string[], answers: Record<string, string | null>):
   const r: Rig = { replies, answers, calls: 0, asks: [], prompts: [], filled: [], statuses: [], files: {} }
   mock.clock(on, { now: 0 })
   on('session.start', async ($, e) => ({ cwd: e.cwd }) as never)
+  on('env.get', async () => ({ value: '/Users/test' }) as never)
   on('command.register', async () => ({ value: undefined }) as never)
   on('store.get', async () => ({ value: undefined }) as never)
   on('store.set', async () => ({ value: undefined }) as never)

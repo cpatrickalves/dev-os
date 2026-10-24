@@ -23,6 +23,7 @@ function rig(on: On, files: Record<string, string>) {
   const toasts: string[] = []
 
   on('session.start', async ($, e) => ({ cwd: e.cwd }) as never)
+  on('env.get', async () => ({ value: '/Users/test' }) as never)
   on('session.id', async () => ({ value: 'sess1' }) as never)
   on('session.usage', async () => ({ value: { startedAt: 0, context: {}, rateLimits: [], cost: { usd: 0.42 } } }) as never)
   on('command.register', async () => ({ value: undefined }) as never)
