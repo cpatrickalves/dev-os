@@ -15,7 +15,7 @@
 # Install and update are the same command: `npx skills update <pkg>` exits 0
 # with "No installed skills found" when the package was never added, so it
 # cannot signal "not installed". `npx skills add` is idempotent (it re-copies
-# files), so it serves as both install and update. `--yes` keeps it
+# files), so it serves as both install and update. Both `--yes` flags keep it
 # non-interactive under the picker-driven flow.
 
 set -e
@@ -178,7 +178,7 @@ install_one() {
     local source="${PACKAGE_SOURCES[$idx]}"
     local scope="${PACKAGE_SCOPES[$idx]}"
 
-    local cmd=(npx skills@latest add "$source" --agent claude-code --"$scope" --yes)
+    local cmd=(npx --yes skills@latest add "$source" --agent claude-code --"$scope" --yes)
     local skill skills
     IFS=',' read -r -a skills <<< "${PACKAGE_SKILLS[$idx]}"
     for skill in "${skills[@]}"; do
