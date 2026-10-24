@@ -22,9 +22,9 @@ skills:
     scope: project
 
   - name: tlc-skills
-    description: Tech Leads Club skills for specs, discovery, design docs, threat modeling and decisions
+    description: Tech Leads Club skills for specs, discovery, design docs, threat modeling, decisions and demo videos
     source: tech-leads-club/agent-skills
-    skills: tlc-spec-lean, tlc-discover, technical-design-doc-creator, security-threat-model, the-fool, the-judge
+    skills: tlc-spec-lean, tlc-discover, technical-design-doc-creator, security-threat-model, the-fool, the-judge, demo
     scope: global
 
   - name: tlc-playwright
