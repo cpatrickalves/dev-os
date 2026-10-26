@@ -71,6 +71,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   writes the report that `/pr-review-to-subtasks` takes.
 - `html-it` skill. `code-review-flow` now renders the final review's HTML
   version with `html-anything`.
+- `ce-code-review` skill, and with it the `ce-code-review` reviewer from
+  `code-review-flow` (and so from `dev-flow` and `tlc-code-review-flow`), which
+  now run 3 reviewers.
 
 ## [1.0.0] - 2026-10-06
 

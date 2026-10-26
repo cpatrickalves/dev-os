@@ -1,11 +1,11 @@
 export const meta = {
   name: 'code-review-flow',
-  description: 'Code review com 4 revisores (thermos + ce-code-review + matt-code-review + /code-review, todos Opus) de um PR, com a issue do PR (e o plano da feature, se houver) como contexto, e consolidação dos relatórios',
+  description: 'Code review com 3 revisores (thermos + matt-code-review + /code-review, todos Opus) de um PR, com a issue do PR (e o plano da feature, se houver) como contexto, e consolidação dos relatórios',
   whenToUse:
     'Quando quiser revisar um PR existente sem implementar nada. A issue do PR e o tracker são descobertos sozinhos; para fixar a issue ou passar o plano: args: {pr, issue, plan}. Para PRs feitos com tlc-spec-lean, use tlc-code-review-flow. Uso: Workflow({name: "code-review-flow", args: "<PR url ou número>"})',
   phases: [
     { title: 'Setup', detail: 'resolve o PR uma única vez: branches, commits base/head fixados, diff salvo, a issue (com os comentários) lida do tracker do projeto e o plano da feature, compartilhados com todos os revisores', model: 'sonnet' },
-    { title: 'Code Review', detail: '4 revisores em paralelo (thermos + ce-code-review + matt-code-review + /code-review embutida, todos Opus), consolidação dos relatórios e relatório de avaliação dos revisores' },
+    { title: 'Code Review', detail: '3 revisores em paralelo (thermos + matt-code-review + /code-review embutida, todos Opus), consolidação dos relatórios e relatório de avaliação dos revisores' },
     { title: 'Final Review', detail: 'verifica cada achado contra o código do PR e gera o relatório final em markdown + HTML (html-anything) na raiz do projeto', model: 'opus' },
     { title: 'Review Eval', detail: 'cruza os vereditos com os achados de cada revisor e fecha o relatório de avaliação (eficácia das skills de review)', model: 'sonnet' },
   ],
@@ -174,13 +174,13 @@ const REPORT_SCHEMA = {
 // Sem revisor só de segurança: em 22 PRs (set–out/2026) a claude-security-review não
 // trouxe nenhum achado procedente que os outros revisores não tivessem apontado
 // (~/.claude/review-evals/analise-revisores-2026-10-26.md).
+// A ce-code-review saiu em 2026-10-26: a skill foi removida do Dev-OS.
 // A key é a identidade do revisor na série histórica de ~/.claude/review-evals:
 // trocar a skill não muda a key.
 // A /code-review embutida tem o mesmo nome da skill do plugin mattpocock, por isso
 // a do plugin é referenciada com o namespace.
 const REVIEWERS = [
   { key: 'thermos', skill: 'thermos:thermos' },
-  { key: 'ce-code-review', skill: 'ce-code-review' },
   { key: 'matt-code-review', skill: 'mattpocock-skills:code-review' },
   { key: 'claude-code-review', skill: 'code-review', args: `high ${reviewRange}` },
 ]

@@ -59,7 +59,6 @@ Legend: `/name` = invoked only as a slash command (`disable-model-invocation: tr
 
 | Skill | Description |
 |-------|-------------|
-| `ce-code-review` **global** | Structured review for bugs, regressions, tests, and standards |
 | `/pr-review-to-subtasks` **global** | Create work-item subtasks from a review file |
 | `pr-description` **global** | Write a PR title and description |
 
@@ -167,13 +166,13 @@ Multi-agent workflow scripts in `workflows/`, installed globally into `~/.claude
 
 | Workflow | Description |
 |----------|-------------|
-| `dev-flow` | Implement a markdown plan, open a PR, review it with 4 reviewers, apply the fixes, and audit the docs |
-| `code-review-flow` | Review an existing PR with 4 reviewers and produce a verified final report; every reviewer reads the PR's issue and its comments (tracker detected per project) and, when given, the feature plan |
+| `dev-flow` | Implement a markdown plan, open a PR, review it with 3 reviewers, apply the fixes, and audit the docs |
+| `code-review-flow` | Review an existing PR with 3 reviewers and produce a verified final report; every reviewer reads the PR's issue and its comments (tracker detected per project) and, when given, the feature plan |
 | `tlc-code-review-flow` | Shortcut for `code-review-flow` on `tlc-spec-lean` PRs: `args: {pr, plan, issue}`; without `plan`, finds the feature plan in `.specs/features/*/plan.md` |
 
 `dev-flow` and `tlc-code-review-flow` run `code-review-flow` as a sub-workflow (`workflow()`), so the review logic lives in one script. Nesting goes one level deep, so `code-review-flow` cannot call another workflow.
 
-All of them rely on the `thermos` and `mattpocock-skills` plugins and on the `ce-code-review` skill.
+All of them rely on the `thermos` and `mattpocock-skills` plugins.
 
 ### Output Styles
 

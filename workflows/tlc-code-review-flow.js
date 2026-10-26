@@ -1,6 +1,6 @@
 export const meta = {
   name: 'tlc-code-review-flow',
-  description: 'Atalho do code-review-flow para PRs feitos com tlc-spec-lean: os 4 revisores leem o plano da feature (.specs/features/*/plan.md) e a issue do PR',
+  description: 'Atalho do code-review-flow para PRs feitos com tlc-spec-lean: os 3 revisores leem o plano da feature (.specs/features/*/plan.md) e a issue do PR',
   whenToUse:
     'Quando quiser revisar um PR cuja feature tem plano tlc-spec-lean, sem implementar nada. Sem plano, use code-review-flow. ' +
     'Uso: Workflow({name: "tlc-code-review-flow", args: {pr: "<PR url ou número>", plan: "<path do plan.md>", issue: "<ID da issue>"}}). ' +
