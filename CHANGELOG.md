@@ -57,6 +57,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `dev-flow` the reviewer keys for the Claude-derived reviewers are now
   `claude-code-review` and `claude-security-review`.
 
+### Removed
+
+- `claude-security-review` reviewer from `code-review-flow` (and so from
+  `dev-flow` and `tlc-code-review-flow`), which now run 4 reviewers. Across 22
+  reviewed PRs it found no accepted issue that another reviewer had not also
+  found. The `claude-security-review` skill stays available on its own.
+
 ## [1.0.0] - 2026-10-06
 
 First versioned release. Dev-OS started as a fork of Agent OS and has since
