@@ -47,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Third-party skill `metadata.source` values normalized to GitHub `tree/` URLs
   or gist `#file-` URLs. `ai-agent-security-analysis` and `claude-security-review`
   now cite their inspiration in `metadata.reference` and are no longer synced.
-- `pr-review-to-subtasks` and `html-it` now install globally into `~/.claude/skills/`.
+- `pr-review-to-subtasks` now installs globally into `~/.claude/skills/`.
 - `code-review-flow` workflow: a new Setup step resolves the PR once (branches,
   base/head/merge-base SHAs, saved diff) and every reviewer reviews that exact
   commit. Final Review checks whether the PR moved and judges findings against
@@ -69,6 +69,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   required it: neither was used.
 - `/pr-review-workflow` skill: `code-review-flow` already reviews the PR and
   writes the report that `/pr-review-to-subtasks` takes.
+- `html-it` skill. `code-review-flow` now renders the final review's HTML
+  version with `html-anything`.
 
 ## [1.0.0] - 2026-10-06
 

@@ -105,7 +105,6 @@ Legend: `/name` = invoked only as a slash command (`disable-model-invocation: tr
 | `cognicode-sow` | Generate a Cognicode project scope document (SOW) |
 | `competitors-analysis` | Evidence-based competitor analysis from actual cloned code |
 | `copywriting` | Write and improve marketing copy for web pages |
-| `html-it` **global** | Produce HTML output instead of markdown |
 | `improve-tech-writing` | Apply clear technical writing patterns in PT-BR |
 | `macos-cleaner` | Analyze and reclaim macOS disk space |
 | `/mermaid-diagram-generator` | Generate interactive HTML diagrams with Mermaid.js |
