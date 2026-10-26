@@ -60,8 +60,6 @@ Legend: `/name` = invoked only as a slash command (`disable-model-invocation: tr
 | Skill | Description |
 |-------|-------------|
 | `ce-code-review` **global** | Structured review for bugs, regressions, tests, and standards |
-| `claude-security-review` **global** | Security review of an explicit `base...head` revision range |
-| `frontend-code-review` | Review `.tsx`/`.ts`/`.js` files for quality, performance, and business logic |
 | `/pr-review-to-subtasks` **global** | Create work-item subtasks from a review file |
 | `/pr-review-workflow` | Review an Azure DevOps PR and create subtasks from the review |
 | `pr-description` **global** | Write a PR title and description |
@@ -164,7 +162,6 @@ Sub-agents in `agents/`, imported per project with `scripts/import-agents.sh`.
 |-------|-------------|
 | `ce-code-simplicity-reviewer` | Final review pass for YAGNI violations and simplification opportunities |
 | `framework-docs-researcher` | Gather official docs, version constraints, and best practices for a dependency |
-| `frontend-code-reviewer` | Review recently changed frontend code (components, styles, hooks) |
 
 ### Workflows
 

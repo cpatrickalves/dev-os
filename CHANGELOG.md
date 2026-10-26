@@ -62,7 +62,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `claude-security-review` reviewer from `code-review-flow` (and so from
   `dev-flow` and `tlc-code-review-flow`), which now run 4 reviewers. Across 22
   reviewed PRs it found no accepted issue that another reviewer had not also
-  found. The `claude-security-review` skill stays available on its own.
+  found.
+- `claude-security-review` skill: it was no longer used by any workflow and
+  proved ineffective on its own.
+- `frontend-code-review` skill and the `frontend-code-reviewer` agent that
+  required it: neither was used.
 
 ## [1.0.0] - 2026-10-06
 

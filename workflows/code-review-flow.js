@@ -173,8 +173,7 @@ const REPORT_SCHEMA = {
 // os falsos positivos caem nos vereditos.
 // Sem revisor só de segurança: em 22 PRs (set–out/2026) a claude-security-review não
 // trouxe nenhum achado procedente que os outros revisores não tivessem apontado
-// (~/.claude/review-evals/analise-revisores-2026-10-26.md). A skill continua
-// disponível para uso avulso.
+// (~/.claude/review-evals/analise-revisores-2026-10-26.md).
 // A key é a identidade do revisor na série histórica de ~/.claude/review-evals:
 // trocar a skill não muda a key.
 // A /code-review embutida tem o mesmo nome da skill do plugin mattpocock, por isso
