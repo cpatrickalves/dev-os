@@ -70,7 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `/pr-review-workflow` skill: `code-review-flow` already reviews the PR and
   writes the report that `/pr-review-to-subtasks` takes.
 - `html-it` skill. `code-review-flow` now renders the final review's HTML
-  version following `show-me`.
+  version with `html-anything`.
 
 ## [1.0.0] - 2026-10-06
 

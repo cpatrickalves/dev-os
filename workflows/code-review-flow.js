@@ -6,7 +6,7 @@ export const meta = {
   phases: [
     { title: 'Setup', detail: 'resolve o PR uma única vez: branches, commits base/head fixados, diff salvo, a issue (com os comentários) lida do tracker do projeto e o plano da feature, compartilhados com todos os revisores', model: 'sonnet' },
     { title: 'Code Review', detail: '4 revisores em paralelo (thermos + ce-code-review + matt-code-review + /code-review embutida, todos Opus), consolidação dos relatórios e relatório de avaliação dos revisores' },
-    { title: 'Final Review', detail: 'verifica cada achado contra o código do PR e gera o relatório final em markdown + HTML (show-me) na raiz do projeto', model: 'opus' },
+    { title: 'Final Review', detail: 'verifica cada achado contra o código do PR e gera o relatório final em markdown + HTML (html-anything) na raiz do projeto', model: 'opus' },
     { title: 'Review Eval', detail: 'cruza os vereditos com os achados de cada revisor e fecha o relatório de avaliação (eficácia das skills de review)', model: 'sonnet' },
   ],
 }
@@ -293,8 +293,6 @@ const VERDICTS_SCHEMA = {
   },
 }
 
-// A show-me tem disable-model-invocation (só roda como /show-me), então o agente
-// não consegue invocá-la pelo Skill tool: lê o SKILL.md e segue a orientação.
 const finalReview = await agent(
   `Você executa a etapa "Final Review" do workflow ${workflowName}, que o usuário pediu para ` +
     `rodar sobre o PR ${prRef}. ${REVIEWERS.length} revisores independentes produziram o relatório consolidado ` +
@@ -322,8 +320,7 @@ const finalReview = await agent(
     `Após o julgamento, gere o relatório final em markdown na raiz do projeto, com o nome "pr-review-${prId}.md". ` +
     'IMPORTANTE: o documento final deve conter os itens que devem ser corrigidos (os achados procedentes) e, se houver, a seção "Não verificáveis"; ' +
     'não inclua os achados descartados/rejeitados (overengineering, premissas incorretas, falsos positivos, etc.). ' +
-    `Em seguida gere uma versão HTML do "pr-review-${prId}.md" (para melhor legibilidade), "pr-review-${prId}.html", também na raiz do projeto, ` +
-    'seguindo a skill show-me: leia ~/.claude/skills/show-me/SKILL.md e aplique a orientação de arquivo HTML dela (sem rodar `open`). ' +
+    `Em seguida use a skill html-anything para gerar uma versão HTML do "pr-review-${prId}.md" (para melhor legibilidade) também na raiz do projeto. ` +
     'Este workflow não altera o PR: nenhum commit, push ou comentário — apenas os dois arquivos de relatório. ' +
     'Cada achado do relatório consolidado tem um ID (F01, F02, ...): retorne em "verdicts" o veredito de TODOS eles ' +
     '(procedente, improcedente ou nao_verificavel) com um motivo curto — esses vereditos alimentam a avaliação de eficácia dos revisores. ' +
@@ -336,7 +333,7 @@ const finalReview = await agent(
       type: 'object',
       properties: {
         markdown_path: { type: 'string', description: 'Path do relatório final em markdown na raiz do projeto' },
-        html_path: { type: 'string', description: 'Path da versão HTML gerada seguindo a skill show-me' },
+        html_path: { type: 'string', description: 'Path da versão HTML gerada pela skill html-anything' },
         summary: { type: 'string', description: 'Resumo do julgamento dos achados (procedentes vs. descartados)' },
         judged_sha: { type: 'string', description: 'SHA completo do commit contra o qual os achados foram julgados' },
         verdicts: VERDICTS_SCHEMA,
