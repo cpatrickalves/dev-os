@@ -18,10 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `manage-mods.sh` and the `external-mods.yaml` catalog: install/update or
   uninstall Claude Code mods. Entries: `savvy-progress`, `filetree`, `reflect-mod`, `skins` and the
   builtin `cc-plugin-you-should-know` (builtin mods are enabled/disabled, not installed).
-- `tlc-skills` entry in `external-skills.yaml`: six Tech Leads Club skills
+- `tlc-skills` entry in `external-skills.yaml`: seven Tech Leads Club skills
   (`tlc-spec-lean`, `tlc-discover`, `technical-design-doc-creator`,
-  `security-threat-model`, `the-fool`, `the-judge`), installed globally for
-  Claude Code only.
+  `security-threat-model`, `the-fool`, `the-judge`, `demo`), installed globally
+  for Claude Code only.
 - `tlc-playwright` entry in `external-skills.yaml`: the Tech Leads Club
   `playwright-skill`, installed per project.
 - `show-me` skill (`learning/`): a third-party copy of the HumanLayer skill,
