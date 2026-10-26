@@ -97,6 +97,7 @@ Legend: `/name` = invoked only as a slash command (`disable-model-invocation: tr
 |-------|-------------|
 | `/explainer-graphic` | Create visual infographics using real-world analogies |
 | `knowledge-distiller` | Distill transcripts, articles, or notes into a PT-BR knowledge document |
+| `/show-me` **global** | Explain the current topic visually with diagrams, code-shape sketches, and HTML |
 
 #### `productivity/` — writing, diagrams, and everyday tools
 
@@ -146,9 +147,8 @@ Third-party assets that are installed, not copied, are declared in two YAML cata
 | `shadcn-ui` | [shadcn/ui](https://ui.shadcn.com/docs/skills) | project | shadcn/ui skills |
 | `tlc-skills` | [tech-leads-club/agent-skills](https://github.com/tech-leads-club/agent-skills) | global | Tech Leads Club skills: `tlc-spec-lean`, `tlc-discover`, `technical-design-doc-creator`, `security-threat-model`, `the-fool`, `the-judge` |
 | `tlc-playwright` | [tech-leads-club/agent-skills](https://github.com/tech-leads-club/agent-skills) | project | Tech Leads Club skill: `playwright-skill` (browser automation and testing) |
-| `show-me` | [humanlayer/skills](https://github.com/humanlayer/skills) | global | HumanLayer skill: `show-me` (visual explanations with diagrams and HTML artifacts) |
 
-Third-party skills copied into `skills/` (such as `unslop`) record their upstream in frontmatter: `metadata.source` (a GitHub `tree/<ref>/<dir>` URL of the skill directory, or a gist URL with a `#file-<name>` anchor), `metadata.last_synced` (the date of the last copy from upstream, which is what marks a skill as third-party) and `metadata.local_changes` (what was adapted locally, or `"None."`). Own skills that are only inspired by external material cite it in `metadata.reference` instead.
+Third-party skills copied into `skills/` (such as `unslop` and `show-me`) record their upstream in frontmatter: `metadata.source` (a GitHub `tree/<ref>/<dir>` URL of the skill directory, or a gist URL with a `#file-<name>` anchor), `metadata.last_synced` (the date of the last copy from upstream, which is what marks a skill as third-party) and `metadata.local_changes` (what was adapted locally, or `"None."`). Own skills that are only inspired by external material cite it in `metadata.reference` instead.
 
 `scripts/sync-third-party-skills.sh` lists them with the upstream changes since `last_synced`, and shows the upstream diff for the skills you pick. With `--apply` it merges those changes into the local copy (a three-way merge per file, so local adaptations survive; conflicts are left as markers) and bumps `last_synced`. It needs an authenticated `gh` and never commits.
 

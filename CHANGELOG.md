@@ -24,8 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Claude Code only.
 - `tlc-playwright` entry in `external-skills.yaml`: the Tech Leads Club
   `playwright-skill`, installed per project.
-- `show-me` entry in `external-skills.yaml`: the HumanLayer `show-me` skill,
-  installed globally for Claude Code only.
+- `show-me` skill (`learning/`): a third-party copy of the HumanLayer skill,
+  installed globally and kept current with `sync-third-party-skills.sh`.
 - `tlc-code-review-flow` workflow: a shortcut for `code-review-flow` on
   `tlc-spec-lean` PRs. It takes `args: {pr, plan, issue}`; without `plan`, the
   Setup finds the feature plan in `.specs/features/*/plan.md` by the issue ID.
@@ -70,7 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `/pr-review-workflow` skill: `code-review-flow` already reviews the PR and
   writes the report that `/pr-review-to-subtasks` takes.
 - `html-it` skill. `code-review-flow` now renders the final review's HTML
-  version with `html-anything`.
+  version following `show-me`.
 
 ## [1.0.0] - 2026-10-06
 
