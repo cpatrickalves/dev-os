@@ -35,6 +35,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `code-review-flow` workflow (and so `dev-flow` and `tlc-code-review-flow`):
+  `the-judge` joins as a 4th reviewer, in report-only mode. The Setup already
+  resolves the PR (GitHub or Azure DevOps), so the reviewer skips the skill's
+  `gh` steps (fetching and posting the review), runs the repo checks in a
+  temporary worktree at the PR head, and writes its findings to the report.
 - `code-review-flow` workflow: the Setup finds the PR's issue, detects the
   project's tracker (Linear, Plane, GitHub Issues, Jira, Azure Boards), and saves
   the issue with all its comments once; every reviewer and the Final Review read

@@ -1,10 +1,10 @@
 export const meta = {
   name: 'dev-flow',
-  description: 'Fluxo de desenvolvimento: implementação do plano → code review com 3 revisores (code-review-flow) → correções no PR → auditoria de docs',
+  description: 'Fluxo de desenvolvimento: implementação do plano → code review com 4 revisores (code-review-flow) → correções no PR → auditoria de docs',
   whenToUse: 'Quando existir um plano de implementação em markdown pronto para executar de ponta a ponta. Uso: Workflow({name: "dev-flow", args: "/path/do/plano.md"})',
   phases: [
     { title: 'Development', detail: 'implementa o plano, commita e abre PR para a branch dev', model: 'sonnet' },
-    { title: 'Code Review', detail: 'roda o code-review-flow sobre o PR, com o plano e a issue: 3 revisores, consolidação, Final Review (vereditos) e avaliação dos revisores' },
+    { title: 'Code Review', detail: 'roda o code-review-flow sobre o PR, com o plano e a issue: 4 revisores, consolidação, Final Review (vereditos) e avaliação dos revisores' },
     { title: 'PR Fixes', detail: 'aplica as correções procedentes do relatório final do code review e atualiza o PR', model: 'opus' },
     { title: 'Docs Audit', detail: 'auditoria de documentação da branch com a skill docs-generator (sincronia /docs + ADRs/guides)', model: 'opus' },
   ],

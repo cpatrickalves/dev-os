@@ -1,11 +1,11 @@
 export const meta = {
   name: 'code-review-flow',
-  description: 'Code review com 3 revisores (thermos + matt-code-review + /code-review, todos Opus) de um PR, com a issue do PR (e o plano da feature, se houver) como contexto, e consolidação dos relatórios',
+  description: 'Code review com 4 revisores (thermos + matt-code-review + /code-review + the-judge, todos Opus) de um PR, com a issue do PR (e o plano da feature, se houver) como contexto, e consolidação dos relatórios',
   whenToUse:
     'Quando quiser revisar um PR existente sem implementar nada. A issue do PR e o tracker são descobertos sozinhos; para fixar a issue ou passar o plano: args: {pr, issue, plan}. Para PRs feitos com tlc-spec-lean, use tlc-code-review-flow. Uso: Workflow({name: "code-review-flow", args: "<PR url ou número>"})',
   phases: [
     { title: 'Setup', detail: 'resolve o PR uma única vez: branches, commits base/head fixados, diff salvo, a issue (com os comentários) lida do tracker do projeto e o plano da feature, compartilhados com todos os revisores', model: 'sonnet' },
-    { title: 'Code Review', detail: '3 revisores em paralelo (thermos + matt-code-review + /code-review embutida, todos Opus), consolidação dos relatórios e relatório de avaliação dos revisores' },
+    { title: 'Code Review', detail: '4 revisores em paralelo (thermos + matt-code-review + /code-review embutida + the-judge, todos Opus), consolidação dos relatórios e relatório de avaliação dos revisores' },
     { title: 'Final Review', detail: 'verifica cada achado contra o código do PR e gera o relatório final em markdown + HTML (html-anything) na raiz do projeto', model: 'opus' },
     { title: 'Review Eval', detail: 'cruza os vereditos com os achados de cada revisor e fecha o relatório de avaliação (eficácia das skills de review)', model: 'sonnet' },
   ],
@@ -179,10 +179,31 @@ const REPORT_SCHEMA = {
 // trocar a skill não muda a key.
 // A /code-review embutida tem o mesmo nome da skill do plugin mattpocock, por isso
 // a do plugin é referenciada com o namespace.
+// note: instruções extras só para aquele revisor, anexadas ao prompt.
+// A the-judge (tlc-skills) foi feita para rodar sozinha no GitHub: busca o PR com gh
+// (Step 0) e publica a review (Step 7). Aqui o Setup já resolveu o PR (GitHub ou
+// Azure DevOps), então a nota pula as duas pontas e mantém o resto da skill.
+// Os checks do Step 1 rodam num worktree temporário no head do PR: o working tree
+// compartilhado não está no PR e não pode ser alterado.
+const judgeWorktree = `/tmp/the-judge-${prId}`
 const REVIEWERS = [
   { key: 'thermos', skill: 'thermos:thermos' },
   { key: 'matt-code-review', skill: 'mattpocock-skills:code-review' },
   { key: 'claude-code-review', skill: 'code-review', args: `high ${reviewRange}` },
+  {
+    key: 'tlc-the-judge',
+    skill: 'the-judge',
+    note:
+      'Adaptações da the-judge a este fluxo (valem sobre o SKILL.md): ' +
+      '(1) pule o Step 0: o PR já está resolvido acima, use o diff salvo e trate a revisão sempre como round 1, sem consultar reviews anteriores; ' +
+      `(2) no Step 1, rode o scan com \`python3 <diretório da skill>/scripts/scan_bypasses.py < "${pr.diff_path}"\` ` +
+      `e rode os checks do repo num worktree temporário (\`git worktree add --detach "${judgeWorktree}" ${pr.head_sha}\`), ` +
+      'só se rodarem sem instalar dependências, sem atualizar snapshots; reproduções do Step 4 também ficam nesse worktree; ' +
+      `ao final remova-o com \`git worktree remove --force "${judgeWorktree}"\`; ` +
+      `(3) grave o findings.json em "/tmp/the-judge-findings-${prId}.json" e rode o gate (Step 6) até exit 0; ` +
+      '(4) NÃO execute o Step 7 nem nada que publique no PR: o relatório pedido substitui a review postada, ' +
+      'com o veredito, a tabela de achados (severidade, arquivo:linha, evidência e correção sugerida), o research log e os checks rodados. ',
+  },
 ]
 const REVIEWER_KEYS = REVIEWERS.map((r) => r.key)
 
@@ -205,6 +226,7 @@ const reviewPrompt = (r) => {
   return (
     scopeContext +
     invoke +
+    (r.note ?? '') +
     'Não troque de branch nem altere o working tree: outros revisores rodam em paralelo no mesmo checkout. ' +
     'Como resultado, retorne o path do relatório gerado.'
   )
