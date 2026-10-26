@@ -125,7 +125,6 @@ Third-party assets that are installed, not copied, are declared in two YAML cata
 | `skill-creator` | official | user | Skill scaffolding helper |
 | `claude-code-setup` | official | user | Claude Code setup helper |
 | `thermos` | dev-os (this repo, `plugins/`) | user | Thermo-nuclear branch review |
-| `compound-engineering` | [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin) | user | Compound Engineering pipeline |
 | `andrej-karpathy-skills` | [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | user | Andrej Karpathy guideline skills |
 | `mattpocock-skills` | official | user | Matt Pocock skills |
 | `pyright-lsp` | official | project | Python type checking |
@@ -157,7 +156,6 @@ Sub-agents in `agents/`, imported per project with `scripts/import-agents.sh`.
 
 | Agent | Description |
 |-------|-------------|
-| `ce-code-simplicity-reviewer` | Final review pass for YAGNI violations and simplification opportunities |
 | `framework-docs-researcher` | Gather official docs, version constraints, and best practices for a dependency |
 
 ### Workflows

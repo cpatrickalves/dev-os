@@ -37,12 +37,6 @@ plugins:
     marketplace_source: .
     scope: user
 
-  - name: compound-engineering
-    description: Compound Engineering pipeline
-    marketplace: every-marketplace
-    marketplace_source: EveryInc/compound-engineering-plugin
-    scope: user
-
   - name: andrej-karpathy-skills
     description: Andrej Karpathy guideline skills
     marketplace: karpathy-skills

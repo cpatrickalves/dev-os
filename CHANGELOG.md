@@ -74,6 +74,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ce-code-review` skill, and with it the `ce-code-review` reviewer from
   `code-review-flow` (and so from `dev-flow` and `tlc-code-review-flow`), which
   now run 3 reviewers.
+- `compound-engineering` plugin from `external-plugins.yaml`, and the
+  `ce-code-simplicity-reviewer` agent copied from it.
 
 ## [1.0.0] - 2026-10-06
 
