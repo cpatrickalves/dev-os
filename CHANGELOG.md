@@ -67,6 +67,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   proved ineffective on its own.
 - `frontend-code-review` skill and the `frontend-code-reviewer` agent that
   required it: neither was used.
+- `/pr-review-workflow` skill: `code-review-flow` already reviews the PR and
+  writes the report that `/pr-review-to-subtasks` takes.
 
 ## [1.0.0] - 2026-10-06
 

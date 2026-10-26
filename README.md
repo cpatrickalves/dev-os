@@ -61,7 +61,6 @@ Legend: `/name` = invoked only as a slash command (`disable-model-invocation: tr
 |-------|-------------|
 | `ce-code-review` **global** | Structured review for bugs, regressions, tests, and standards |
 | `/pr-review-to-subtasks` **global** | Create work-item subtasks from a review file |
-| `/pr-review-workflow` | Review an Azure DevOps PR and create subtasks from the review |
 | `pr-description` **global** | Write a PR title and description |
 
 #### `engineering/documentation/` — docs, specs, and changelogs
