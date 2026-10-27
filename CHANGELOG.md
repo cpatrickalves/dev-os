@@ -30,6 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `playwright-skill`, installed per project.
 - `show-me` skill (`learning/`): a third-party copy of the HumanLayer skill,
   installed globally and kept current with `sync-third-party-skills.sh`.
+- `grill-with-ui` skill (`productivity/`): a third-party copy of Jason Ku's
+  skill that runs a grilling interview on a local browser page (plain Node, no
+  dependencies). Only the runtime files are copied; kept current with
+  `sync-third-party-skills.sh`.
 - `tlc-code-review-flow` workflow: a shortcut for `code-review-flow` on
   `tlc-spec-lean` PRs. It takes `args: {pr, plan, issue}`; without `plan`, the
   Setup finds the feature plan in `.specs/features/*/plan.md` by the issue ID.

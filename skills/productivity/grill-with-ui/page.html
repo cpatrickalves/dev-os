@@ -1,0 +1,882 @@
+<!doctype html>
+<html lang="en" data-theme="__GRILL_THEME__">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>grill</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: light-dark(#f7f4ee, #16130f); --panel: light-dark(#ffffff, #1e1a15); --ink: light-dark(#1f1c18, #ece7dd);
+    --ink-2: light-dark(#625b51, #b3aa9c); --ink-3: light-dark(#9a9285, #7d7568); --rule: light-dark(#e6e0d4, #322c24); --hover: light-dark(#efebe3, #2a241d);
+    --accent: light-dark(#9a3a26, #d9d1c3); --ok: light-dark(#3d6b4a, #7fb08d); --ok-soft: light-dark(#e3eee5, #1f2b22); --ok-deep: light-dark(#2f5a3b, #6ea07c); --ok-pulse: light-dark(#7fb08d, #a9d6b6);
+    --stage: light-dark(#b8791f, #d9a441); --stage-soft: light-dark(#f8ecd2, #2e2616); --warn-soft: light-dark(#fbe9e4, #38211b);
+    /* Text and ticks on an --accent or --ok fill. Those fills turn light in the dark theme, where white on them drops to 3:1 and below. */
+    --on-fill: light-dark(#ffffff, #16130f);
+    /* Importance levels and rating chips. In the dark theme the accent is a neutral off-white, so
+       red means only Decide carefully (its own --careful, which never moves with the accent) or a
+       poor rating. */
+    --accent-soft: light-dark(#fbefeb, #2c2720); --accent-line: light-dark(#e7c9c0, #4a4238);
+    --careful: light-dark(#9a3a26, #e0785c); --careful-soft: light-dark(#fbefeb, #38211b); --careful-line: light-dark(#e7c9c0, #5a2e24); --stage-line: light-dark(#ecd6ae, #4a3a1c);
+    --taste: light-dark(#5d4a86, #b4a2e0); --taste-soft: light-dark(#f1edf7, #251f33); --taste-line: light-dark(#d6cde6, #3d3352);
+    --check-ink: light-dark(#7f5413, #e0b45a); --skim-ink: light-dark(#625b51, #b3aa9c);
+    --chip-g-bg: light-dark(#e3eee5, #1f2b22); --chip-g-ink: light-dark(#2f5a3b, #8fc29d); --chip-g-line: light-dark(#c7dccb, #2f4a36);
+    --chip-x-bg: light-dark(#f8ecd2, #2e2616); --chip-x-ink: light-dark(#7f5413, #e0b45a); --chip-x-line: light-dark(#ead3a2, #4a3a1c);
+    --chip-p-bg: light-dark(#fbe4dd, #38211b); --chip-p-ink: light-dark(#9a3a26, #ec8b72); --chip-p-line: light-dark(#f0c7bb, #5a2e24);
+    --serif: "Iowan Old Style", Charter, Georgia, serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  :root[data-theme="light"] { color-scheme: light; }
+  :root[data-theme="dark"] { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: var(--sans); font-size: 15px; line-height: 1.5; color: var(--ink); background: var(--bg);
+    display: grid; grid-template-rows: auto auto 1fr auto; grid-template-columns: 260px minmax(0, 1fr) 33vw; height: 100vh;
+  }
+  a { color: var(--accent); }
+  /* Rows are pinned: the banner is display:none most of the time, and auto-placement would
+     otherwise slide the content into the "auto" row and stretch the footer into the "1fr" row. */
+  #banner { grid-row: 1; grid-column: 1 / -1; display: none; padding: 9px 24px; font-size: 14px; background: var(--warn-soft); color: var(--accent); border-bottom: 1px solid var(--rule); }
+  #banner.show { display: block; } #banner.done { background: var(--ok-soft); color: var(--ok); }
+
+  header { grid-row: 2; grid-column: 1 / -1; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 14px; padding: 12px 24px; border-bottom: 1px solid var(--rule); background: var(--panel); position: relative; }
+  header h1 { font-family: var(--serif); font-weight: 500; font-size: 20px; margin: 0; }
+  header .path { color: var(--ink-3); font-size: 13px; }
+  #intent { display: none; flex-basis: 100%; order: 10; font-size: 14px; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #intent.show { display: block; }
+  #intent.show.open { white-space: normal; }
+  #intent.show.clamped { cursor: pointer; }
+  header .status { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); } header .status .spin { color: var(--stage); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+  .dot.working { background: var(--stage); animation: pulse 1.2s ease-in-out infinite; }
+  .dot.gone { background: var(--ink-3); }
+  .dot.unheard { background: transparent; box-shadow: inset 0 0 0 1.5px var(--stage); }
+  @keyframes pulse { 50% { opacity: .3; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { display: inline-block; width: 11px; height: 11px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -1px; flex-shrink: 0; }
+  #progress { display: none; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; overflow: hidden; background: var(--stage-soft); }
+  header.working #progress { display: block; }
+  #progress::after { content: ""; position: absolute; top: 0; bottom: 0; width: 30%; background: var(--stage); animation: slide 1.4s ease-in-out infinite; }
+  @keyframes slide { from { left: -30%; } to { left: 100%; } }
+  #levels-toggle, #terms-toggle, #visualize { font-size: 12px; padding: 4px 10px; }
+  #theme-toggle { display: inline-flex; align-items: center; padding: 4px 8px; }
+  #theme-toggle svg { display: none; width: 15px; height: 15px; }
+  #theme-toggle[data-mode="system"] .i-system, #theme-toggle[data-mode="light"] .i-light, #theme-toggle[data-mode="dark"] .i-dark { display: block; }
+  #visualize .spin { width: 9px; height: 9px; margin-right: 4px; }
+  #visualize:disabled { background: var(--panel); border-color: var(--rule); color: var(--ink-3); }
+  #subagent-opt { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--ink-2); white-space: nowrap; }
+  #subagent-opt[hidden] { display: none; }
+  #subagent-opt input { margin: 0; accent-color: var(--accent); }
+  #subagent-opt label { cursor: pointer; }
+  .info { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--ink-3); color: var(--ink-3); font: italic 600 10px/1 var(--serif); cursor: help; }
+  .info:hover, .info:focus { color: var(--ink); border-color: var(--ink); outline: none; }
+  .info::after { content: attr(data-tip); display: none; position: absolute; top: calc(100% + 8px); right: -8px; width: 260px; padding: 8px 10px; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,.08); color: var(--ink-2); font: 12px/1.45 system-ui, sans-serif; font-style: normal; white-space: normal; text-align: left; z-index: 6; }
+  .info:hover::after, .info:focus::after { display: block; }
+  #terms { display: none; position: absolute; right: 24px; top: 100%; width: 420px; max-height: 60vh; overflow-y: auto; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 10px 16px; box-shadow: 0 8px 24px rgba(0,0,0,.08); z-index: 5; }
+  #terms.show { display: block; }
+  .term { padding: 8px 0; border-bottom: 1px solid var(--rule); font-size: 14px; } .term:last-child { border-bottom: 0; }
+  .term b { font-family: var(--serif); font-weight: 500; font-size: 15px; } .term .avoid { color: var(--ink-3); font-size: 12px; }
+  #levels { display: none; position: absolute; right: 24px; top: 100%; width: 400px; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 12px 16px; box-shadow: 0 8px 24px rgba(0,0,0,.08); z-index: 5; font-size: 13px; }
+  #levels.show { display: block; }
+  #levels h4 { margin: 0 0 6px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+  .lv-row { display: grid; grid-template-columns: 22px 120px 1fr; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+  .lv-row:last-child { border-bottom: 0; }
+  .lv-row b { font-weight: 600; font-size: 13px; } .lv-row .d { color: var(--ink-2); }
+  .sdot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+  .sdot.yours { border-radius: 1px; transform: rotate(45deg); width: 8px; height: 8px; }
+  .sdot.skim { background: transparent; border: 1.5px solid currentColor; }
+  .lvc-careful { color: var(--careful); } .lvc-yours { color: var(--taste); } .lvc-check { color: var(--stage); } .lvc-skim { color: var(--ink-3); }
+
+  nav { grid-row: 3; grid-column: 1; border-right: 1px solid var(--rule); overflow-y: auto; padding: 10px 0 24px; }
+  nav .note { margin: 6px 14px 4px; padding: 10px 12px; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; font-size: 13px; color: var(--ink-2); }
+  nav .round { padding: 16px 20px 6px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); display: flex; justify-content: space-between; }
+  nav .round.current { color: var(--accent); }
+  .item { display: grid; grid-template-columns: 30px 1fr auto; gap: 0 8px; align-items: baseline; padding: 8px 20px; cursor: pointer; }
+  .item:hover { background: var(--hover); }
+  .item.selected { background: var(--panel); box-shadow: inset 3px 0 0 var(--accent); }
+  .item .id { font-size: 12px; color: var(--ink-3); }
+  .item .t { font-size: 14px; }
+  /* Only Decide carefully and Your call rows carry a word; Skim and Check rows carry no mark. */
+  .item .sword { grid-column: 2; font-size: 11px; font-weight: 600; letter-spacing: .02em; margin-top: 1px; } .item .sword.done { opacity: .45; }
+  .item .mark { font-size: 11px; color: var(--ink-3); display: inline-flex; align-items: center; gap: 4px; }
+  .item .mark svg { width: 12px; height: 12px; }
+  .mark.answered { color: var(--ok); } .mark.open, .mark.reopened { color: var(--accent); } .mark.staged { color: var(--stage); font-weight: 600; } .mark.pending { color: var(--stage); }
+  .item.updated .t::after { content: "updated"; font-size: 10px; color: var(--stage); margin-left: 6px; letter-spacing: .06em; text-transform: uppercase; }
+  nav .empty { padding: 20px; font-size: 13px; color: var(--ink-3); }
+
+  /* Visualize view: the list and card columns give way to the visual; the right panel becomes its feedback. */
+  #visual { grid-row: 3; grid-column: 1 / 3; display: none; grid-template-rows: auto 1fr; min-height: 0; background: var(--panel); }
+  body.visualize #visual { display: grid; } body.visualize nav, body.visualize main { display: none; }
+  #visual-strip { display: flex; align-items: center; gap: 14px; padding: 8px 24px; border-bottom: 1px solid var(--rule); font-size: 13px; color: var(--ink-2); background: var(--bg); }
+  #visual-strip .kind { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+  #visual-strip .ver { color: var(--ink-3); } #visual-strip .ver b { color: var(--ink-2); font-weight: 600; }
+  #visual-stale { color: var(--stage); font-size: 12px; }
+  #visual-strip .right { margin-left: auto; display: flex; align-items: center; gap: 10px; color: var(--stage); }
+  #visual-strip a { color: var(--ink-3); text-decoration: none; font-size: 13px; } #visual-strip a:hover { color: var(--accent); }
+  #visual-frame { width: 100%; height: 100%; border: 0; background: #fff; display: block; }
+  #visual-wait { display: flex; align-items: center; justify-content: center; gap: 10px; height: 100%; color: var(--ink-3); font-size: 14px; background: var(--panel); }
+  #visual-wait[hidden], #visual-frame[hidden] { display: none; }
+
+  main { grid-row: 3; grid-column: 2; overflow-y: auto; padding: 36px 44px 60px; background: var(--panel); }
+  .card { max-width: 680px; }
+  .crumb { font-size: 12px; color: var(--ink-3); display: flex; gap: 12px; flex-wrap: wrap; }
+  .crumb a { text-decoration: none; } .crumb .upd { color: var(--stage); }
+  .imp { display: inline-flex; align-items: center; gap: 8px; margin-top: 12px; padding: 4px 10px; border-radius: 999px; font-size: 12px; border: 1px solid; }
+  .imp b { font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-size: 11px; }
+  .imp .why-l { color: var(--ink-2); }
+  .imp.careful { color: var(--careful); border-color: var(--careful-line); background: var(--careful-soft); }
+  .imp.check { color: var(--check-ink); border-color: var(--stage-line); background: var(--stage-soft); }
+  .imp.skim { color: var(--skim-ink); border-color: var(--rule); background: var(--bg); }
+  .imp.yours { color: var(--taste); border-color: var(--taste-line); background: var(--taste-soft); }
+  .title-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 8px 0 12px; }
+  .card h2 { font-family: var(--serif); font-weight: 500; font-size: 30px; line-height: 1.15; margin: 0; }
+  #explore { font-size: 13px; padding: 6px 12px; flex-shrink: 0; }
+  #explore:disabled { background: var(--panel); border-color: var(--rule); color: var(--ink-3); }
+  .card .body { font-size: 15px; color: var(--ink-2); max-width: 62ch; margin: 0; white-space: pre-line; }
+  .card .body code, .opt code, .why code, .msg .text code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9em; background: var(--hover); padding: 1px 5px; border-radius: 4px; }
+  .card .body a, .opt a, .why a, .msg .text a { color: var(--accent); }
+  .opts { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 8px; }
+  .opt { display: grid; grid-template-columns: 28px 1fr auto; gap: 12px; align-items: start; padding: 12px 14px; border: 1px solid var(--rule); border-radius: 8px; background: var(--panel); cursor: pointer; }
+  .opt .check { width: 20px; height: 20px; color: var(--ok); visibility: hidden; align-self: center; }
+  .opt .check svg, .mark svg { display: block; width: 100%; height: 100%; }
+  .opt .check path, .mark path { stroke: var(--on-fill); }
+  .opt:hover { border-color: var(--ink-3); }
+  .opt .k { font-family: var(--serif); font-size: 18px; line-height: 1.2; color: var(--ink-3); }
+  .opt.rec { border-color: var(--accent); } .opt.rec .k { color: var(--accent); }
+  .opt .tag { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); margin-bottom: 2px; }
+  .opt.lean { border-color: var(--taste); } .opt.lean .k, .opt.lean .tag { color: var(--taste); }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+  .chip { font-size: 11.5px; line-height: 1; padding: 4px 8px; border-radius: 999px; border: 1px solid transparent; white-space: nowrap; }
+  .chip.g { background: var(--chip-g-bg); color: var(--chip-g-ink); border-color: var(--chip-g-line); }
+  .chip.x { background: var(--chip-x-bg); color: var(--chip-x-ink); border-color: var(--chip-x-line); }
+  .chip.p { background: var(--chip-p-bg); color: var(--chip-p-ink); border-color: var(--chip-p-line); }
+  .opt.chosen { background: var(--ok-soft); border-color: var(--ok); } .opt.chosen .k, .opt.chosen .tag { color: var(--ok); } .opt.chosen .check { visibility: visible; }
+  /* Once an answer is picked (staged or recorded), everything but the picked box reads as disabled; hover or focus wakes a part back up. */
+  .card.picked .body, .card.picked .why, .card.picked .note-taste, .card.picked .answer-row, .card.picked .links, .card.picked .opt:not(.chosen):not(.staged):not(.pending) { opacity: .45; transition: opacity .15s; }
+  .card.picked .opt:not(.chosen):not(.staged):not(.pending):hover, .card.picked .answer-row:focus-within, .card.picked .links:hover { opacity: 1; }
+  .opt.text-answer { cursor: default; } .opt.text-answer .tag { color: var(--ok); } .opt.text-answer:hover { border-color: var(--ok); }
+  .opt.staged { border-color: var(--stage); box-shadow: 0 0 0 1px var(--stage); background: var(--stage-soft); }
+  .opt.pending { border-color: var(--stage); border-style: dashed; } .opt.pending .k { color: var(--stage); } .opt .check.pending { visibility: visible; color: var(--stage); display: flex; align-items: center; justify-content: center; }
+  .locked .opt { cursor: default; } .locked .opt:hover { border-color: var(--rule); }
+  .multi-hint { margin: 16px 0 0; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+  .multi-hint + .opts { margin-top: 8px; }
+  .why { margin: 14px 0 0; font-size: 14px; color: var(--ink-2); white-space: pre-line; } .why b { color: var(--accent); font-weight: 600; }
+  .why.lean b { color: var(--taste); } .note-taste { margin: 10px 0 0; font-size: 13px; color: var(--taste); }
+  .staged-line { margin-top: 10px; font-size: 14px; color: var(--stage); } .staged-line a { color: var(--ink-3); font-size: 12px; margin-left: 8px; }
+  .pending-line { margin-top: 10px; font-size: 14px; color: var(--stage); display: flex; align-items: center; gap: 8px; }
+  .answer-row { display: flex; gap: 8px; margin-top: 20px; align-items: flex-start; }
+  .links { margin-top: 12px; font-size: 13px; display: flex; gap: 14px; } .links a { color: var(--ink-3); text-decoration: none; } .links a:hover { color: var(--accent); }
+  textarea { width: 100%; min-height: 60px; font: inherit; font-size: 14px; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 8px; background: var(--panel); resize: vertical; color: var(--ink); }
+  textarea:focus { outline: none; border-color: var(--ink-3); }
+  button { font-family: var(--sans); font-weight: 500; font-size: 14px; padding: 9px 14px; border-radius: 8px; border: 1px solid var(--rule); background: var(--panel); color: var(--ink); cursor: pointer; white-space: nowrap; }
+  button:hover { border-color: var(--ink-3); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-fill); } button.primary:hover { border-color: var(--accent); }
+  button:disabled, button.primary:disabled { background: var(--ink-3); border-color: var(--ink-3); color: #fff; cursor: default; }
+  main .empty { color: var(--ink-3); font-size: 14px; }
+
+  aside { grid-row: 3; grid-column: 3; border-left: 1px solid var(--rule); display: grid; grid-template-rows: auto 1fr auto; min-height: 0; }
+  aside .head { padding: 20px 22px 12px; }
+  aside .head h3 { margin: 0; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+  aside .head .sub { font-family: var(--serif); font-size: 16px; margin-top: 4px; }
+  aside .head .count { font-size: 12px; color: var(--ink-3); margin-left: 8px; font-family: var(--sans); }
+  aside .msgs { overflow-y: auto; padding: 0 22px 12px; }
+  .msg { padding: 12px 0; border-top: 1px solid var(--rule); position: relative; }
+  .msg .who { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 4px; }
+  .msg.user .who { color: var(--stage); } .msg.agent .who { color: var(--accent); }
+  .msg.staged { background: var(--stage-soft); margin: 8px -10px 0; padding: 10px 28px 10px 10px; border-radius: 6px; border-top: 0; }
+  .msg.pending { opacity: .7; } .msg.pending .who { display: flex; align-items: center; gap: 6px; }
+  .msg .text { font-size: 14px; white-space: pre-line; }
+  .msg .rm { position: absolute; right: 8px; top: 8px; color: var(--ink-3); text-decoration: none; font-size: 14px; }
+  .empty-thread { padding: 12px 0; font-size: 13px; color: var(--ink-3); border-top: 1px solid var(--rule); }
+  .explore-head { padding: 12px 0 6px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; border-top: 1px solid var(--rule); }
+  .explore-wait { padding: 12px 0; font-size: 13px; color: var(--stage); border-top: 1px solid var(--rule); }
+  .procon { width: 100%; border-collapse: collapse; font-size: 13px; margin: 2px 0 10px; }
+  .procon th { text-align: left; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; padding: 6px 8px 6px 0; border-bottom: 1px solid var(--rule); }
+  .procon td { vertical-align: top; padding: 8px 8px 8px 0; border-bottom: 1px solid var(--rule); }
+  .procon td.k { font-family: var(--serif); font-size: 16px; color: var(--ink-2); width: 28px; } .procon td.k.rec { color: var(--accent); }
+  .procon ul { margin: 0; padding-left: 16px; } .procon li { margin: 0 0 3px; }
+  .procon .pro li::marker { color: var(--ok); } .procon .con li::marker { color: var(--accent); }
+  aside .compose { padding: 12px 22px 18px; border-top: 1px solid var(--rule); display: grid; gap: 8px; } aside .compose button { justify-self: end; }
+
+  footer { grid-row: 4; grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; padding: 12px 24px; border-top: 1px solid var(--rule); background: var(--panel); }
+  footer .staged-list { font-size: 13px; color: var(--ink-2); flex: 1; } footer .staged-list b { color: var(--stage); } footer .staged-list .sent { color: var(--stage); display: inline-flex; align-items: center; gap: 6px; }
+  #finish.ready { background: var(--ok); border-color: var(--ok); color: var(--on-fill); font-weight: 600; animation: ready 1.2s ease-in-out infinite; }
+  #finish.ready:hover { background: var(--ok-deep); border-color: var(--ok-deep); }
+  /* The inline confirm keeps the green so the eye stays on it, but stops blinking:
+     blinking means "you can act", solid green means "confirm here". */
+  #finish-yes.ready { background: var(--ok); border-color: var(--ok); color: var(--on-fill); font-weight: 600; }
+  #finish-yes.ready:hover { background: var(--ok-deep); border-color: var(--ok-deep); }
+  @keyframes ready { 0%, 100% { background-color: var(--ok); border-color: var(--ok); } 50% { background-color: var(--ok-pulse); border-color: var(--ok-pulse); } }
+  footer .hint { font-size: 12px; color: var(--ink-3); } footer .warn { font-size: 12px; color: var(--accent); }
+  footer .confirm { font-size: 13px; color: var(--ink-2); display: flex; gap: 8px; align-items: center; }
+  #finish:disabled { background: var(--panel); border-color: var(--rule); color: var(--ink-3); animation: none; } #finish .spin { margin-right: 4px; }
+
+  /* Narrow screens. The desktop layout is three fixed columns (260px / flexible
+     / 33vw) in a 100vh grid. At 390px the middle column is crushed and the option
+     cards fall off the right edge. Below 760px the three panes stack into one
+     scrolling page and the action bar sticks to the bottom, so there is no need to
+     switch the browser into desktop mode. Tablets (768px) keep the three columns:
+     that width already fits. */
+  @media (max-width: 760px) {
+    body { grid-template-columns: 1fr; grid-template-rows: none; height: auto; min-height: 100vh; }
+    #banner, header, nav, main, #visual, aside, footer { grid-column: 1 / -1; grid-row: auto; }
+
+    /* buttons carry white-space:nowrap; without wrapping they shove the
+       status text past the right edge */
+    header { flex-wrap: wrap; gap: 8px 12px; padding: 10px 16px; }
+    header h1 { font-size: 17px; flex-basis: 100%; }
+    header .status { margin-left: 0; }
+
+    /* the question list stays within reach without eating the screen */
+    nav { max-height: 24vh; border-right: 0; border-bottom: 1px solid var(--rule); }
+
+    /* panes join the page scroll instead of each scrolling on its own */
+    main { overflow-y: visible; padding: 20px 16px 28px; }
+    .card h2 { font-size: 22px; }
+    .opts { margin-top: 16px; }
+    .opt { padding: 12px; gap: 10px; }
+
+    aside { border-left: 0; border-top: 1px solid var(--rule); grid-template-rows: auto auto auto; }
+    aside .msgs { overflow-y: visible; }
+
+    /* "Send to Agent" must always be reachable */
+    footer { position: sticky; bottom: 0; z-index: 4; flex-wrap: wrap; gap: 8px 12px; padding: 10px 16px; }
+
+    /* the fixed 420px width overflows a 390px screen */
+    #terms, #levels { left: 12px; right: 12px; width: auto; max-height: 50vh; }
+
+    /* #visual-frame is height:100%, so the pane needs a resolved height */
+    #visual { height: 78vh; }
+  }
+
+  /* Five looping animations had no escape hatch. The blanket reset below stops
+     everything that travels or rotates, but three of them are progress indicators
+     rather than decoration: freezing them removes the only sign that the agent is
+     working, because .spin has border-right-color:transparent and reads as a broken
+     ring, and #progress::after starts at left:-30% so a stopped one is invisible.
+     Those fade instead, legible with nothing moving. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .01ms !important;
+      scroll-behavior: auto !important;
+    }
+    /* spinner: stop rotating, close the ring so it does not look broken */
+    .spin { animation: pulse 1.6s ease-in-out infinite !important; border-right-color: currentColor !important; }
+    /* progress bar: stop travelling, become a full-width bar that pulses */
+    #progress::after { animation: pulse 1.6s ease-in-out infinite !important; left: 0 !important; width: 100% !important; }
+    /* status dot & Finish button: opacity/colour only, nothing moves — just slow them */
+    .dot.working { animation-duration: 2.4s !important; animation-iteration-count: infinite !important; }
+    #finish.ready { animation-duration: 2.4s !important; animation-iteration-count: infinite !important; }
+  }
+</style>
+</head>
+<body>
+<div id="banner"></div>
+<header>
+  <h1 id="topic">grill</h1>
+  <span class="path" id="doc-path"></span>
+  <span id="intent"></span>
+  <button id="levels-toggle" type="button" hidden>Levels</button>
+  <div id="levels"><h4>Importance levels</h4>
+    <div class="lv-row"><span class="sdot careful lvc-careful"></span><b>Decide carefully</b><span class="d">High stakes and a close call: your judgement changes the outcome.</span></div>
+    <div class="lv-row"><span class="sdot yours lvc-yours"></span><b>Your call</b><span class="d">Taste or preference; the agent only has a lean.</span></div>
+    <div class="lv-row"><span class="sdot check lvc-check"></span><b>Check</b><span class="d">Stakes are real but the answer is clear: read the why and confirm.</span></div>
+    <div class="lv-row"><span class="sdot skim lvc-skim"></span><b>Skim</b><span class="d">Low stakes: accept unless something jumps out.</span></div>
+  </div>
+  <button id="terms-toggle" type="button">Terms</button>
+  <div id="terms"></div>
+  <button id="visualize" type="button" hidden>Visualize</button>
+  <span id="subagent-opt" hidden><input type="checkbox" id="use-subagent" checked><label for="use-subagent">Use subagent</label><span id="subagent-info" class="info" tabindex="0" role="img" aria-label="Using subagents frees up your main context for grilling. You can switch this off once you are done grilling to make the visualization build faster." data-tip="Using subagents frees up your main context for grilling. You can switch this off once you are done grilling to make the visualization build faster.">i</span></span>
+  <span class="status"><span class="dot" id="agent-dot"></span><span id="agent-status">connecting…</span></span>
+  <button id="theme-toggle" type="button" data-mode="system">
+    <svg class="i-system" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.7a6.3 6.3 0 0 1 0 12.6z" fill="currentColor"/></svg>
+    <svg class="i-light" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.5"/><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 1v1.8M8 13.2V15M1 8h1.8M13.2 8H15M3 3l1.3 1.3M11.7 11.7L13 13M13 3l-1.3 1.3M4.3 11.7L3 13"/></g></svg>
+    <svg class="i-dark" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 9.5A6 6 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+  </button>
+  <div id="progress"></div>
+</header>
+<nav id="nav"><div class="empty">Connecting…</div></nav>
+<main id="main"></main>
+<section id="visual"><div id="visual-strip"></div><div id="visual-wait" hidden><span class="spin"></span>Drawing the first version…</div><iframe id="visual-frame" title="Visual" sandbox="allow-scripts"></iframe></section>
+<aside id="aside"></aside>
+<footer>
+  <span class="staged-list" id="staged-list"></span>
+  <span class="warn" id="send-why"></span>
+  <span class="hint">⌘↩ send</span>
+  <span id="finish-area"></span>
+  <button class="primary" id="send" type="button" disabled>Send to Agent</button>
+</footer>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+// ---- markdown BEGIN ----
+// Minimal markdown (issue #9, fork). Keep in sync with markdown.mjs.
+// Escape first, then inline code, bold, italic, and safe links only.
+const formatInline = (text) => text
+  .replace(/\*\*(?!\s)([^*]+?)(?<!\s)\*\*/g, (_, b) => `<strong>${b}</strong>`)
+  .replace(/(?<!\*)\*(?!\s)([^*]+?)(?<!\s)\*(?!\*)/g, (_, i) => `<em>${i}</em>`)
+  .replace(/(^|\W)_([^_]+?)_(\W|$)/g, (_, pre, i, post) => `${pre}<em>${i}</em>${post}`);
+const isSafeMdUrl = (url) => /^https?:\/\/[^\s"'<>]+$/.test(url); // absolute http(s) only
+const md = (s) => {
+  const codes = [];
+  const noCode = esc(s).replace(/`([^`\n]+?)`/g, (_, code) => {
+    codes.push(`<code>${code}</code>`);
+    return `\0CODE${codes.length - 1}\0`;
+  });
+  const links = [];
+  const withLinks = noCode.replace(/\[([^\]]+?)\]\(([^)\s]+?)\)/g, (m, label, url) => {
+    if (!isSafeMdUrl(url)) return m;
+    links.push(`<a href="${url}" target="_blank" rel="noopener noreferrer">${formatInline(label)}</a>`);
+    return `\0LINK${links.length - 1}\0`;
+  });
+  const formatted = formatInline(withLinks);
+  return formatted
+    .replace(/\0LINK(\d+)\0/g, (m, n) => links[Number(n)] ?? m)
+    .replace(/\0CODE(\d+)\0/g, (m, n) => codes[Number(n)] ?? m);
+};
+// ---- markdown END ----
+const WORKING_GRACE_MS = 5 * 60 * 1000;
+const DRAW_GRACE_MS = 10 * 60 * 1000; // a background draw older than this is treated as stuck: Regenerate comes back
+const DRAW_STUCK_NOTE = "The draw has run over 10 minutes; regenerate to try again.";
+const GONE_AFTER_MS = 3000;
+const CHECK = '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="10" fill="currentColor"/><path d="M6 10.4l2.6 2.6L14 7.4" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+// LAN mode mints a per-serve token and puts it in the page URL (?t=...). The
+// page carries it on every fetch so a LAN socket that requires it keeps working;
+// on loopback there is no token and the paths stay exactly as before.
+const LAN_TOKEN = new URLSearchParams(location.search).get("t") || "";
+const withToken = (p) => LAN_TOKEN ? p + (p.includes("?") ? "&" : "?") + "t=" + encodeURIComponent(LAN_TOKEN) : p;
+
+let S = null, raw = null, selected = null, storeKey = null;
+let lastOk = Date.now(), gone = false, confirmFinish = false, intentOpen = false;
+// GET /listener: has an agent shown a sign of life lately? null until known, and an unknown
+// listener counts as listening, so the page never warns on a guess.
+let listener = null;
+let local = fresh();
+function fresh() { return { staged: {}, pending: [], drafts: {}, view: "questions", vfeedback: [], subagent: true }; }
+function load() { local = fresh(); try { const v = localStorage.getItem(storeKey); if (v) local = Object.assign(fresh(), JSON.parse(v)); } catch {} }
+function save() { try { localStorage.setItem(storeKey, JSON.stringify(local)); } catch {} }
+
+// ---- data helpers ----
+const qs = () => (S && Array.isArray(S.questions) ? S.questions : []);
+const byId = (id) => qs().find((q) => q.id === id);
+const isOpen = (q) => q.status === "open" || q.status === "reopened";
+const curRound = () => qs().reduce((m, q) => Math.max(m, Number(q.round) || 0), 0);
+const rounds = () => { const m = new Map(); for (const q of qs()) { const r = Number(q.round) || 0; if (!m.has(r)) m.set(r, []); m.get(r).push(q); } return [...m.entries()].sort((a, b) => a[0] - b[0]).map(([r, list]) => [r, byLevel(list)]); };
+const firstOpen = () => {
+  const all = rounds();
+  return all.find(([r]) => r === curRound())?.[1].find(isOpen) || all.flatMap(([, list]) => list).find(isOpen) || qs()[qs().length - 1] || null;
+};
+// Importance levels: how much attention a question deserves. Within a round the list sorts where
+// your judgment matters first; a question with no level sorts with Check, and a round with no
+// levels at all keeps its order, so an older session looks exactly as it did.
+const LEVEL_NAMES = { careful: "Decide carefully", yours: "Your call", check: "Check", skim: "Skim" };
+const LEVEL_RANK = { careful: 0, yours: 1, check: 2, skim: 3 };
+const levelOf = (q) => (q && typeof q.level === "string" && Object.hasOwn(LEVEL_NAMES, q.level) ? q.level : null);
+const byLevel = (list) => (!list.some(levelOf) ? list
+  : list.slice().sort((a, b) => LEVEL_RANK[levelOf(a) || "check"] - LEVEL_RANK[levelOf(b) || "check"] || String(a.id).localeCompare(String(b.id), undefined, { numeric: true })));
+// Ratings: each option scored good|mixed|poor|na on the grill's axes (these four unless the agent
+// replaced them at the start). One chip per rated axis, in axis order; "na" and unrated axes show none.
+const DEFAULT_AXES = [{ key: "ux", name: "User experience" }, { key: "correct", name: "Technical correctness" }, { key: "risk", name: "Risk" }, { key: "cost", name: "Cost" }];
+const axes = () => (S && Array.isArray(S.axes) && S.axes.length ? S.axes.filter((a) => a && typeof a.key === "string") : DEFAULT_AXES);
+const RATING_CLASS = { good: "g", mixed: "x", poor: "p" };
+function chipRow(o) {
+  const r = o && o.ratings && typeof o.ratings === "object" ? o.ratings : null;
+  if (!r) return "";
+  const chips = axes().filter((a) => typeof r[a.key] === "string" && Object.hasOwn(RATING_CLASS, r[a.key]))
+    .map((a) => `<span class="chip ${RATING_CLASS[r[a.key]]}" title="${esc(a.name)}: ${esc(r[a.key])}">${esc(a.name)}</span>`).join("");
+  return chips ? `<div class="chips">${chips}</div>` : "";
+}
+const locked = () => !!(S && S.finished);
+const visual = () => (S && S.visual && typeof S.visual === "object" ? S.visual : null);
+const hasVisual = () => { const v = visual(); return !!v && (Number(v.version) || 0) >= 1; }; // version 0 = first draw still running, nothing to show
+const drawing = () => { const v = visual(); return v && v.drawing && typeof v.drawing === "object" ? v.drawing : null; };
+const drawStuck = () => { const d = drawing(); return !!d && Date.now() - Date.parse(d.since || 0) > DRAW_GRACE_MS; };
+const activeView = () => (local.view === "visualize" && hasVisual() ? "visualize" : "questions");
+// A multi question takes a set of options: rec.options and answer.options. A single one
+// takes rec.option and answer.option. keysOf reads either shape, so callers need not care.
+const isMulti = (q) => !!(q && q.multi);
+const keysOf = (x) => (x && Array.isArray(x.options) ? x.options : x && x.option ? [x.option] : []);
+const recKeys = (q) => keysOf(q && q.rec);
+const sameKeys = (a, b) => a.length === b.length && a.every((k) => b.includes(k));
+const keyLabel = (x) => keysOf(x).join(" + ");
+const timeOf = (iso) => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); };
+const fmtMs = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)); return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`; };
+
+// ---- polling ----
+async function poll() {
+  try {
+    const r = await fetch(withToken("/state"), { cache: "no-store" });
+    if (!r.ok) throw new Error(String(r.status));
+    const text = await r.text();
+    lastOk = Date.now();
+    if (gone) { gone = false; render(); }
+    const was = unheard();
+    listener = await fetch(withToken("/listener"), { cache: "no-store" }).then((x) => (x.ok ? x.json() : null)).catch(() => null);
+    if (text !== raw) { raw = text; S = JSON.parse(text); onState(); } else if (unheard() !== was) render(); else tick();
+  } catch {
+    if (!gone && Date.now() - lastOk > GONE_AFTER_MS) { gone = true; render(); } else tick();
+  }
+  setTimeout(poll, 1000);
+}
+function onState() {
+  const key = "grill:" + (S.project || "") + ":" + (S.created || "");
+  if (key !== storeKey) { storeKey = key; load(); }
+  const handled = Number((S.agent || {}).handled) || 0;
+  const still = local.pending.filter((p) => p.seq > handled);
+  if (still.length !== local.pending.length) {
+    local.pending = still; save();
+    if (!still.length) { const cur = byId(selected); if (!cur || !isOpen(cur)) selected = (firstOpen() || {}).id || selected; }
+  }
+  if (!selected || !byId(selected)) selected = (firstOpen() || {}).id || null;
+  render();
+}
+
+// ---- staging ----
+const st = (id) => (local.staged[id] = local.staged[id] || {});
+const prune = (id) => { const s = local.staged[id]; if (s && !s.answer && !s.defer && !s.reopen && !(s.thread && s.thread.length)) delete local.staged[id]; };
+function stageAnswer(id, answer) { const s = st(id); s.answer = answer; delete s.defer; delete s.reopen; commit(); }
+// Clicking an option of a multi question toggles it in the staged set. The set starts from
+// what is staged, else from the recorded answer, so changing an answer edits it instead of
+// starting over. An emptied set unstages the answer.
+function toggleOption(q, k) {
+  const s = local.staged[q.id];
+  const base = s && s.answer && s.answer.kind !== "text" ? keysOf(s.answer) : q.status === "answered" && !(s && s.answer) ? keysOf(q.answer) : [];
+  const next = base.includes(k) ? base.filter((x) => x !== k) : base.concat(k);
+  if (!next.length) return clearStaged(q.id);
+  stageKeys(q, next);
+}
+function stageKeys(q, keys) {
+  const order = (q.options || []).map((o) => o.k);
+  const sorted = keys.slice().sort((a, b) => order.indexOf(a) - order.indexOf(b));
+  stageAnswer(q.id, { kind: sameKeys(sorted, recKeys(q)) ? "accept" : "option", options: sorted });
+}
+function stageThread(id, text) { const s = st(id); (s.thread = s.thread || []).push(text); if (local.drafts[id]) delete local.drafts[id].thread; commit(); }
+function stageDefer(id) { const s = st(id); s.defer = true; delete s.answer; delete s.reopen; commit(); }
+function stageReopen(id) { const s = st(id); s.reopen = true; delete s.answer; delete s.defer; commit(); }
+function clearStaged(id) { const s = local.staged[id]; if (s) { delete s.answer; delete s.defer; delete s.reopen; prune(id); } commit(); }
+function removeThread(id, i) { const s = local.staged[id]; if (s && s.thread) { s.thread.splice(i, 1); prune(id); } commit(); }
+function commit() { save(); render(); }
+// ---- pending: sent, not yet recorded by the agent (agent.handled < seq) ----
+const pendingActions = (id) => local.pending.flatMap((p) => p.actions.filter((a) => a.q === id));
+const lastPending = () => local.pending[local.pending.length - 1] || null;
+const isExploring = (id) => pendingActions(id).some((a) => a.type === "explore");
+const pendingOfType = (t) => local.pending.flatMap((p) => p.actions.filter((a) => a.type === t));
+const isVisualizing = () => pendingOfType("visualize").length > 0 || (!!drawing() && !drawStuck());
+// Every draw request says whether the agent should hand the drawing to a subagent (the default,
+// which keeps the markup out of the interview's context) or draw it inline, which is faster once
+// the grilling is done.
+const useSubagent = () => local.subagent !== false;
+const isFinishing = () => pendingOfType("finish").length > 0;
+const allSettled = () => qs().length > 0 && !qs().some(isOpen);
+// No agent is listening: sends are still accepted, but only queue until one resumes. Not shown
+// while the agent works, since it is busy with a send then rather than waiting for the next.
+const unheard = () => !!S && !S.finished && !gone && !!listener && listener.listening === false && (S.agent || {}).status !== "working";
+function stagedCount() {
+  let n = local.vfeedback.length + typedNotes().length;
+  for (const s of Object.values(local.staged)) n += (s.answer ? 1 : 0) + (s.defer ? 1 : 0) + (s.reopen ? 1 : 0) + (s.thread ? s.thread.length : 0);
+  return n;
+}
+// Text typed in a discussion or feedback box but never added used to be left behind by Send
+// without a word (#32). A note commits you to nothing, so it now goes with the send as if
+// added: typedNotes lists every such box, on any question, and carryTyped stages them. A typed
+// free-text answer is different: it would answer the question, so it is never carried;
+// typedAnswers names those so the footer can say they will not be sent.
+const typed = (d, k) => (d && typeof d[k] === "string" ? d[k].trim() : "");
+const typedNotes = () => Object.entries(local.drafts).filter(([id, d]) => typed(d, "thread") && (id === "__visual" ? hasVisual() : !!byId(id))).map(([id, d]) => ({ id, text: typed(d, "thread") }));
+const typedAnswers = () => Object.entries(local.drafts).filter(([id, d]) => id !== "__visual" && typed(d, "free") && byId(id)).map(([id]) => id);
+function carryTyped() {
+  for (const { id, text } of typedNotes()) {
+    if (id === "__visual") local.vfeedback.push(text); else (st(id).thread = st(id).thread || []).push(text);
+    delete local.drafts[id].thread;
+  }
+  commit();
+}
+function stageFeedback(text) { local.vfeedback.push(text); if (local.drafts.__visual) delete local.drafts.__visual.thread; commit(); }
+function removeFeedback(i) { local.vfeedback.splice(i, 1); commit(); }
+function buildActions() {
+  const out = [];
+  for (const [q, s] of Object.entries(local.staged)) {
+    if (s.reopen) out.push({ q, type: "reopen" });
+    if (s.defer) out.push({ q, type: "defer" });
+    if (s.answer) { const a = { q, type: "answer", kind: s.answer.kind }; if (s.answer.option) a.option = s.answer.option; if (s.answer.options) a.options = s.answer.options; if (s.answer.text) a.text = s.answer.text; out.push(a); }
+    for (const t of s.thread || []) out.push({ q, type: "thread", text: t });
+  }
+  for (const t of local.vfeedback) out.push({ type: "visual-feedback", text: t, subagent: useSubagent() });
+  return out;
+}
+function sendState(needStaged = true) {
+  const a = (S && S.agent) || {};
+  if (locked()) return { disabled: true, why: "" };
+  if (gone) return { disabled: true, why: "server gone" };
+  if (needStaged && !stagedCount()) return { disabled: true, why: "" };
+  if (a.status === "working") {
+    const ms = Date.now() - Date.parse(a.since || 0);
+    if (!(ms > WORKING_GRACE_MS)) return { disabled: true, why: "" };
+    return { disabled: false, why: `The agent has been working for ${fmtMs(ms)}; it may not be listening.` };
+  }
+  const lp = lastPending();
+  if (lp) { // sent, but the agent has not even picked it up yet: one event in flight at a time
+    const ms = Date.now() - Date.parse(lp.at || 0);
+    if (!(ms > WORKING_GRACE_MS)) return { disabled: true, why: "" };
+    return { disabled: false, why: `Send #${lp.seq} has waited ${fmtMs(ms)} for the agent; it may not be listening.` };
+  }
+  return { disabled: false, why: "" };
+}
+async function post(actions) {
+  let r, j = {};
+  try { r = await fetch(withToken("/send"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ actions }) }); j = await r.json().catch(() => ({})); } catch { r = null; }
+  if (!j.ok) $("send-why").textContent = "Send failed: " + (j.error || (r && r.status) || "no server");
+  return j.ok ? j : null;
+}
+async function send() {
+  const { disabled } = sendState(); if (disabled) return;
+  carryTyped();
+  const actions = buildActions();
+  const j = await post(actions);
+  if (j) { local.pending.push({ seq: j.seq, at: new Date().toISOString(), actions }); local.staged = {}; local.vfeedback = []; confirmFinish = false; commit(); }
+}
+// Finish is not staged: confirming ships everything staged plus the finish action in one event, right away.
+async function finishNow() {
+  if (sendState(false).disabled || isFinishing()) return;
+  carryTyped();
+  const actions = buildActions().concat([visual() ? { type: "finish", subagent: useSubagent() } : { type: "finish" }]);
+  const j = await post(actions);
+  if (j) { local.pending.push({ seq: j.seq, at: new Date().toISOString(), actions }); local.staged = {}; local.vfeedback = []; confirmFinish = false; commit(); }
+}
+// Visualize is not staged either: the first click (and Regenerate) is a generate request, like Explore deeper.
+async function visualize() {
+  if (sendState(false).disabled || isVisualizing()) return;
+  const actions = [{ type: "visualize", subagent: useSubagent() }];
+  const j = await post(actions);
+  if (j) { local.pending.push({ seq: j.seq, at: new Date().toISOString(), actions }); local.view = "visualize"; commit(); }
+}
+// Explore deeper skips staging: one click, one event, so the table is on its way at once.
+async function explore(id) {
+  if (sendState(false).disabled || isExploring(id)) return;
+  const actions = [{ q: id, type: "explore" }];
+  const j = await post(actions);
+  if (j) { local.pending.push({ seq: j.seq, at: new Date().toISOString(), actions }); commit(); }
+}
+
+// ---- rendering ----
+function render() { withThreadScroll(() => withInputs(() => { document.body.classList.toggle("visualize", activeView() === "visualize"); renderBanner(); renderHeader(); renderNav(); renderMain(); renderVisual(); renderAside(); renderFooter(); })); }
+function tick() { renderStatus(); renderSend(); }
+function withInputs(fn) {
+  const act = document.activeElement; const keep = act && act.tagName === "TEXTAREA" ? { id: act.id, s: act.selectionStart, e: act.selectionEnd } : null;
+  fn();
+  if (keep) { const el = $(keep.id); if (el) { el.focus(); try { el.setSelectionRange(keep.s, keep.e); } catch {} } }
+}
+// Every render replaces the discussion panel with a fresh element, and a fresh element starts
+// at scrollTop 0: a send, or the agent's reply landing, used to throw you back to the top of a
+// long thread. Put the panel back where it was. One that could scroll and sat at the bottom
+// stays at the bottom so new messages arrive in view; a panel now showing another question, the
+// visual's feedback, or a pros and cons table it did not have before starts at the top, as
+// something you have not read yet should.
+const BOTTOM_SLACK = 32; // px from the bottom that still counts as following the thread
+const threadKey = () => {
+  if (activeView() === "visualize") return "visual";
+  const q = byId(selected);
+  return "q:" + (selected || "") + (q && q.explore ? "|x" + (q.explore.at || "") : "");
+};
+let shownThread = null;
+function withThreadScroll(fn) {
+  const el = $("aside").querySelector(".msgs");
+  const was = el && { key: shownThread, top: el.scrollTop, bottom: el.scrollHeight > el.clientHeight + BOTTOM_SLACK && el.scrollHeight - el.scrollTop - el.clientHeight <= BOTTOM_SLACK };
+  fn();
+  shownThread = threadKey();
+  const now = $("aside").querySelector(".msgs");
+  if (now && was && was.key === shownThread) now.scrollTop = was.bottom ? now.scrollHeight : was.top;
+}
+function renderBanner() {
+  const b = $("banner");
+  if (S && S.finished) { b.className = "show done"; b.textContent = `Finished · the design doc was written to ${S.finished.doc || S.doc || "the doc path"}${S.finished.visual ? ", the visual to " + S.finished.visual : ""}${S.finished.at ? " at " + timeOf(S.finished.at) : ""}.`; }
+  else if (gone) { b.className = "show"; b.textContent = "Server gone. Resume the grill from the terminal; this tab reconnects by itself."; }
+  else { b.className = ""; b.textContent = ""; }
+}
+function renderHeader() {
+  if (!S) return;
+  const intent = typeof S.intent === "string" ? S.intent.trim() : "";
+  document.title = intent ? "grill · " + (S.topic || "") + " — " + intent.slice(0, 80) : "grill · " + (S.topic || "");
+  $("topic").textContent = S.topic || "grill";
+  $("doc-path").textContent = S.doc || "";
+  const intentEl = $("intent");
+  if (intent) {
+    intentEl.textContent = intent; intentEl.title = intent; intentEl.classList.add("show");
+    intentEl.classList.toggle("open", intentOpen);
+    intentEl.classList.toggle("clamped", !intentOpen && intentEl.scrollWidth > intentEl.clientWidth);
+  }
+  else { intentEl.textContent = ""; intentEl.title = ""; intentEl.classList.remove("show", "open", "clamped"); intentOpen = false; }
+  const terms = Array.isArray(S.terms) ? S.terms : [];
+  $("terms-toggle").textContent = `Terms${terms.length ? " · " + terms.length : ""}`;
+  $("terms").innerHTML = terms.length
+    ? terms.map((t) => `<div class="term"><b>${esc(t.term)}</b> — ${md(t.def)}${t.avoid && t.avoid.length ? `<div class="avoid">Avoid: ${t.avoid.map(esc).join(", ")}</div>` : ""}</div>`).join("")
+    : `<div class="term" style="color:var(--ink-3)">No terms yet. The agent adds vocabulary here as it settles.</div>`;
+  const levelled = qs().some(levelOf);
+  $("levels-toggle").hidden = !levelled; if (!levelled) $("levels").classList.remove("show");
+  renderVisualizeButton();
+  renderStatus();
+}
+function renderVisualizeButton() {
+  const b = $("visualize"); const v = visual(); const lk = locked();
+  $("subagent-opt").hidden = lk; $("use-subagent").checked = useSubagent();
+  if (hasVisual()) { b.hidden = false; b.disabled = false; b.title = ""; b.textContent = activeView() === "visualize" ? "Questions" : `Visual · v${esc(v.version)}`; return; }
+  if (lk) { b.hidden = true; return; }
+  b.hidden = false;
+  if (isVisualizing()) { b.disabled = true; b.title = ""; b.innerHTML = `<span class="spin"></span>Visualizing…`; return; }
+  const gate = sendState(false); b.disabled = gate.disabled; b.textContent = "Visualize";
+  b.title = gate.disabled && gate.why ? gate.why : drawStuck() ? DRAW_STUCK_NOTE : "Draw a prototype or diagram of the design so far";
+}
+function renderVisual() {
+  const v = visual(); const strip = $("visual-strip"); const frame = $("visual-frame");
+  const wait = $("visual-wait");
+  if (!v) { strip.innerHTML = ""; wait.hidden = true; frame.hidden = false; if (frame.dataset.v) { frame.removeAttribute("src"); delete frame.dataset.v; } return; }
+  if (!hasVisual()) { // first draw still running: no file to show yet, never request v0
+    if (frame.dataset.v) { frame.removeAttribute("src"); delete frame.dataset.v; }
+    frame.hidden = true; wait.hidden = false;
+    strip.innerHTML = `<span class="kind">${v.kind === "diagram" ? "Diagram" : "Prototype"}</span><span class="ver">first version on its way</span>`;
+    return;
+  }
+  wait.hidden = true; frame.hidden = false;
+  const src = withToken(`/visual?v=${encodeURIComponent(v.version)}`);
+  if (frame.dataset.v !== String(v.version)) { frame.dataset.v = String(v.version); frame.setAttribute("src", src); } // only a version bump reloads the iframe; a background redraw keeps the current one
+  const busy = isVisualizing(); const gate = sendState(false); const lk = locked();
+  const regenTitle = gate.disabled ? (gate.why || "the agent is busy") : drawStuck() ? DRAW_STUCK_NOTE : "";
+  strip.innerHTML = `<span class="kind">${v.kind === "diagram" ? "Diagram" : "Prototype"}</span>
+    <span class="ver"><b>v${esc(v.version)}</b>${v.note ? " · " + esc(v.note) : ""}${v.at ? " · " + timeOf(v.at) : ""}</span>
+    ${v.stale ? `<span id="visual-stale" role="status">Out of date · regenerate to include the latest decisions</span>` : ""}
+    <span class="right">${busy ? `<span class="spin"></span> regenerating…` : lk ? "" : `<a href="#" id="regen"${regenTitle ? ` title="${esc(regenTitle)}"` : ""}>Regenerate</a>`}</span>`;
+  const r = $("regen"); if (r) r.onclick = (e) => { e.preventDefault(); visualize(); };
+}
+function renderStatus() {
+  const dot = $("agent-dot"), txt = $("agent-status");
+  txt.parentElement.title = unheard() ? "Sends are saved. The agent picks them up when it listens again (on resume, it replays them in order)." : "";
+  if (gone) { dot.className = "dot gone"; txt.textContent = "server gone"; return; }
+  if (!S) return;
+  const a = S.agent || {};
+  if (S.finished) { dot.className = "dot"; txt.textContent = "finished"; document.querySelector("header").classList.remove("working"); return; }
+  const working = a.status === "working";
+  document.querySelector("header").classList.toggle("working", working);
+  if (working) { dot.className = "dot working"; txt.innerHTML = `<span class="spin"></span> Agent working · ${fmtMs(Date.now() - Date.parse(a.since || 0))}`; }
+  else if (unheard()) { dot.className = "dot unheard"; txt.textContent = "No agent is listening · sends will queue until it resumes"; }
+  else { dot.className = "dot"; txt.textContent = `Agent waiting for you${a.since ? " · since " + timeOf(a.since) : ""}${a.handled ? " · handled #" + a.handled : ""}`; }
+}
+function renderNav() {
+  const nav = $("nav"); nav.innerHTML = "";
+  if (!S) return;
+  if (S.note) { const n = document.createElement("div"); n.className = "note"; n.textContent = S.note; nav.appendChild(n); }
+  const all = rounds();
+  if (!all.length) { nav.insertAdjacentHTML("beforeend", `<div class="empty">Waiting for the first round…</div>`); return; }
+  const cur = curRound();
+  for (const [r, list] of all) {
+    const h = document.createElement("div"); h.className = "round" + (r === cur ? " current" : "");
+    h.innerHTML = `<span>Round ${r}${r === cur ? " · current" : ""}</span><span>${list.length}</span>`; nav.appendChild(h);
+    for (const q of list) {
+      const s = local.staged[q.id];
+      const el = document.createElement("div");
+      el.className = "item" + (q.id === selected ? " selected" : "") + (q.updated ? " updated" : "");
+      el.dataset.q = q.id;
+      const lv = levelOf(q);
+      if (lv) el.title = LEVEL_NAMES[lv] + (q.levelReason ? " · " + q.levelReason : "");
+      const word = lv === "careful" || lv === "yours" ? `<span class="sword lvc-${lv}${q.status === "answered" ? " done" : ""}">${LEVEL_NAMES[lv]}</span>` : "";
+      const mark = s ? `<span class="mark staged">staged</span>`
+        : pendingActions(q.id).some((a) => a.type !== "explore") ? `<span class="mark pending"><span class="spin"></span>sent</span>`
+        : `<span class="mark ${esc(q.status)}">${q.status === "answered" ? CHECK + esc(keyLabel(q.answer) || "text") : esc(q.status)}</span>`;
+      el.innerHTML = `<span class="id">${esc(q.id).toUpperCase()}</span><span class="t">${esc(q.title)}</span>${mark}${word}`;
+      el.onclick = () => { selected = q.id; render(); };
+      nav.appendChild(el);
+    }
+  }
+  const sel = nav.querySelector(".item.selected"); if (sel) sel.scrollIntoView({ block: "nearest" });
+}
+function renderMain() {
+  const main = $("main"); const q = byId(selected);
+  if (!q) { main.innerHTML = `<p class="empty">${S && qs().length ? "Pick a question on the left." : "No questions yet."}</p>`; return; }
+  const s = local.staged[q.id] || {}; const lk = locked(); const d = local.drafts[q.id] || {};
+  const rec = q.rec || {};
+  const crumb = [`${esc(q.id).toUpperCase()} · round ${esc(q.round)}`];
+  crumb.push(q.deps && q.deps.length ? `<span>after ${q.deps.map((x) => `<a href="#" data-go="${esc(x)}">${esc(x).toUpperCase()}</a>`).join(", ")}</span>` : `<span>root</span>`);
+  if (q.updated) crumb.push(`<span class="upd">recommendation updated</span>`);
+  if (q.status === "deferred") crumb.push(`<span>deferred</span>`);
+  if (q.status === "reopened") crumb.push(`<span>reopened</span>`);
+  // Your call: the agent only has a lean, and the axes do not separate the options, so no chips.
+  const lv = levelOf(q), yours = lv === "yours";
+  const pill = lv ? `<div class="imp ${lv}"><b>${LEVEL_NAMES[lv]}</b>${q.levelReason ? `<span class="why-l">${esc(q.levelReason)}</span>` : ""}</div>` : "";
+  const pend = pendingActions(q.id);
+  const pendAnswer = pend.filter((a) => a.type === "answer").pop() || null;
+  const opts = (q.options || []).map((o) => {
+    // A multi question shows one set at a time: the staged set, else the one in flight, else the recorded one.
+    const shadow = isMulti(q) && (s.answer || pendAnswer);
+    const isRec = recKeys(q).includes(o.k), chosen = !shadow && keysOf(q.answer).includes(o.k), staged = keysOf(s.answer).includes(o.k), pending = !staged && !(isMulti(q) && s.answer) && keysOf(pendAnswer).includes(o.k);
+    return `<li class="opt${isRec ? (yours ? " lean" : " rec") : ""}${chosen ? " chosen" : ""}${staged ? " staged" : ""}${pending ? " pending" : ""}" data-opt="${esc(o.k)}"><span class="k">${esc(o.k)}</span><span>${isRec ? `<div class="tag">${yours ? "My lean" : "Recommended"}</div>` : ""}${md(o.text)}${yours ? "" : chipRow(o)}</span>${pending ? `<span class="check pending"><span class="spin"></span></span>` : `<span class="check">${CHECK}</span>`}</li>`;
+  }).join("") + (q.status === "answered" && q.answer && q.answer.kind === "text" && q.answer.text
+    ? `<li class="opt chosen text-answer"><span class="k"></span><span><div class="tag">Your answer</div>${md(q.answer.text)}</span><span class="check">${CHECK}</span></li>` : "")
+    + (pendAnswer && pendAnswer.kind === "text" && pendAnswer.text
+    ? `<li class="opt pending text-answer"><span class="k"></span><span><div class="tag">Your answer · sending</div>${md(pendAnswer.text)}</span><span class="check pending"><span class="spin"></span></span></li>` : "");
+  const why = recKeys(q).length && yours ? `<p class="why lean"><b>Leaning ${esc(keyLabel(rec))}.</b> ${md(rec.why)}</p><p class="note-taste">This one is yours: the axes do not separate these options, so there are no ratings.</p>`
+    : recKeys(q).length ? `<p class="why"><b>Why ${esc(keyLabel(rec))}.</b> ${md(rec.why)}</p>`
+    : rec.text ? `<p class="why"><b>Suggested.</b> ${md(rec.text)}${rec.why ? " — " + md(rec.why) : ""}</p>` : rec.why ? `<p class="why">${md(rec.why)}</p>` : "";
+  let stagedLine = "";
+  if (s.defer) stagedLine = "Staged: defer this question";
+  else if (s.reopen) stagedLine = "Staged: reopen this question";
+  else if (s.answer) stagedLine = s.answer.kind === "accept" ? `Staged: accept ${esc(keyLabel(s.answer))}` : keysOf(s.answer).length > 1 ? `Staged: options ${esc(keyLabel(s.answer))}` : keysOf(s.answer).length ? `Staged: option ${esc(keyLabel(s.answer))}` : `Staged text: “${esc(s.answer.text)}”`;
+  if (stagedLine) stagedLine = `<div class="staged-line">${stagedLine}<a href="#" id="clear-staged">clear</a></div>`;
+  const pendBits = pend.filter((a) => a.type === "defer" || a.type === "reopen").map((a) => a.type);
+  if (pendBits.length) stagedLine += `<div class="pending-line"><span class="spin"></span>Sent: ${pendBits.join(", ")} this question · waiting for the agent</div>`;
+  const controls = lk ? "" : `
+      <div class="answer-row">
+        <textarea id="free" placeholder="${q.status === "answered" ? "Change your answer, or add nuance…" : (q.options || []).length ? "Free-text answer, if none of the options fit…" : "Your answer…"}">${esc(d.free || "")}</textarea>
+        <button id="stage-text" type="button" title="Stage text (⌘↩)">Stage text</button>
+      </div>
+      <div class="links">${isMulti(q) && recKeys(q).length > 1 ? `<a href="#" id="accept-rec">Accept the recommended ${esc(keyLabel(rec))}</a>` : ""}${isOpen(q) ? `<a href="#" id="defer">Defer this question</a>` : `<a href="#" id="reopen">Reopen this question</a>`}</div>`;
+  const exploring = isExploring(q.id);
+  const gate = sendState(false);
+  const exploreBtn = (q.options || []).length && !lk
+    ? `<button id="explore" type="button"${exploring || gate.disabled ? " disabled" : ""}${gate.disabled && gate.why ? ` title="${esc(gate.why)}"` : ""}>${exploring ? `<span class="spin"></span> Exploring…` : q.explore ? "Explore again" : "Explore deeper"}</button>` : "";
+  const picked = (q.status === "answered" && q.answer) || !!s.answer || !!pendAnswer;
+  main.innerHTML = `<article class="card${lk ? " locked" : ""}${picked ? " picked" : ""}">
+      <div class="crumb">${crumb.join("")}</div>
+      ${pill}
+      <div class="title-row"><h2>${esc(q.title)}</h2>${exploreBtn}</div>
+      <p class="body">${md(q.body)}</p>
+      ${opts && isMulti(q) ? `<p class="multi-hint">Pick one or more</p>` : ""}
+      ${opts ? `<ul class="opts">${opts}</ul>` : ""}
+      ${why}${stagedLine}${controls}
+    </article>`;
+  main.querySelectorAll("[data-go]").forEach((a) => (a.onclick = (e) => { e.preventDefault(); if (byId(a.dataset.go)) { selected = a.dataset.go; render(); } }));
+  if (lk) return;
+  main.querySelectorAll(".opt:not(.text-answer)").forEach((o) => (o.onclick = (e) => { if (e.target.closest("a")) return; if (isMulti(q)) toggleOption(q, o.dataset.opt); else stageAnswer(q.id, { kind: o.dataset.opt === rec.option ? "accept" : "option", option: o.dataset.opt }); }));
+  const ar = $("accept-rec"); if (ar) ar.onclick = (e) => { e.preventDefault(); stageKeys(q, recKeys(q)); };
+  const ex = $("explore"); if (ex) ex.onclick = () => explore(q.id);
+  $("stage-text").onclick = () => { const t = $("free").value.trim(); if (t) { (local.drafts[q.id] = local.drafts[q.id] || {}).free = ""; stageAnswer(q.id, { kind: "text", text: t }); } };
+  $("free").oninput = (e) => { (local.drafts[q.id] = local.drafts[q.id] || {}).free = e.target.value; save(); renderFooter(); };
+  const cl = $("clear-staged"); if (cl) cl.onclick = (e) => { e.preventDefault(); clearStaged(q.id); };
+  const df = $("defer"); if (df) df.onclick = (e) => { e.preventDefault(); stageDefer(q.id); };
+  const ro = $("reopen"); if (ro) ro.onclick = (e) => { e.preventDefault(); stageReopen(q.id); };
+}
+function renderAside() {
+  const aside = $("aside");
+  if (activeView() === "visualize") return renderFeedback(aside);
+  const q = byId(selected);
+  if (!q) { aside.innerHTML = ""; return; }
+  const s = local.staged[q.id] || {}; const lk = locked(); const d = local.drafts[q.id] || {};
+  const thread = Array.isArray(q.thread) ? q.thread : [];
+  const msgs = thread.map((m) => `<div class="msg ${m.who === "agent" ? "agent" : "user"}"><div class="who">${esc(m.who)}${m.at ? " · " + timeOf(m.at) : ""}</div><div class="text">${md(m.text)}</div></div>`).join("")
+    + pendingActions(q.id).filter((a) => a.type === "thread").map((a) => `<div class="msg user pending"><div class="who"><span class="spin"></span>you · sending</div><div class="text">${md(a.text)}</div></div>`).join("")
+    + (s.thread || []).map((t, i) => `<div class="msg user staged"><div class="who">you · staged</div><div class="text">${md(t)}</div>${lk ? "" : `<a href="#" class="rm" data-rm="${i}" title="Remove">×</a>`}</div>`).join("");
+  const rec = q.rec || {};
+  let explore = "";
+  if (q.explore && Array.isArray(q.explore.rows) && q.explore.rows.length) {
+    const li = (xs) => `<ul>${(Array.isArray(xs) ? xs : []).map((x) => `<li>${md(x)}</li>`).join("")}</ul>`;
+    explore = `<div class="explore-head">Pros and cons${q.explore.at ? " · " + timeOf(q.explore.at) : ""}</div>
+      <table class="procon"><thead><tr><th></th><th>Pros</th><th>Cons</th></tr></thead><tbody>${q.explore.rows.map((r) =>
+        `<tr><td class="k${recKeys(q).includes(r.option) ? " rec" : ""}">${esc(r.option)}</td><td class="pro">${li(r.pros)}</td><td class="con">${li(r.cons)}</td></tr>`).join("")}</tbody></table>`;
+  }
+  if (isExploring(q.id)) explore += `<div class="explore-wait"><span class="spin"></span> Exploring: the agent is writing a pros and cons table for this question.</div>`;
+  aside.innerHTML = `
+    <div class="head"><h3>Discussion</h3><div class="sub">${esc(q.id).toUpperCase()} · ${esc(q.title)}<span class="count">${thread.length} message${thread.length === 1 ? "" : "s"}</span></div></div>
+    <div class="msgs">${explore}${msgs || (explore ? "" : `<div class="empty-thread">Nothing yet. Ask anything about this question; the agent answers here on the next send.</div>`)}</div>
+    ${lk ? "" : `<div class="compose"><textarea id="thread-in" placeholder="Dig deeper on ${esc(q.id).toUpperCase()}…">${esc(d.thread || "")}</textarea><button id="stage-thread" type="button" title="Stage message (⌘↩)">Add to discussion</button></div>`}`;
+  aside.querySelectorAll("[data-rm]").forEach((a) => (a.onclick = (e) => { e.preventDefault(); removeThread(q.id, Number(a.dataset.rm)); }));
+  if (lk) return;
+  $("stage-thread").onclick = () => { const t = $("thread-in").value.trim(); if (t) stageThread(q.id, t); };
+  $("thread-in").oninput = (e) => { (local.drafts[q.id] = local.drafts[q.id] || {}).thread = e.target.value; save(); renderFooter(); };
+}
+function renderFeedback(aside) {
+  const v = visual(); const lk = locked(); const d = local.drafts.__visual || {};
+  const thread = Array.isArray(v.thread) ? v.thread : [];
+  const msgs = thread.map((m) => `<div class="msg ${m.who === "agent" ? "agent" : "user"}"><div class="who">${esc(m.who)}${m.at ? " · " + timeOf(m.at) : ""}</div><div class="text">${md(m.text)}</div></div>`).join("")
+    + pendingOfType("visual-feedback").map((a) => `<div class="msg user pending"><div class="who"><span class="spin"></span>you · sending</div><div class="text">${md(a.text)}</div></div>`).join("")
+    + local.vfeedback.map((t, i) => `<div class="msg user staged"><div class="who">you · staged</div><div class="text">${md(t)}</div>${lk ? "" : `<a href="#" class="rm" data-rmf="${i}" title="Remove">×</a>`}</div>`).join("");
+  aside.innerHTML = `
+    <div class="head"><h3>Visual feedback</h3><div class="sub">${v.kind === "diagram" ? "Diagram" : "Prototype"} · v${esc(v.version)}<span class="count">${thread.length} message${thread.length === 1 ? "" : "s"}</span></div></div>
+    <div class="msgs">${msgs || `<div class="empty-thread">Nothing yet. Say what is wrong or missing in the visual; the agent redraws it on the next send. If a note contradicts an answered question, that question is reopened for you.</div>`}</div>
+    ${lk ? "" : `<div class="compose"><textarea id="feedback-in" placeholder="Feedback on the visual…">${esc(d.thread || "")}</textarea><button id="stage-feedback" type="button" title="Stage feedback (⌘↩)">Add feedback</button></div>`}`;
+  aside.querySelectorAll("[data-rmf]").forEach((a) => (a.onclick = (e) => { e.preventDefault(); removeFeedback(Number(a.dataset.rmf)); }));
+  if (lk) return;
+  $("stage-feedback").onclick = () => { const t = $("feedback-in").value.trim(); if (t) stageFeedback(t); };
+  $("feedback-in").oninput = (e) => { (local.drafts.__visual = local.drafts.__visual || {}).thread = e.target.value; save(); renderFooter(); };
+}
+function renderFooter() {
+  const n = stagedCount(); const list = $("staged-list");
+  const parts = Object.entries(local.staged).map(([id, s]) => {
+    const bits = [];
+    if (s.reopen) bits.push("reopen"); if (s.defer) bits.push("defer");
+    if (s.answer) bits.push(keysOf(s.answer).length ? "→ " + keyLabel(s.answer) : "→ text");
+    if (s.thread && s.thread.length) bits.push(`+${s.thread.length} msg`);
+    return `${esc(id).toUpperCase()} ${bits.join(" ")}`;
+  });
+  if (local.vfeedback.length) parts.push(`visual +${local.vfeedback.length} msg`);
+  for (const { id } of typedNotes()) parts.push(`${id === "__visual" ? "visual" : esc(id).toUpperCase()} +1 msg typed`);
+  const lp = lastPending();
+  const sent = !lp ? "" : unheard() ? `<span class="sent">Sent #${lp.seq} · queued until an agent listens</span>`
+    : `<span class="sent"><span class="spin"></span>Sent #${lp.seq} · waiting for the agent</span>`;
+  const loose = typedAnswers().map((id) => esc(id).toUpperCase());
+  const note = loose.length ? ` <span class="warn" id="unstaged-note">${loose.length > 1 ? "Typed answers on " + loose.join(", ") + " are" : "Typed answer on " + loose[0] + " is"} not staged and will not be sent; press Stage text to include ${loose.length > 1 ? "them" : "it"}.</span>` : "";
+  list.innerHTML = locked() ? "This grill is finished." : (n ? `<b>${n} staged</b> · ${parts.join(" · ")}${sent ? " · " + sent : ""}` : sent || "Nothing staged. Pick an option or write in the discussion.") + note;
+  const fa = $("finish-area");
+  if (locked()) fa.innerHTML = "";
+  else if (isFinishing()) fa.innerHTML = `<button id="finish" type="button" disabled><span class="spin"></span>Finishing…</button>`;
+  else if (confirmFinish) fa.innerHTML = `<span class="confirm">Finish this grill? Everything staged goes with it; the agent writes the design doc and stops. <button id="finish-yes" class="ready" type="button">Finish grill</button><button id="finish-no" type="button">Cancel</button></span>`;
+  else {
+    const a = (S && S.agent) || {}; const gate = sendState(false);
+    const ready = allSettled() && a.status !== "working" && !lp && !gone;
+    fa.innerHTML = `<button id="finish" type="button" class="${ready ? "ready" : ""}"${gate.disabled ? " disabled" : ""}${ready ? ` title="Every question is settled. Finish writes the design doc."` : gate.disabled && gate.why ? ` title="${esc(gate.why)}"` : ""}>Finish grill</button>`;
+  }
+  const f = $("finish"); if (f && !f.disabled) f.onclick = () => { confirmFinish = true; render(); };
+  const fy = $("finish-yes"); if (fy) fy.onclick = finishNow;
+  const fn = $("finish-no"); if (fn) fn.onclick = () => { confirmFinish = false; render(); };
+  renderSend();
+}
+function renderSend() {
+  const { disabled, why } = sendState(); const n = stagedCount(); const b = $("send");
+  b.disabled = disabled; b.textContent = n ? `Send ${n} to Agent` : "Send to Agent";
+  $("send-why").textContent = why;
+}
+
+$("send").onclick = send;
+$("intent").onclick = () => { if ($("intent").classList.contains("show")) { intentOpen = !intentOpen; render(); } };
+$("use-subagent").onchange = (e) => { local.subagent = e.target.checked; commit(); };
+$("visualize").onclick = () => { if (hasVisual()) { local.view = activeView() === "visualize" ? "questions" : "visualize"; commit(); } else visualize(); };
+$("terms-toggle").onclick = () => { $("levels").classList.remove("show"); $("terms").classList.toggle("show"); };
+$("levels-toggle").onclick = () => { $("terms").classList.remove("show"); $("levels").classList.toggle("show"); };
+// ---- theme: data-theme forces light/dark; "system" follows the OS via light-dark() ----
+const THEMES = ["system", "light", "dark"];
+let theme = document.documentElement.dataset.theme || "system";
+const applyTheme = () => {
+  document.documentElement.dataset.theme = theme;
+  const b = $("theme-toggle");
+  b.dataset.mode = theme;
+  b.title = b.ariaLabel = `Theme: ${theme} — click to change`;
+};
+$("theme-toggle").onclick = () => {
+  theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length];
+  applyTheme();
+  fetch(withToken("/theme"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ theme }) }).catch(() => {});
+};
+applyTheme();
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#terms") && !e.target.closest("#terms-toggle")) $("terms").classList.remove("show");
+  if (!e.target.closest("#levels") && !e.target.closest("#levels-toggle")) $("levels").classList.remove("show");
+});
+document.addEventListener("keydown", (e) => {
+  if (!((e.metaKey || e.ctrlKey) && e.key === "Enter")) return;
+  // First press in a compose box stages the draft so a second press can send it.
+  if (!locked()) {
+    const act = document.activeElement;
+    const t = act && typeof act.value === "string" ? act.value.trim() : "";
+    if (t) {
+      if (act.id === "thread-in") { const q = byId(selected); if (q) { e.preventDefault(); stageThread(q.id, t); return; } }
+      if (act.id === "free") { const q = byId(selected); if (q) { e.preventDefault(); (local.drafts[q.id] = local.drafts[q.id] || {}).free = ""; stageAnswer(q.id, { kind: "text", text: t }); return; } }
+      if (act.id === "feedback-in") { e.preventDefault(); stageFeedback(t); return; }
+    }
+  }
+  send();
+});
+poll();
+</script>
+</body>
+</html>
