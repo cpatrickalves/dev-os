@@ -33,7 +33,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `grill-with-ui` skill (`productivity/`): a third-party copy of Jason Ku's
   skill that runs a grilling interview on a local browser page (plain Node, no
   dependencies). Only the runtime files are copied; kept current with
-  `sync-third-party-skills.sh`.
+  `sync-third-party-skills.sh`. Adapted to review documents: it takes one or
+  more plans, docs or issues, writes `.grills/<slug>-grill.md`, applies the
+  decisions back to the reviewed documents, merges terms into `GLOSSARY.md` and
+  writes the ADRs you pick (through Matt Pocock's `domain-modeling`).
 - `tlc-code-review-flow` workflow: a shortcut for `code-review-flow` on
   `tlc-spec-lean` PRs. It takes `args: {pr, plan, issue}`; without `plan`, the
   Setup finds the feature plan in `.specs/features/*/plan.md` by the issue ID.

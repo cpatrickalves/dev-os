@@ -1,9 +1,9 @@
 ---
 name: grill-with-ui
-description: Run a grilling interview on a local browser page instead of the terminal. Every question is laid out with its recommendation, answerable in any order, with a per-question discussion thread and one "Send to Agent" button. Use when the user says "grill with ui", invokes /grill-with-ui with a topic, or says "/grill-with-ui resume".
+description: Run a grilling interview on a local browser page instead of the terminal, usually to review one or more plans, technical docs or issues and update them with the decisions. Every question is laid out with its recommendation, answerable in any order, with a per-question discussion thread and one "Send to Agent" button; Finish writes the grill doc, updates the reviewed documents and the glossary, and offers ADRs. Use when the user says "grill with ui", invokes /grill-with-ui with a topic or documents, or says "/grill-with-ui resume".
 metadata:
   last_synced: "2026-10-27"
-  local_changes: "None. Only the runtime files are copied; upstream docs/, design/, test/, README.md and CI config are left out."
+  local_changes: "Only the runtime files are copied (upstream docs/, design/, test/, README.md and CI config are left out). Start takes one or more source documents (files, issues, PRs) and reads GLOSSARY.md; the doc defaults to .grills/<slug>-grill.md; Interview method reviews the sources and challenges glossary terms; Finish applies the decisions back to the sources, merges terms into GLOSSARY.md and writes ADRs the user picks (via domain-modeling). Description rewritten for these triggers."
   source: "https://github.com/jasonku09/grill-with-ui/tree/main"
 ---
 
@@ -107,9 +107,16 @@ GRILL_PATCH
 
 ## Start (`/grill-with-ui <topic>`, `$grill-with-ui <topic>`, or "grill with ui: <topic>")
 
+0. **Sources.** The topic may name one or more documents to review: file paths (plans,
+   technical docs, specs) and issue or PR links or ids. Read every one in full before round 1;
+   fetch remote items with the tracker's CLI (`gh`, `planecli`, `az boards`). When no
+   document is named, the grill has no sources and works from the topic alone. Also read
+   the project's `GLOSSARY.md` (or, when `GLOSSARY-MAP.md` exists, the glossary of each
+   context the topic touches) when there is one: its terms are the grill's starting
+   vocabulary.
 1. From the project directory run
    `node $SKILL/server.mjs new --topic "<topic>" --intent "<why this grill exists, 1-2 sentences>" --doc "<doc path>"`.
-   The doc path defaults to `docs/<slug-of-topic>-design.md` under the project root (create the
+   The doc path defaults to `.grills/<slug-of-topic>-grill.md` under the project root (create the
    folder later if needed). Pass `--intent` with the user's goal in their words (1-2 sentences),
    taken from the topic message that started this grill. The topic is the title; the intent
    is the why. Omit it only when the topic arrived as a bare phrase with no goal attached.
@@ -118,7 +125,8 @@ GRILL_PATCH
 2. Patch round 1 in (`new` already wrote the skeleton): one to three independent questions,
    each with lettered options, a level, ratings, one recommendation, and a one-paragraph why
    (see Interview method), plus any `terms`, `axes` if the default four do not fit the topic,
-   and `"agent": { "status": "waiting" }`.
+   `sources` (each reviewed document as `{ "ref": "<path or URL>", "title": "…" }`; leave it
+   out when there are none), and `"agent": { "status": "waiting" }`.
 3. Open a **persistent Monitor** (`persistent: true`) whose command is
    `node $SKILL/server.mjs serve --session <session> --open`, description `grill page: <topic>`.
    No Monitor tool in your harness (Codex, Gemini CLI, Cursor, Copilot, others)? Use
@@ -277,8 +285,13 @@ decisions in order:
   option on a `multi` question.
 - If a question can be answered by exploring the codebase or the docs, explore instead of
   asking, and mention what you found in the next question's body.
+- With `sources`, the grill reviews them: ask about their gaps, ambiguities, unstated
+  assumptions, and contradictions (between sources, or between a source and the code), and
+  name the source and section a question comes from in its body.
 - Maintain `terms` as vocabulary settles: `term`, one-sentence `def`, and `avoid` (words
-  not to use for it). Use the terms consistently in later questions.
+  not to use for it). Use the terms consistently in later questions. When a source or the
+  user uses a term that conflicts with the project's glossary, or a vague or overloaded
+  word, make that a question: which meaning is meant, and which canonical term to use.
 - Set `durable: true` on a question whose decision passes all three gates: hard to reverse,
   surprising without context, a real trade-off. Everything else is a routine choice.
   `durable` shapes only the doc (see Finish); the page shows the level, never `durable`.
@@ -414,7 +427,8 @@ On a `finish` action, or when the user says finish in the terminal:
 
 1. Write the design doc to `doc` (relative to the project root). It is exhaustive and
    self-contained, in this order: a one-paragraph summary (linking the visual at
-   `docs/<slug>-visual.html` when there is one, see step 3); **Terms** (each with its
+   `<doc folder>/<slug>-visual.html` when there is one, see step 3); **Sources** (each
+   reviewed document as a link, when there are any); **Terms** (each with its
    Avoid list); **Why** (the problem in the user's words); **Locked decisions** (every
    `durable` question: the decision, a ratings table with options as rows and axes as
    columns, the decision in bold and every rating as a word (good / mixed / poor, a dash for
@@ -431,7 +445,7 @@ On a `finish` action, or when the user says finish in the terminal:
    finished banner and locks staging.
 3. If `state.visual` exists, it must be reconciled with every answered question before it
    is exported. If no draw is in flight and it is not stale and nothing disagrees, copy
-   `<session>/visual.html` to `docs/<slug>-visual.html` next to the doc (same folder, same
+   `<session>/visual.html` to `<doc folder>/<slug>-visual.html` next to the doc (same folder, same
    slug, `-visual.html`) and add `"visual": <that path>` to `finished` (it is replaced
    whole, so give `doc` again, or fold it into the step 2 patch). Otherwise request one
    reconciling draw (or let the in-flight one land), return to listening, and when it lands
@@ -440,8 +454,32 @@ On a `finish` action, or when the user says finish in the terminal:
    is in flight and inline drawing is selected, draw before step 2 and export it in the same patch. An in-flight
    draw must land first; queue any further reconciliation under those same rules.
 4. Once there is no draw in flight and the exports are complete, stop the persistent
-   Monitor with TaskStop, or stop the server as described in Wait mode.
-5. Print one line with the doc path (and the visual's). End.
+   Monitor with TaskStop, or stop the server as described in Wait mode. The page is done;
+   the steps below run in the terminal.
+5. **Apply the decisions back.** The grill exists to review and update its sources, so
+   always do this, without asking. Update every source so it states what was decided:
+   edit the affected sections in place, in the document's own structure and voice; do not
+   paste the grill doc into it or add a changelog of the grill. Remote sources (issues,
+   PRs) are updated the same way through the tracker's CLI (the issue or PR body). Then
+   update any other document the decisions make wrong or incomplete (a linked spec, a
+   README, a doc the sources point to), and create a document when a decision needs a home
+   none of them offers, where the project keeps documents of that kind. Without sources,
+   apply only to documents the decisions clearly change.
+6. **Glossary and ADRs.** Load the `domain-modeling` skill with the Skill tool
+   (`mattpocock-skills:domain-modeling`) for its file layout and its `GLOSSARY-FORMAT.md`
+   and `ADR-FORMAT.md`. If it is not available, skip this step and say so in step 8.
+   - Merge `terms` into the project's `GLOSSARY.md` (or the right context's, per
+     `GLOSSARY-MAP.md`), creating it if missing. Terms only, never implementation details.
+   - **Always ask before writing an ADR.** List every `durable` question with its decision
+     in one sentence each, and ask which ones become ADRs (the harness's question tool,
+     multi-select, when it has one; otherwise a numbered list in the terminal). Ask even
+     when there is only one. Write only the picked ones to `docs/adr/` (or the context's),
+     numbered after the last existing ADR, each linking back to the grill doc. No `durable`
+     question: say there is nothing for an ADR, and write none.
+7. Append a **Follow-through** section to the grill doc: each document updated or created,
+   the glossary terms added, and the ADRs written, as links.
+8. Print one line with the doc path (and the visual's), the number of documents updated,
+   and the ADRs written. End.
 
 ## Wait mode (agents without a Monitor tool)
 
@@ -501,10 +539,11 @@ below. For the Your-call rule, see Interview method; when changing a rated quest
 
 ```jsonc
 {
-  "topic": "…", "intent": "why this grill exists, 1-2 sentences", "doc": "docs/x-design.md", "project": "/abs/path", "created": "ISO",
+  "topic": "…", "intent": "why this grill exists, 1-2 sentences", "doc": ".grills/x-grill.md", "project": "/abs/path", "created": "ISO",
+  "sources": [{ "ref": "docs/plan.md", "title": "…" }],         // optional; the documents under review
   "agent": { "status": "waiting|working", "since": "ISO", "handled": 3 },
   "note": "optional short sentence shown above the question list",
-  "finished": { "doc": "docs/x-design.md", "visual": "docs/x-visual.html", "at": "ISO" },  // only after Finish
+  "finished": { "doc": ".grills/x-grill.md", "visual": ".grills/x-visual.html", "at": "ISO" },  // only after Finish
   "visual": {                                                   // only after a visualize action
     "kind": "prototype|diagram", "version": 3, "at": "ISO",
     "note": "v3: discussion panel moved to the right per Q3",
