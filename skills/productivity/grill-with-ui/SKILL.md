@@ -3,7 +3,7 @@ name: grill-with-ui
 description: Run a grilling interview on a local browser page instead of the terminal, usually to review one or more plans, technical docs or issues and update them with the decisions. Every question is laid out with its recommendation, answerable in any order, with a per-question discussion thread and one "Send to Agent" button; Finish writes the grill doc, updates the reviewed documents and the glossary, and offers ADRs. Use when the user says "grill with ui", invokes /grill-with-ui with a topic or documents, or says "/grill-with-ui resume".
 metadata:
   last_synced: "2026-10-27"
-  local_changes: "Only the runtime files are copied (upstream docs/, design/, test/, README.md and CI config are left out). Start takes one or more source documents (files, issues, PRs) and reads GLOSSARY.md; the doc defaults to .grills/<slug>-grill.md; Interview method reviews the sources and challenges glossary terms; Finish applies the decisions back to the sources, merges terms into GLOSSARY.md and writes ADRs the user picks (via domain-modeling). Description rewritten for these triggers."
+  local_changes: "Only the runtime files are copied (upstream docs/, design/, test/, README.md and CI config are left out). Start takes one or more source documents (files, issues, PRs), loads domain-modeling and reads GLOSSARY.md; the doc defaults to .grills/<slug>-grill.md; Interview method asks the whole frontier per round, reviews the sources, challenges glossary terms, writes settled terms to GLOSSARY.md right away, probes edge-case scenarios, cross-checks claims against the code, and sends fact lookups to background subagents (new optional facts key); Finish applies the decisions back to the sources (asking before rewriting issues or PRs) and writes the ADRs the user picks. Description rewritten for these triggers."
   source: "https://github.com/jasonku09/grill-with-ui/tree/main"
 ---
 
@@ -110,10 +110,13 @@ GRILL_PATCH
 0. **Sources.** The topic may name one or more documents to review: file paths (plans,
    technical docs, specs) and issue or PR links or ids. Read every one in full before round 1;
    fetch remote items with the tracker's CLI (`gh`, `planecli`, `az boards`). When no
-   document is named, the grill has no sources and works from the topic alone. Also read
-   the project's `GLOSSARY.md` (or, when `GLOSSARY-MAP.md` exists, the glossary of each
+   document is named, the grill has no sources and works from the topic alone. Load the
+   `domain-modeling` skill with the Skill tool (`mattpocock-skills:domain-modeling`): it
+   gives the glossary and ADR layout and formats this grill writes in. Then read the
+   project's `GLOSSARY.md` (or, when `GLOSSARY-MAP.md` exists, the glossary of each
    context the topic touches) when there is one: its terms are the grill's starting
-   vocabulary.
+   vocabulary. If `domain-modeling` is not available, keep `terms` in `state.json` only
+   and say once, in the Start line, that the glossary and ADRs are off.
 1. From the project directory run
    `node $SKILL/server.mjs new --topic "<topic>" --intent "<why this grill exists, 1-2 sentences>" --doc "<doc path>"`.
    The doc path defaults to `.grills/<slug-of-topic>-grill.md` under the project root (create the
@@ -122,8 +125,8 @@ GRILL_PATCH
    is the why. Omit it only when the topic arrived as a bare phrase with no goal attached.
    The page shows it under the topic so several open
    grills stay distinguishable. It prints one JSON line; keep `session` (the session folder).
-2. Patch round 1 in (`new` already wrote the skeleton): one to three independent questions,
-   each with lettered options, a level, ratings, one recommendation, and a one-paragraph why
+2. Patch round 1 in (`new` already wrote the skeleton): the whole frontier (see Interview
+   method), each question with lettered options, a level, ratings, one recommendation, and a one-paragraph why
    (see Interview method), plus any `terms`, `axes` if the default four do not fit the topic,
    `sources` (each reviewed document as `{ "ref": "<path or URL>", "title": "…" }`; leave it
    out when there are none), and `"agent": { "status": "waiting" }`.
@@ -154,7 +157,7 @@ GRILL_PATCH
 2. Exactly one line: take it. Several: list them in the terminal (topic, intent, created, open/answered
    counts) and ask which. None: say so and stop.
 3. Read `<session>/state.json` once to load the grill (reading is fine; only writes go
-   through `patch`). Run `node $SKILL/server.mjs pending --session <session>`. Every line
+   through `patch`), and load `domain-modeling` as Start step 0 does. Run `node $SKILL/server.mjs pending --session <session>`. Every line
    printed is a Send the user made while no agent was listening. Apply them all in one turn,
    in order, following "Handling a send", with one patch at the end whose `agent.handled`
    is the last seq.
@@ -177,7 +180,9 @@ Any other monitor line (`"type":"ready"`, errors, exit) is status. Do not treat 
 
 A second wake-up is the completion notice of a draw subagent you launched in the background
 (see Visualize). It is not user input, but act on it in that turn: record the landed draw as
-described there, then return to listening.
+described there, then return to listening. A fact-finding subagent's notice (see Interview
+method) is handled the same way: record its fact, publish what it unblocked, return to
+listening.
 
 ## Handling a send
 
@@ -216,8 +221,8 @@ described there, then return to listening.
 3. If an answer changes the recommendation of a still-open question, give that question its
    new `rec` and `updated: true` (the page marks it). Set `updated: false` once the user
    answers it.
-4. Add the next round: the frontier (see Interview method), up to three when independent,
-   each a new question entry with `deps` listing the question ids it depends on. New
+4. Add the next round: the whole frontier (see Interview method), each a new question entry
+   with `deps` listing the question ids it depends on. New
    questions get the next round number. If the tree is fully walked, add no questions and
    set `note` to a short sentence saying every branch is settled and Finish is the next step.
 5. **Ordinary turns do not redraw the visual.** When an answer, reopen, or changed
@@ -244,8 +249,9 @@ understanding, walking each branch of the design tree and resolving dependencies
 decisions in order:
 
 - A question is asked only when its prerequisites are settled. Each round is the current
-  **frontier**: the questions that can be asked now. Ask up to three per round when they are
-  independent of each other; one when they are not. Record each question's `deps`.
+  **frontier**: every question that can be asked now, all of it in one round. A question
+  whose answer depends on another question still open in this round belongs to a later
+  round. Record each question's `deps`.
 - Every question has a `title`, a `body` that states what hangs on it, lettered `options`
   (two to four), and `rec` with the recommended option and a one-paragraph `why` that names
   the trade-off. A question with no sensible options has `options: []` and `rec.text`.
@@ -283,8 +289,16 @@ decisions in order:
   toggle any number of options. Keep single choice whenever picking one rules out the
   others; never use `multi` to dodge a real trade-off, and never offer an "all of the above"
   option on a `multi` question.
-- If a question can be answered by exploring the codebase or the docs, explore instead of
-  asking, and mention what you found in the next question's body.
+- Finding **facts** is your job, never the user's; the **decisions** are theirs. When a
+  question needs a fact from the environment (codebase, docs, tools, a tracker), do not ask
+  the user for it. Dispatch a background subagent (Agent tool, Explore or general-purpose)
+  to find it, and do not block on it: a running lookup is an unsettled prerequisite, so only
+  the questions downstream of it wait, and the rest of the frontier goes out now. Its
+  completion notice wakes you like a draw's (see The event rule): add the fact to `facts`,
+  then patch the questions it unblocked as a new round, mentioning the fact in their
+  bodies; leave `agent.handled` as it is (there was no send). In wait mode, check finished
+  lookups between waits. A quick lookup (one grep, one file) you may do inline, and when
+  you are yourself a subagent or have no subagent tool, explore inline instead.
 - With `sources`, the grill reviews them: ask about their gaps, ambiguities, unstated
   assumptions, and contradictions (between sources, or between a source and the code), and
   name the source and section a question comes from in its body.
@@ -292,6 +306,16 @@ decisions in order:
   not to use for it). Use the terms consistently in later questions. When a source or the
   user uses a term that conflicts with the project's glossary, or a vague or overloaded
   word, make that a question: which meaning is meant, and which canonical term to use.
+- Write each term to the project's glossary **the moment it settles** (its question is
+  answered, or the user states it plainly), in the same turn's work, in `domain-modeling`'s
+  `GLOSSARY-FORMAT.md`; create the file if missing. Do not batch terms for Finish. The
+  glossary holds domain language only, never implementation decisions.
+- Stress-test relationships between concepts with **concrete scenarios**: invent the edge
+  case that forces a boundary ("an order is half shipped when the customer cancels: what
+  happens to the shipped half?") and put it in a question's body or make it the question.
+- **Cross-check claims against the code.** When a source or the user states how something
+  works, check whether the code agrees; a contradiction becomes a question that quotes both
+  ("the plan says partial cancellation is allowed; `cancelOrder` cancels the whole order").
 - Set `durable: true` on a question whose decision passes all three gates: hard to reverse,
   surprising without context, a real trade-off. Everything else is a routine choice.
   `durable` shapes only the doc (see Finish); the page shows the level, never `durable`.
@@ -435,7 +459,8 @@ On a `finish` action, or when the user says finish in the terminal:
    `na` or an unrated axis; never invent ratings), then the rejected options and why each
    lost, applying the consistency rule and its escape from Interview method);
    **Routine choices** (every other answered question, one bullet each);
-   **Verified facts** (anything you established by exploring rather than asking, if any);
+   **Verified facts** (`facts` and anything else you established by exploring rather than
+   asking, if any);
    **Risks**; **Deferred**
    (deferred questions, with what would reopen them); **Open threads** (discussion points
    that ended without a decision). Importance levels stay out of the doc. Do not compress: a
@@ -457,19 +482,21 @@ On a `finish` action, or when the user says finish in the terminal:
    Monitor with TaskStop, or stop the server as described in Wait mode. The page is done;
    the steps below run in the terminal.
 5. **Apply the decisions back.** The grill exists to review and update its sources, so
-   always do this, without asking. Update every source so it states what was decided:
-   edit the affected sections in place, in the document's own structure and voice; do not
-   paste the grill doc into it or add a changelog of the grill. Remote sources (issues,
-   PRs) are updated the same way through the tracker's CLI (the issue or PR body). Then
+   always do this; local files need no confirmation. Update every source so it states what
+   was decided: edit the affected sections in place, in the document's own structure and
+   voice; do not paste the grill doc into it or add a changelog of the grill. Remote
+   sources (issues, PRs) are visible to others: show the user each new body and **ask
+   before writing it** through the tracker's CLI; write only the ones confirmed. Then
    update any other document the decisions make wrong or incomplete (a linked spec, a
    README, a doc the sources point to), and create a document when a decision needs a home
    none of them offers, where the project keeps documents of that kind. Without sources,
    apply only to documents the decisions clearly change.
-6. **Glossary and ADRs.** Load the `domain-modeling` skill with the Skill tool
-   (`mattpocock-skills:domain-modeling`) for its file layout and its `GLOSSARY-FORMAT.md`
-   and `ADR-FORMAT.md`. If it is not available, skip this step and say so in step 8.
-   - Merge `terms` into the project's `GLOSSARY.md` (or the right context's, per
-     `GLOSSARY-MAP.md`), creating it if missing. Terms only, never implementation details.
+6. **Glossary and ADRs.** Use `domain-modeling` (loaded at Start; load it again if this is
+   a resumed session) for the layout and `ADR-FORMAT.md`. If it is not available, skip
+   this step and say so in step 8.
+   - Check that every entry in `terms` is in the project's `GLOSSARY.md` (or the right
+     context's, per `GLOSSARY-MAP.md`); terms are written as they settle, so add only
+     what is missing or changed since.
    - **Always ask before writing an ADR.** List every `durable` question with its decision
      in one sentence each, and ask which ones become ADRs (the harness's question tool,
      multi-select, when it has one; otherwise a numbered list in the terminal). Ask even
@@ -541,6 +568,7 @@ below. For the Your-call rule, see Interview method; when changing a rated quest
 {
   "topic": "…", "intent": "why this grill exists, 1-2 sentences", "doc": ".grills/x-grill.md", "project": "/abs/path", "created": "ISO",
   "sources": [{ "ref": "docs/plan.md", "title": "…" }],         // optional; the documents under review
+  "facts": [{ "text": "…", "from": "src/orders.ts:42" }],       // optional; found by lookups, replaced whole (send the full list)
   "agent": { "status": "waiting|working", "since": "ISO", "handled": 3 },
   "note": "optional short sentence shown above the question list",
   "finished": { "doc": ".grills/x-grill.md", "visual": ".grills/x-visual.html", "at": "ISO" },  // only after Finish

@@ -35,8 +35,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dependencies). Only the runtime files are copied; kept current with
   `sync-third-party-skills.sh`. Adapted to review documents: it takes one or
   more plans, docs or issues, writes `.grills/<slug>-grill.md`, applies the
-  decisions back to the reviewed documents, merges terms into `GLOSSARY.md` and
-  writes the ADRs you pick (through Matt Pocock's `domain-modeling`).
+  decisions back to the reviewed documents (asking before rewriting an issue or
+  PR), and writes the ADRs you pick. Brought closer to Matt Pocock's
+  `grill-with-docs`: it asks the whole frontier per round, sends fact lookups
+  to background subagents, writes terms to `GLOSSARY.md` as they settle, and
+  probes edge cases and claims against the code (through `domain-modeling`).
 - `tlc-code-review-flow` workflow: a shortcut for `code-review-flow` on
   `tlc-spec-lean` PRs. It takes `args: {pr, plan, issue}`; without `plan`, the
   Setup finds the feature plan in `.specs/features/*/plan.md` by the issue ID.
