@@ -1,0 +1,4 @@
+#!/bin/bash
+# Runs the Dev-OS checks before every commit. Enabled per clone with:
+#   git config core.hooksPath .githooks
+exec "$(git rev-parse --show-toplevel)/scripts/check.sh"

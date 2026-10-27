@@ -195,6 +195,26 @@ load_catalog() {
     ' "$file"
 }
 
+# Schema of each catalog, shared by the script that installs it and check.sh.
+# Usage : load_<kind>_catalog <file>   (same output and errors as load_catalog)
+load_plugins_catalog() {
+    load_catalog "$1" plugins \
+        name,description,marketplace,marketplace_source,scope \
+        name,description,marketplace,scope
+}
+
+load_skills_catalog() {
+    load_catalog "$1" skills \
+        name,description,source,skills,scope \
+        name,description,source,skills,scope
+}
+
+load_mods_catalog() {
+    load_catalog "$1" mods \
+        name,description,marketplace,marketplace_source,scope,github \
+        name,description,marketplace,scope
+}
+
 # -----------------------------------------------------------------------------
 # File Operations
 # -----------------------------------------------------------------------------

@@ -52,9 +52,7 @@ load_packages() {
     PACKAGE_NAMES=(); PACKAGE_DESCS=(); PACKAGE_SOURCES=(); PACKAGE_SKILLS=(); PACKAGE_SCOPES=()
 
     local records
-    records="$(load_catalog "$CATALOG_FILE" skills \
-        name,description,source,skills,scope \
-        name,description,source,skills,scope)" || exit 1
+    records="$(load_skills_catalog "$CATALOG_FILE")" || exit 1
 
     local name desc source skills scope
     while IFS="$CATALOG_SEP" read -r name desc source skills scope; do

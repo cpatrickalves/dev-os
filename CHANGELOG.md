@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `scripts/check.sh` and a `.githooks/pre-commit` hook that runs it: validates
+  the three YAML catalogs with the install scripts' schema, compiles
+  `workflows/*.js`, and runs `bash -n` on the scripts. Enable the hook per clone
+  with `git config core.hooksPath .githooks`.
 - `setup-automated-checks` skill (`engineering/build/`): sets up or audits a
   project's deterministic checks (ruff, mypy, pytest; Biome, tsc, Vitest; hooks,
   Makefile `check`, GitHub Actions) and the files the review layer reads
@@ -35,6 +39,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Catalog schemas moved into `load_plugins_catalog`, `load_skills_catalog` and
+  `load_mods_catalog` (`common-functions.sh`), shared by the install scripts and
+  `check.sh`.
 - `code-review-flow` workflow (and so `dev-flow` and `tlc-code-review-flow`):
   `the-judge` joins as a 4th reviewer, in report-only mode. The Setup already
   resolves the PR (GitHub or Azure DevOps), so the reviewer skips the skill's

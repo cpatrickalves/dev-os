@@ -53,9 +53,7 @@ load_plugins() {
     PLUGIN_NAMES=(); PLUGIN_DESCS=(); PLUGIN_MARKETPLACES=(); PLUGIN_SOURCES=(); PLUGIN_SCOPES=()
 
     local records
-    records="$(load_catalog "$CATALOG_FILE" plugins \
-        name,description,marketplace,marketplace_source,scope \
-        name,description,marketplace,scope)" || exit 1
+    records="$(load_plugins_catalog "$CATALOG_FILE")" || exit 1
 
     local name desc marketplace source scope
     while IFS="$CATALOG_SEP" read -r name desc marketplace source scope; do

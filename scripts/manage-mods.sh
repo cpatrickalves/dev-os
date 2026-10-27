@@ -59,9 +59,7 @@ load_mods() {
     MOD_NAMES=(); MOD_DESCS=(); MOD_MARKETPLACES=(); MOD_SOURCES=(); MOD_SCOPES=(); MOD_GITHUBS=()
 
     local records
-    records="$(load_catalog "$CATALOG_FILE" mods \
-        name,description,marketplace,marketplace_source,scope,github \
-        name,description,marketplace,scope)" || exit 1
+    records="$(load_mods_catalog "$CATALOG_FILE")" || exit 1
 
     local name desc marketplace source scope github
     while IFS="$CATALOG_SEP" read -r name desc marketplace source scope github; do

@@ -199,7 +199,8 @@ dev-os/
 ├── workflows/             # Multi-agent workflow scripts
 ├── output-styles/         # Output styles
 ├── plugins/               # Dev-OS's own plugin marketplace (thermos)
-├── scripts/               # Import/install helper scripts
+├── scripts/               # Import/install helper scripts + check.sh
+├── .githooks/             # pre-commit: runs scripts/check.sh
 ├── docs/                  # Reference notes (LangGraph practices)
 ├── external-plugins.yaml  # External plugins to install
 ├── external-mods.yaml     # Claude Code mods to install or uninstall
@@ -233,5 +234,7 @@ The skills cover the full stack I work with daily — from FastAPI backends and 
    already installed, so rerun them to refresh. Mods go through
    `~/dev-os/scripts/manage-mods.sh install` (or `uninstall`).
 4. Once per machine, run `~/dev-os/scripts/setup-skill-hook.sh` to log skill usage
+   and, inside `~/dev-os`, `git config core.hooksPath .githooks` so every commit
+   runs `scripts/check.sh` (catalogs, workflow syntax, `bash -n`). Requires `node`.
 5. Open the project with Claude Code
 6. Use `/create-simple-feature-tasks` to break down a feature, `/pr-description` to write a PR description, or any other skill
