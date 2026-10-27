@@ -180,6 +180,8 @@ const REPORT_SCHEMA = {
 // A /code-review embutida tem o mesmo nome da skill do plugin mattpocock, por isso
 // a do plugin é referenciada com o namespace.
 // note: instruções extras só para aquele revisor, anexadas ao prompt.
+// Ao trocar um revisor, atualize o meta deste arquivo (description e detail da fase
+// Code Review) e a nota de dependências da seção Workflows do README.
 // A the-judge (tlc-skills) foi feita para rodar sozinha no GitHub: busca o PR com gh
 // (Step 0) e publica a review (Step 7). Aqui o Setup já resolveu o PR (GitHub ou
 // Azure DevOps), então a nota pula as duas pontas e mantém o resto da skill.

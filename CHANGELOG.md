@@ -42,6 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Catalog schemas moved into `load_plugins_catalog`, `load_skills_catalog` and
   `load_mods_catalog` (`common-functions.sh`), shared by the install scripts and
   `check.sh`.
+- `dev-flow`, `tlc-code-review-flow` and the README no longer state how many
+  reviewers `code-review-flow` runs; only its own `meta` does.
 - `code-review-flow` workflow (and so `dev-flow` and `tlc-code-review-flow`):
   `the-judge` joins as a 4th reviewer, in report-only mode. The Setup already
   resolves the PR (GitHub or Azure DevOps), so the reviewer skips the skill's
