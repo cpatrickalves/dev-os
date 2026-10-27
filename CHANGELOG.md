@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   installed globally and kept current with `sync-third-party-skills.sh`.
 - `grill-with-ui` skill (`productivity/`): a third-party copy of Jason Ku's
   skill that runs a grilling interview on a local browser page (plain Node, no
-  dependencies). Only the runtime files are copied; kept current with
+  dependencies), installed globally. Only the runtime files are copied; kept current with
   `sync-third-party-skills.sh`. Adapted to review documents: it takes one or
   more plans, docs or issues, writes `.grills/<slug>-grill.md`, applies the
   decisions back to the reviewed documents (asking before rewriting an issue or

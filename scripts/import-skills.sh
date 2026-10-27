@@ -29,7 +29,7 @@ SKILLS_DEST="$PROJECT_DIR/.claude/skills"
 # Skills installed globally (user-level) instead of into the project.
 # These are copied to $GLOBAL_SKILLS_DEST so they are available in every project.
 GLOBAL_SKILLS_DEST="$HOME/.claude/skills"
-declare -a GLOBAL_SKILLS=("docs-generator" "planecli" "azure-devops-cli" "napkin-runbook" "unslop" "logbook" "end-session" "pr-description" "pr-review-to-subtasks" "post-merge-cleanup" "create-update-changelog" "create-update-readme" "show-me")
+declare -a GLOBAL_SKILLS=("docs-generator" "planecli" "azure-devops-cli" "napkin-runbook" "unslop" "logbook" "end-session" "pr-description" "pr-review-to-subtasks" "post-merge-cleanup" "create-update-changelog" "create-update-readme" "show-me" "grill-with-ui")
 
 # Arrays for skill handling. SKILL_PATHS holds each skill's path relative to
 # $SKILLS_SOURCE (e.g. engineering/build/python-testing); SKILL_DIRS its basename.
