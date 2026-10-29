@@ -3,7 +3,7 @@ name: grill-with-ui
 description: Run a grilling interview on a local browser page instead of the terminal, usually to review one or more plans, technical docs or issues and update them with the decisions. Every question is laid out with its recommendation, answerable in any order, with a per-question discussion thread and one "Send to Agent" button; Finish writes the grill doc, updates the reviewed documents and the glossary, and offers ADRs. Use when the user says "grill with ui", invokes /grill-with-ui with a topic or documents, or says "/grill-with-ui resume".
 metadata:
   last_synced: "2026-10-27"
-  local_changes: "Only the runtime files are copied (upstream docs/, design/, test/, README.md and CI config are left out). Start takes one or more source documents (files, issues, PRs), loads domain-modeling and reads GLOSSARY.md; the doc defaults to .grills/<slug>-grill.md; Interview method asks the whole frontier per round, reviews the sources, challenges glossary terms, writes settled terms to GLOSSARY.md right away, probes edge-case scenarios, cross-checks claims against the code, and sends fact lookups to background subagents (new optional facts key); Finish applies the decisions back to the sources (asking before rewriting issues or PRs) and writes the ADRs the user picks. Description rewritten for these triggers."
+  local_changes: "Only the runtime files are copied (upstream docs/, design/, test/, README.md and CI config are left out). Start takes one or more source documents (files, issues, PRs), loads domain-modeling and reads GLOSSARY.md; the doc defaults to .grills/<slug>-grill.md; Interview method asks the whole frontier per round, reviews the sources, challenges glossary terms, writes settled terms to GLOSSARY.md right away, probes edge-case scenarios, cross-checks claims against the code, and sends fact lookups to background subagents (new optional facts key); every candidate question passes a filter (a real decision, no precedent, in scope) or goes to the new assumed or handoffs keys; an accepted recommendation does not close its branch, and a closing sweep over answers, facts, sources and follow-ups runs before the grill is declared done; Finish applies the decisions back to the sources (asking before rewriting issues or PRs) and writes the ADRs the user picks. Description rewritten for these triggers."
   source: "https://github.com/jasonku09/grill-with-ui/tree/main"
 ---
 
@@ -223,8 +223,11 @@ listening.
    answers it.
 4. Add the next round: the whole frontier (see Interview method), each a new question entry
    with `deps` listing the question ids it depends on. New
-   questions get the next round number. If the tree is fully walked, add no questions and
-   set `note` to a short sentence saying every branch is settled and Finish is the next step.
+   questions get the next round number. When the frontier is empty, run the closing sweep
+   (see Interview method) before concluding: the questions that survive its filter are the
+   next round, and the rest go to `assumed` or `handoffs`. Only when no question survives, add no
+   questions and set `note` to say every branch is settled, what the sweep checked, how many
+   assumptions it made, and that Finish is the next step.
 5. **Ordinary turns do not redraw the visual.** When an answer, reopen, or changed
    recommendation affects what an existing visual shows, set `"visual": { "stale": true }`.
    Leave `visual.html`, `version`, `at`, and `note` unchanged; the page marks it out of date
@@ -299,9 +302,10 @@ decisions in order:
   bodies; leave `agent.handled` as it is (there was no send). In wait mode, check finished
   lookups between waits. A quick lookup (one grep, one file) you may do inline, and when
   you are yourself a subagent or have no subagent tool, explore inline instead.
-- With `sources`, the grill reviews them: ask about their gaps, ambiguities, unstated
-  assumptions, and contradictions (between sources, or between a source and the code), and
-  name the source and section a question comes from in its body.
+- With `sources`, the grill reviews them: their gaps, ambiguities, unstated assumptions, and
+  contradictions (between sources, or between a source and the code) are candidates, which
+  the filter below turns into questions or not. Name the source and section a question
+  comes from in its body.
 - Maintain `terms` as vocabulary settles: `term`, one-sentence `def`, and `avoid` (words
   not to use for it). Use the terms consistently in later questions. When a source or the
   user uses a term that conflicts with the project's glossary, or a vague or overloaded
@@ -319,7 +323,42 @@ decisions in order:
 - Set `durable: true` on a question whose decision passes all three gates: hard to reverse,
   surprising without context, a real trade-off. Everything else is a routine choice.
   `durable` shapes only the doc (see Finish); the page shows the level, never `durable`.
-- Stop asking when the tree is walked. Say so with `note`; do not pad with filler questions.
+- An answer settles its question, not its branch. An accepted recommendation counts the same
+  as an option the user picked: what hangs off it is asked in a later round, even when the
+  `why` already sketched it. Do not let a recommendation's text stand in for a question.
+- Stop asking only when no candidate from the **closing sweep** survives its filter.
+  Before declaring the tree walked, run it:
+  - For every answered question, list what hangs off the decision: implementation
+    consequences, edge cases, failure modes, data migration, tests, security, rollout, and
+    who does what. Each item still unsettled is a candidate.
+  - Every entry in `facts` must lead somewhere: to an answered question it informed, or to
+    a candidate about the decision it implies. A fact with no decision attached is
+    something silently assumed.
+  - With `sources`, every section of every source is covered by a question or confirmed as
+    needing no change.
+  - Every follow-up a `why` or a thread reply mentioned ("must appear in the TDD", "if the
+    threat model changes") is a candidate.
+- **Filter every candidate before it becomes a question**, in every round, round 1
+  included, and in the closing sweep. Finding a gap does not mean asking about it:
+  - A candidate becomes a question only when it is a real decision: genuine alternatives,
+    and the pick changes the plan or a source. If the code or another answer settles it,
+    it is a fact: look it up, do not ask.
+  - A decision that belongs to work the sources put out of scope (a "not in this issue"
+    list, another issue, a later phase) is not asked here. Add it to `handoffs` with where
+    it belongs (`{ "text": "…", "to": "issue \"Local de pesquisa e divergência\"" }`), so the
+    doc hands it over instead of deciding it.
+  - When the project has a precedent (an earlier feature, an existing module, a convention
+    in the code), follow it without asking. Following a precedent is an assumption, not a
+    question. A precedent counts when it solves the same problem for the same kind of
+    thing; when unsure it fits, ask, at level `skim`.
+  - Everything that is neither a question nor a handoff is an **assumption**: add it to `assumed` (one
+    sentence each, naming the precedent or reason). Nothing is dropped silently, and the
+    user can reopen any of them by asking in a thread or the terminal.
+  If questions survive the filter, they are the next round. When none do, set `note` to say
+  every branch is settled, what the sweep checked, and how many assumptions it made
+  ("swept 14 decisions, 9 facts and 4 sources; 6 assumptions from the DEV-324 precedent,
+  listed in the doc"), so the user can challenge it before Finish. Do not pad with filler
+  questions.
 
 ## Visualize
 
@@ -459,10 +498,12 @@ On a `finish` action, or when the user says finish in the terminal:
    `na` or an unrated axis; never invent ratings), then the rejected options and why each
    lost, applying the consistency rule and its escape from Interview method);
    **Routine choices** (every other answered question, one bullet each);
+   **Assumed** (every entry in `assumed`, with its precedent or reason, if any);
    **Verified facts** (`facts` and anything else you established by exploring rather than
    asking, if any);
    **Risks**; **Deferred**
-   (deferred questions, with what would reopen them); **Open threads** (discussion points
+   (deferred questions, with what would reopen them, and every entry in `handoffs` with the
+   work it belongs to); **Open threads** (discussion points
    that ended without a decision). Importance levels stay out of the doc. Do not compress: a
    reader with no access to the session must be able to build from it.
 2. Patch `"finished": { "doc": … }` and `"agent": { "status": "waiting" }`
@@ -569,6 +610,8 @@ below. For the Your-call rule, see Interview method; when changing a rated quest
   "topic": "…", "intent": "why this grill exists, 1-2 sentences", "doc": ".grills/x-grill.md", "project": "/abs/path", "created": "ISO",
   "sources": [{ "ref": "docs/plan.md", "title": "…" }],         // optional; the documents under review
   "facts": [{ "text": "…", "from": "src/orders.ts:42" }],       // optional; found by lookups, replaced whole (send the full list)
+  "assumed": [{ "text": "…", "why": "DEV-324 precedent" }],     // optional; filtered-out candidates, replaced whole
+  "handoffs": [{ "text": "…", "to": "issue \"…\"" }],          // optional; out-of-scope decisions, replaced whole
   "agent": { "status": "waiting|working", "since": "ISO", "handled": 3 },
   "note": "optional short sentence shown above the question list",
   "finished": { "doc": ".grills/x-grill.md", "visual": ".grills/x-visual.html", "at": "ISO" },  // only after Finish
