@@ -40,6 +40,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `grill-with-docs`: it asks the whole frontier per round, sends fact lookups
   to background subagents, writes terms to `GLOSSARY.md` as they settle, and
   probes edge cases and claims against the code (through `domain-modeling`).
+  Before declaring the grill done it sweeps answers, facts, sources and
+  follow-ups; candidates that are not real decisions, follow a precedent or
+  belong to other work go to the doc's Assumed and Deferred sections instead
+  of becoming questions.
 - `tlc-code-review-flow` workflow: a shortcut for `code-review-flow` on
   `tlc-spec-lean` PRs. It takes `args: {pr, plan, issue}`; without `plan`, the
   Setup finds the feature plan in `.specs/features/*/plan.md` by the issue ID.
