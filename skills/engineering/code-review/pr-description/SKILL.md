@@ -3,7 +3,7 @@ name: pr-description
 description: "Use when writing a PR title and body."
 metadata:
   last_synced: "2026-10-08"
-  local_changes: "Renamed to pr-description; added Title section; no Mermaid on Azure DevOps remotes."
+  local_changes: "Renamed to pr-description; added Title section; no Mermaid on Azure DevOps remotes; optional screenshots for UI changes."
   author: Matt Pocock
   source: "https://github.com/mattpocock/skills/tree/main/skills/engineering/pr"
 ---
@@ -174,6 +174,29 @@ You may use one of these, you may use several, it is unlikely you will use all o
 Concrete evidence that the change works. Show a before and after.
 
 Screenshots are S-tier - when the environment is set up for it and the change is visual.
+
+#### Screenshots for UI changes
+
+When the diff creates or changes UI (components, templates, styles, routes, copy shown on screen), screenshots in the Evidence section are desirable but not required. Add them when the environment allows it:
+
+1. Launch the app the way the project documents it and open each affected screen in a browser tool (Playwright, Claude in Chrome, the built-in browser).
+2. Capture **After** on the PR branch. For a changed screen, capture **Before** on the base branch in a separate worktree (`git worktree add <tmp> <base>`), in the same state and viewport. A new screen has only **After**.
+3. Crop to the area that changed; add a mobile-width capture when the layout is responsive.
+4. Embed each image next to one line naming the screen and state:
+
+```markdown
+- **Before:** Settings page, empty state
+  ![before](<url>)
+  **After:** Settings page, empty state
+  ![after](<url>)
+```
+
+Images need a URL the PR can render:
+
+- **GitHub:** there is no API to upload PR attachments. Push the images to a dedicated branch (e.g. `pr-assets`, never the PR branch) and link `https://github.com/<owner>/<repo>/blob/pr-assets/<pr>/<file>.png?raw=true`, which also renders for private repos.
+- **Azure DevOps:** after the PR exists, upload each image with `POST {org}/{project}/_apis/git/repositories/{repo}/pullRequests/{id}/attachments/{file}.png?api-version=7.1` (body is the binary, token from `az account get-access-token`), then update the description with the returned `url`.
+
+If the app cannot be launched or the screen cannot be reached, fall back to execution-based evidence and tell the user the PR has no screenshots, so they can add them by hand.
 
 Execution-based evidence is A-tier. Test results, console output. Show the exact test that now fails and passes, using pseudocode.
 
