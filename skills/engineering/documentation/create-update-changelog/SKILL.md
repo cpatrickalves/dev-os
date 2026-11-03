@@ -17,13 +17,13 @@ Copy this checklist and work through it in order:
 
 ```
 - [ ] Detect the version source: pyproject.toml (Python), package.json (JavaScript), or else the latest git tag
-- [ ] Run: git log $(git describe --tags --abbrev=0)..HEAD --oneline
+- [ ] List the commits since the last release (see "Git tags" for the base)
 - [ ] Categorize the changes using the Keep a Changelog order (see template)
 - [ ] Bump the version following Semantic Versioning
 - [ ] Write/update CHANGELOG.md: promote [Não Publicado] → [VERSÃO] - YYYY-MM-DD
 - [ ] Confirm version + entries with the user
 - [ ] Commit (commit message in Portuguese) — only after user confirmation
-- [ ] Create the git tag for the version — only after user confirmation
+- [ ] Create and push the git tag — only after user confirmation and once the commit is on the target branch
 ```
 
 ## Changelog template (CHANGELOG.md)
@@ -82,14 +82,24 @@ Always use this category order: **Adicionado → Alterado → Depreciado → Rem
 
 Use Git tags to manage versions and releases. Only create a tag after the user confirms the version.
 
-- List the commits since the last tag, to see what changed:
+- List the commits since the last release. The base is the latest tag when it matches the version in the manifest:
   ```
   git log $(git describe --tags --abbrev=0)..HEAD --oneline
   ```
+  When the tag is behind the manifest, tags have gone stale: the base is the last commit that changed the version.
+  ```
+  git log $(git log -1 --format=%h -G'^version *=' -- pyproject.toml)..HEAD --oneline
+  ```
+  For `package.json`, use `-G'"version":'`.
 - Create the tag for the new version:
   ```
   git tag -a v[VERSAO no formato x.x.x] -m "Mensagem descritiva da versão, ex.: Lançamento inicial com funcionalidades básicas"
   ```
+- Publish the tag after the commit is on the target branch. On a branch that only accepts pull requests, that means after a merge that keeps the commit (merge commit, no squash); a squash leaves the tag outside the branch. Confirm before pushing:
+  ```
+  git merge-base --is-ancestor v[VERSAO] origin/[BRANCH]
+  ```
+- Run each `git push` as its own command, without a pipe, and read its exit code before the next one. A pipe reports the exit code of its last command, which hides a rejected push.
 
 ### Rules for entries
 

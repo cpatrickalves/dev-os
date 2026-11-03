@@ -82,6 +82,8 @@ az repos pr update --id {pr-id} --status completed
 
 Full PR reference (parameters, reviewers, policies, work items): [references/pull-requests.md](references/pull-requests.md)
 
+Check each option with `az repos pr create --help` before you run a command or hand it to the user. `az` accepts option prefixes, so a misremembered flag can run as a different option with no error: `--merge-commit true` runs as `--merge-commit-message true`, and the merge message becomes `true`. After creating a PR, read `completionOptions` back with `az repos pr show --id {pr-id}`.
+
 ### Pipelines
 
 ```bash
