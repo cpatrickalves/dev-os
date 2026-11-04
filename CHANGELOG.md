@@ -49,6 +49,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `grill-with-ui`: page restyled with the cpatrickalves.com visual identity (Gelo
+  palette, square plates, Outfit and Martian Mono served locally from
+  `fonts/`). Also fixes the sideways scroll at 390px.
 - Catalog schemas moved into `load_plugins_catalog`, `load_skills_catalog` and
   `load_mods_catalog` (`common-functions.sh`), shared by the install scripts and
   `check.sh`.

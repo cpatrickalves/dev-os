@@ -344,6 +344,12 @@ function cmdServe(o) {
       const html = fs.readFileSync(page, "utf8").replace("__GRILL_THEME__", readTheme());
       return send(res, 200, html, "text/html; charset=utf-8");
     }
+    if (req.method === "GET" && pathname.startsWith("/fonts/")) {
+      const name = pathname.slice("/fonts/".length);
+      const file = path.join(HERE, "fonts", name);
+      if (!/^[a-z-]+\.woff2$/.test(name) || !fs.existsSync(file)) return json(res, 404, { error: "no font" });
+      return send(res, 200, fs.readFileSync(file), "font/woff2", { "cache-control": "max-age=86400" });
+    }
     if (req.method === "GET" && pathname === "/state") {
       // `patch` swaps state.json in atomically, but a hand-written file can be caught mid-write:
       // then serve the last parse that worked.
