@@ -10,7 +10,7 @@ Adapte os modelos de `assets/capturas/` e resolva cada `TODO(manual)`:
 - `playwright.manual.config.ts`: configuração própria e mapa de viewports por capítulo;
 - `helpers.ts`: função `capture`, sessão persistida e dados fictícios;
 - `setup.spec.ts`: sessões e dados que o seed não cria;
-- `NN-exemplo.spec.ts`: forma de um script de capítulo.
+- `nn-exemplo.spec.ts`: forma de um script de capítulo.
 
 Sem ambiente descartável no projeto, crie um Docker Compose próprio antes de continuar, com banco e caixa de e-mails separados dos de desenvolvimento. Um banco novo a cada rodada torna as contagens reproduzíveis e permite cadastro real.
 

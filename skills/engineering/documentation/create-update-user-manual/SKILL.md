@@ -63,7 +63,7 @@ Critério: nenhum marcador `{...}` restante no guia.
 ### 3. Escrever os capítulos
 
 1. Monte o inventário: cada jornada vira um capítulo `NN-nome.md`, e os papéis viram trilhas de leitura no índice.
-2. Crie o índice a partir de `assets/manual-README.md`.
+2. Crie o índice a partir de `assets/manual-readme.md`.
 3. Escreva um capítulo completo no molde e mostre ao usuário. Ele calibra tom e nível de detalhe antes do restante.
 4. Escreva os demais capítulos. Leia cada rótulo e cada mensagem no componente da tela, e cubra toda mensagem de erro que a pessoa pode ver.
 5. Use um marcador onde cada imagem vai entrar: `<!-- 🖼️ img/NN/slug.png — tela e estado a capturar -->`.

@@ -73,6 +73,7 @@ Legend: `/name` = invoked only as a slash command (`disable-model-invocation: tr
 | `/create-simple-feature-tasks` | Generate a phased task list from requirements |
 | `/create-update-changelog` | Create or update CHANGELOG.md and tag the release |
 | `create-update-readme` | Create or update the project README.md (PT-BR) |
+| `create-update-user-manual` **global** | Create or update a product's user manual: chapters by user journey, regenerable screenshots, link and image checks |
 | `docs-generator` **global** | Generate or update a standardized `docs/` folder |
 | `user-story-spec-writer` | Turn vague user stories into specs ready for AI coding agents |
 
