@@ -36,7 +36,18 @@ function engine(on: any, first: First, beneath?: unknown) {
   on('session.measure', (_$: any, e: any) => ({ changed: e.changed }))
   on('ui.toast', (_$: any, e: any) => (toasts.push(e.text), { value: undefined }))
   on('ui.render', ($: any, e: any) => beneath ?? $.ui.resolve(e).Text({ children: 'engine band' }))
+  on('turn.step', async function* (_$: any, e: any) {
+    return { turnId: e.turnId, index: e.index, answer: '', toolUses: [], stopReason: 'end_turn', usage: null }
+  })
   return { toasts, clock, session }
+}
+
+// One model request of the main loop (or of a subagent, with `agentId`), read to its end.
+async function step($: any, effort: unknown, agentId?: string) {
+  const input = { turnId: 't', index: 0, model: 'claude-opus-5-5', messageCount: 1, ...(effort === undefined ? {} : { effort }), ...(agentId ? { agentId } : {}) }
+  for await (const _ of $.turn.step(input)) {
+    // the chunks are the engine's; the effort is read from the request
+  }
 }
 
 // The band over the prompt, where the mod draws with `position: above`; ROUND adds the powerline ends.
@@ -219,6 +230,32 @@ describe('usage-meter in the band (position: above)', () => {
     await measure($, [{ kind: 'five_hour', percentUsed: 11, resetsAt: at(HOUR) }], { tokens: 37_792, window: 1_000_000, percent: 4 })
     expect(await line(ui)).toContain(' Model: Haiku ')
     expect(await line(ui)).toContain(' Ctx Used: 3.8% ')
+    await ui.unmount()
+  })
+
+  test("the model pill shows the effort of the main loop's last request", ABOVE, async ($, on) => {
+    engine(on, { rateLimits: [{ kind: 'five_hour', percentUsed: 10, resetsAt: at(HOUR) }] })
+    await start($)
+    const ui = await $.ui.mount({ plugin: 'usage-meter', surface: 'terminal', ...band() } as any)
+    expect(await line(ui)).toContain(' Model: Opus 5.5 ') // no request yet, no effort
+
+    await step($, 'medium')
+    expect(await line(ui)).toContain(' Model: Opus 5.5 (medium) ')
+    await step($, 'low', 'agent-1') // a subagent's request leaves the main loop's alone
+    expect(await line(ui)).toContain(' Model: Opus 5.5 (medium) ')
+    await step($, 'xhigh') // a /effort change
+    expect(await line(ui)).toContain(' Model: Opus 5.5 (xhigh) ')
+
+    // A new usage reading keeps it.
+    await measure($, [{ kind: 'five_hour', percentUsed: 11, resetsAt: at(HOUR) }])
+    expect(await line(ui)).toContain(' Model: Opus 5.5 (xhigh) ')
+
+    // A token budget, or a model without effort, shows none.
+    await step($, 32_000)
+    expect(await line(ui)).toContain(' Model: Opus 5.5  Session')
+    await step($, 'high')
+    await step($, undefined)
+    expect(await line(ui)).toContain(' Model: Opus 5.5  Session')
     await ui.unmount()
   })
 

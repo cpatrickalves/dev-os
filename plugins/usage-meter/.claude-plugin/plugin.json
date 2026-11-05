@@ -1,7 +1,7 @@
 {
   "name": "usage-meter",
-  "version": "0.4.0",
-  "description": "The model, the context window's fill, your plan's 5-hour usage and its reset countdown as a row of flat, tinted pills under the prompt (or in the band above it). A Dev-OS fork of hamzafer/claude-code-mods' usage-meter.",
+  "version": "0.5.0",
+  "description": "The model and its effort, the context window's fill, your plan's 5-hour usage and its reset countdown as a row of flat, tinted pills under the prompt (or in the band above it). A Dev-OS fork of hamzafer/claude-code-mods' usage-meter.",
   "author": {
     "name": "Hamza Zafar",
     "url": "https://github.com/hamzafer"

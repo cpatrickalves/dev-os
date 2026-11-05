@@ -1,5 +1,5 @@
-// Usage Meter: the model, the context window's fill and the plan's rate-limit windows as one
-// row of powerline pills: "Model: Opus 5.5 | Ctx Used: 7.0% | Session: 50.0% | Reset: 19m".
+// Usage Meter: the model and its effort, the context window's fill and the plan's rate-limit windows
+// as one row of pills: "Model: Opus 5.5 (medium) | Ctx Used: 7.0% | Session: 50.0% | Reset: 19m".
 // The row sits under the prompt, in the footer, where a status line would; `position: above`
 // puts it back in the band over the prompt, where upstream draws. The pills are flat and
 // tinted, to sit quietly by herdr's straight lines; `caps: round` gives them powerline ends.
@@ -101,6 +101,13 @@ export const register: Register = (on, options) => {
 
   // Under the prompt: the footer's hint line stays, and the pills take a row of their own beneath it,
   // an empty row apart.
+  // The effort rides each model request of the main loop, not $.session: the pill shows it once the
+  // session's first request has gone out, and a /effort change at the next one.
+  on('turn.step', async function* ($, e, next) {
+    if (e.agentId === undefined) await noteEffort($, e.effort).catch(() => {})
+    return yield* next(e)
+  })
+
   on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {
     const rest = await next(e) // the engine's hint line, and what other mods draw here
     if (!isBelow) return rest
@@ -169,13 +176,20 @@ async function currentModel($: EngineInterface) {
   return (await $.session.model().catch(() => '')) || undefined
 }
 
+// Keeps the level a main-loop request asked for; a number (a token budget) or none shows no effort.
+async function noteEffort($: EngineInterface, effort: string | number | undefined) {
+  const level = typeof effort === 'string' ? effort : undefined
+  if ((await read($, snapshot))?.effort === level) return
+  await update($, snapshot, s => (s ? { ...s, effort: level } : s))
+}
+
 async function take($: EngineInterface, context: Context | undefined, rateLimits: readonly UsageMeterWindow[]) {
   const windows = rateLimits
     .filter(w => Number.isFinite(w.percentUsed))
     .map(w => ({ kind: w.kind, percentUsed: w.percentUsed, resetsAt: w.resetsAt }))
   const model = await currentModel($)
   const contextPercent = context ? fill(context) : undefined
-  await update($, snapshot, () => ({ model, contextPercent, rateLimits: windows }))
+  await update($, snapshot, s => ({ model, effort: s?.effort, contextPercent, rateLimits: windows })) // the effort is turn.step's
   await warn($, windows)
 }
 
@@ -213,7 +227,10 @@ async function warn($: EngineInterface, windows: UsageMeterWindow[]) {
 // countdown, then every other window that runs high.
 export function build(snap: UsageMeterSnapshot, now: number): Pill[] {
   const pills: Pill[] = []
-  if (snap.model) pills.push({ kind: 'model', text: `Model: ${modelName(snap.model)}`, ...colored(CYAN) })
+  if (snap.model) {
+    const effort = snap.effort ? ` (${snap.effort})` : ''
+    pills.push({ kind: 'model', text: `Model: ${modelName(snap.model)}${effort}`, ...colored(CYAN) })
+  }
   if (snap.contextPercent !== undefined) {
     pills.push({ kind: 'context', text: `Ctx Used: ${percent(snap.contextPercent)}`, ...colored(TEXT) })
   }

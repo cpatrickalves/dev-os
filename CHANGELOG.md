@@ -25,7 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the pills are flat, side by side and tinted, to match herdr's straight
   lines: each pill's text is its color, over that color at 25% on the theme's
   background, and an empty row parts them from the footer's hint line. Its
-  `caps: round` option adds powerline pill ends (they need a Nerd Font).
+  `caps: round` option adds powerline pill ends (they need a Nerd Font). From
+  0.5.0 the model pill carries the effort, `Model: Opus 5.5 (medium)`: the
+  level the main loop's last model request asked for, read from `turn.step`,
+  so it shows from the session's first message and follows `/effort` at the
+  next one.
 - `quiet-edits` mod (`plugins/quiet-edits`, in `external-mods.yaml`): in the
   terminal, the diff under an `Edit`, `MultiEdit` or `Write` row is folded away
   while the row is closed, and the `skins` mod's `▸` on the row opens it. A
