@@ -1,17 +1,22 @@
-// Usage Meter: the model, the context window's fill and the plan's rate-limit windows above
-// the prompt, as one row of powerline pills: "Model: Opus 5.5 | Ctx Used: 7.0% | Session: 50.0% | Reset: 19m".
+// Usage Meter: the model, the context window's fill and the plan's rate-limit windows as one
+// row of powerline pills: "Model: Opus 5.5 | Ctx Used: 7.0% | Session: 50.0% | Reset: 19m".
+// The row sits under the prompt, in the footer, where a status line would; `position: above`
+// puts it back in the band over the prompt, where upstream draws.
 //
 // A Dev-OS fork of usage-meter 0.1.1 from https://github.com/hamzafer/claude-code-mods
 // (commit 7e60143, MIT, see ../LICENSE). Upstream draws block bars and the session's cost;
 // this one draws pills in the Tokyo Night colors and leaves the cost out. The readings, the countdown timer, the
 // toasts past 90% and the band order (bands.ts, untouched) are upstream's.
 import { atom, read, update } from 'claude-code'
-import type { EngineInterface, Register, RenderNode, Timer } from 'claude-code'
+import type { EngineInterface, Register, RenderElement, RenderNode, Timer } from 'claude-code'
 
 import type { UsageMeterSnapshot, UsageMeterWindow } from '../types'
 import { bandsFile, parseOrder, stackBands } from './bands'
 
 const TICK_MS = 60_000
+const GAP_ROWS = 2 // in the band: empty rows between the transcript and the pills
+const FOOTER_MARGIN = 4 // in the footer: the two cells the engine indents its lines by, on each side
+const FOOTER_COLUMNS = 80 // where the surface does not say how wide it is
 const HIGH_AT = 75 // a window past this turns amber, and a secondary window shows up
 const WARN_AT = 90 // past this it turns red and raises a toast
 const LABELS: Record<string, string> = { five_hour: '5h', seven_day: '7d', spend_limit: 'spend' } // in toasts
@@ -25,13 +30,14 @@ const CAP_LEFT = ''
 const CAP_RIGHT = ''
 
 // The colors of Dev-OS's theme: Tokyo Night, as herdr/nightgrid/themes/tokyo-night.json and the
-// nightgrid skin (configs/claude-skins) have them. The bright pills take the theme's background as text.
+// nightgrid skin (configs/claude-skins) have them. The bright pills take the theme's background as text,
+// the dark ones (the context and the countdown) its foreground, so bright and dark alternate along the row.
 const INK = '#1a1b26' // background
 const TEXT = '#c0caf5' // foreground
 const CYAN = '#7dcfff'
 const SLATE = '#414868' // bright black
 const BLUE = '#7aa2f7' // accent
-const PURPLE = '#bb9af7'
+const NAVY = '#283457' // selection
 const AMBER = '#e0af68' // working
 const RED = '#f7768e' // blocked
 
@@ -43,6 +49,7 @@ const warned = atom({ plugin: 'usage-meter', key: 'warned' } as const, {} as Rec
 type PillKind = 'model' | 'context' | 'window' | 'reset' | 'extra'
 export type Pill = { kind: PillKind; text: string; bg: string; fg: string }
 type Context = { tokens?: number; window: number; percent?: number }
+type Elements = ReturnType<EngineInterface['ui']['resolve']>
 
 let bandOrder: Promise<string[]> | undefined // read once per session: restart to apply
 
@@ -58,8 +65,11 @@ export function resetBandOrder() {
 }
 
 export const register: Register = (on, options) => {
+  const config = (options ?? {}) as Record<string, unknown>
   // userConfig.caps: 'none' draws flat pills, for a terminal font with no powerline glyphs.
-  const isRound = String((options as Record<string, unknown>)?.caps ?? 'round').trim().toLowerCase() !== 'none'
+  const isRound = String(config.caps ?? 'round').trim().toLowerCase() !== 'none'
+  // userConfig.position: 'below' draws under the prompt; 'above' in the band over it.
+  const isBelow = String(config.position ?? 'below').trim().toLowerCase() !== 'above'
   let timer: Timer | undefined // one countdown timer, even if session.start fires again
 
   on('session.start', async ($, e, next) => {
@@ -86,39 +96,68 @@ export const register: Register = (on, options) => {
     return result
   })
 
-  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    const rest = await next(e) // what other mods and Claude Code draw here stays
-    await read($, tick) // redraws on each tick of the countdown
-    const snap = await read($, snapshot)
-    if (e.props.hasSurvey || !snap) return rest
-
-    const hasCaps = isRound && e.surface === 'terminal' // the glyphs are a terminal font's
-    const pills = fit(build(snap, await $.clock.now()), e.props.bodyColumns - 2, hasCaps)
-    if (pills.length === 0) return rest
-
-    const { Box, Text } = $.ui.resolve(e)
-    const cells: RenderNode[] = []
-    pills.forEach((p, i) => {
-      const after = pills[i + 1]
-      if (hasCaps && i === 0) cells.push(<Text key="cap" color={p.bg}>{CAP_LEFT}</Text>)
-      cells.push(
-        <Text key={`pill-${i}`} color={p.fg} backgroundColor={p.bg} wrap="truncate">
-          {` ${p.text} `}
-        </Text>,
-      )
-      // Each pill ends in a half circle of its own color, drawn over the next pill's.
-      if (hasCaps) cells.push(<Text key={`cap-${i}`} color={p.bg} {...(after ? { backgroundColor: after.bg } : {})}>{CAP_RIGHT}</Text>)
-    })
-
-    // One empty row above, so the pills do not sit against the transcript; a one-row band has no room for it.
-    const mine = (
-      <Box flexDirection="row" paddingX={1} marginTop={e.props.maxRows >= 2 ? 1 : 0}>
-        {cells}
+  // Under the prompt: the footer's hint line stays, and the pills take a row of their own beneath it.
+  on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {
+    const rest = await next(e) // the engine's hint line, and what other mods draw here
+    if (!isBelow) return rest
+    const drawn = await pillsFor($, e.surface, (e.viewport?.columns ?? FOOTER_COLUMNS) - FOOTER_MARGIN, isRound)
+    if (!drawn) return rest
+    const ui = $.ui.resolve(e)
+    const { Box } = ui
+    return (
+      <Box flexDirection="column">
+        {rest}
+        {row(ui, drawn.pills, drawn.hasCaps, {})}
       </Box>
     )
+  })
+
+  // Over the prompt, with `position: above`: one band among the other mods' bands.
+  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    const rest = await next(e) // what other mods and Claude Code draw here stays
+    if (isBelow || e.props.hasSurvey) return rest
+    const drawn = await pillsFor($, e.surface, e.props.bodyColumns - 2, isRound)
+    if (!drawn) return rest
+
+    // Empty rows above, so the pills do not sit against the transcript: as many as a short band has room
+    // for. The row between the pills and the prompt is the engine's (its notices draw there), not this tree's.
+    const marginTop = Math.max(0, Math.min(GAP_ROWS, e.props.maxRows - 1))
+    const mine = row($.ui.resolve(e), drawn.pills, drawn.hasCaps, { paddingX: 1, marginTop })
     bandOrder ??= readBandOrder($).catch(() => [])
     return stackBands(rest, 'usage-meter', mine, 'above', await bandOrder) // above what other mods draw, unless the band order says otherwise
   })
+}
+
+// The pills that fit in `columns` cells, or undefined with nothing to show. Reading the
+// tick and the snapshot here has the site drawn again when either changes.
+async function pillsFor($: EngineInterface, surface: string, columns: number, isRound: boolean) {
+  await read($, tick) // redraws on each tick of the countdown
+  const snap = await read($, snapshot)
+  if (!snap) return undefined
+  const hasCaps = isRound && surface === 'terminal' // the glyphs are a terminal font's
+  const pills = fit(build(snap, await $.clock.now()), columns, hasCaps)
+  return pills.length > 0 ? { pills, hasCaps } : undefined
+}
+
+// One row of pills. With caps, a half circle opens the row and each pill ends in one of its
+// own color, drawn over the next pill's.
+function row({ Box, Text }: Elements, pills: Pill[], hasCaps: boolean, layout: { paddingX?: number; marginTop?: number }): RenderElement {
+  const cells: RenderNode[] = []
+  pills.forEach((p, i) => {
+    const after = pills[i + 1]
+    if (hasCaps && i === 0) cells.push(<Text key="cap" color={p.bg}>{CAP_LEFT}</Text>)
+    cells.push(
+      <Text key={`pill-${i}`} color={p.fg} backgroundColor={p.bg} wrap="truncate">
+        {` ${p.text} `}
+      </Text>,
+    )
+    if (hasCaps) cells.push(<Text key={`cap-${i}`} color={p.bg} {...(after ? { backgroundColor: after.bg } : {})}>{CAP_RIGHT}</Text>)
+  })
+  return (
+    <Box key="usage-meter" flexDirection="row" {...layout}>
+      {cells}
+    </Box>
+  )
 }
 
 // The main loop's model as the engine names it (`claude-opus-5-5`, `opus`); undefined when it will not say.
@@ -183,7 +222,7 @@ export function build(snap: UsageMeterSnapshot, now: number): Pill[] {
       if (i === 0) {
         // The first window is always there, blue until it runs high, with its countdown in a pill of its own.
         pills.push({ kind: 'window', text: `${title(w.kind)}: ${percent(w.percentUsed)}`, ...tone(w.percentUsed) })
-        if (left) pills.push({ kind: 'reset', text: `Reset: ${left}`, bg: PURPLE, fg: INK })
+        if (left) pills.push({ kind: 'reset', text: `Reset: ${left}`, bg: NAVY, fg: TEXT })
       } else if (w.percentUsed >= HIGH_AT) {
         // The others only once they run high, so they are always amber or red.
         pills.push({ kind: 'extra', text: `${title(w.kind)}: ${percent(w.percentUsed)}${left ? ` · ${left}` : ''}`, ...tone(w.percentUsed) })

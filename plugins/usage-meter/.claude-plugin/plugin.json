@@ -1,13 +1,20 @@
 {
   "name": "usage-meter",
-  "version": "0.2.1",
-  "description": "The model, the context window's fill, your plan's 5-hour usage and its reset countdown as a row of powerline pills above the prompt. A Dev-OS fork of hamzafer/claude-code-mods' usage-meter.",
+  "version": "0.3.0",
+  "description": "The model, the context window's fill, your plan's 5-hour usage and its reset countdown as a row of powerline pills under the prompt (or in the band above it). A Dev-OS fork of hamzafer/claude-code-mods' usage-meter.",
   "author": {
     "name": "Hamza Zafar",
     "url": "https://github.com/hamzafer"
   },
   "types": "./types/index.d.ts",
   "userConfig": {
+    "position": {
+      "type": "string",
+      "title": "Position",
+      "default": "below",
+      "options": ["below", "above"],
+      "description": "below: under the prompt, in the footer, where a status line sits. above: in the band over the prompt, with two empty rows between the transcript and the pills."
+    },
     "caps": {
       "type": "string",
       "title": "Pill ends",

@@ -35,7 +35,7 @@
     {
       "name": "usage-meter",
       "source": "./plugins/usage-meter",
-      "description": "Mod: o modelo, o uso do contexto, o uso da janela de 5 horas do plano e a contagem até o reset como pílulas powerline acima do prompt. Fork com outro visual do usage-meter de hamzafer/claude-code-mods (MIT)."
+      "description": "Mod: o modelo, o uso do contexto, o uso da janela de 5 horas do plano e a contagem até o reset como pílulas powerline abaixo do prompt (ou na faixa acima dele, com position: above). Fork com outro visual do usage-meter de hamzafer/claude-code-mods (MIT)."
     },
     {
       "name": "next-steps",
