@@ -39,3 +39,45 @@ On Windows, use `install.ps1` and `sync-from-live.ps1` (`pwsh -File ...`).
   right, run `sync-from-live` and commit.
 - **Don't commit screenshots from real sessions.** This repo is public, and
   `herdr-app shot` captures space names and terminal contents.
+
+## Suggested: match Claude Code to nightgrid
+
+Optional, and separate from the layout: nothing below goes into the Herdr home.
+A layout only styles Herdr itself, so a Claude Code session in one of its
+terminals keeps its own colours. Three Dev-OS pieces make that session look
+like the rest of the window:
+
+- the [`skins`](https://github.com/hellosverre/claude-skins) mod, which restyles
+  the Claude Code transcript;
+- the `nightgrid` skin in [`configs/claude-skins`](../configs/README.md):
+  `tokyo-night` with the secondary text and the table zebra set to the colours
+  of the nightgrid theme;
+- the [`quiet-edits`](../plugins/quiet-edits/) mod, which folds the diff under
+  `Edit`, `MultiEdit` and `Write` rows until the row is opened. It needs `skins`.
+
+Run the steps where Claude Code runs (inside WSL if that is where you start
+it), with Dev-OS cloned at `~/dev-os`. They write to `~/.claude`:
+
+1. Install the two mods. Pick `skins` and `quiet-edits` in the picker:
+
+   ```sh
+   ~/dev-os/scripts/manage-mods.sh install
+   ```
+
+2. Open Claude Code once, so `skins` writes its store file, then close every
+   Claude Code session.
+3. Import the skin and the settings:
+
+   ```sh
+   ~/dev-os/scripts/import-skins.sh
+   ```
+
+   This adds the `nightgrid` skin and applies `prefs.json`, which selects it
+   and replaces this machine's `skins` settings. To keep your settings, run it
+   with `--no-prefs` and pick the skin in `/skin` afterwards. If a `nightgrid`
+   skin already exists and differs, `--overwrite` replaces it.
+4. Start a new Claude Code session: `skins` reads its store when a session
+   starts.
+
+[`configs/README.md`](../configs/README.md) has the details of the import, and
+`~/dev-os/scripts/manage-mods.sh uninstall` removes the mods.
