@@ -138,6 +138,7 @@ Third-party assets that are installed, not copied, are declared in two YAML cata
 | Mod | Marketplace | Scope | Description |
 |-----|-------------|-------|-------------|
 | `savvy-progress` | [JohnnyVizz/claude-kit](https://github.com/JohnnyVizz/claude-kit) | user | Progress bar above the prompt and subagents panel (`/agents-info`) |
+| `quiet-edits` | Dev-OS ([`plugins/quiet-edits`](plugins/quiet-edits/)) | user | Folds the diff under `Edit`, `MultiEdit` and `Write` rows in the terminal while the row is closed; the `skins` row's `▸` opens it. Needs `skins`, and does nothing while `skins` is off |
 
 **Skill packages** — [`external-skills.yaml`](external-skills.yaml), installed with `scripts/install-external-skills.sh` through `npx skills add`.
 

@@ -62,3 +62,9 @@ mods:
     marketplace: dev-os
     marketplace_source: .
     scope: user
+
+  - name: quiet-edits
+    description: Folds the diff under Edit and Write rows in the terminal until the skins row is opened (Dev-OS marketplace, needs skins)
+    marketplace: dev-os
+    marketplace_source: .
+    scope: user

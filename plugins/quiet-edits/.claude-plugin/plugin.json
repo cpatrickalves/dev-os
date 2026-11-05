@@ -1,0 +1,9 @@
+{
+  "name": "quiet-edits",
+  "version": "0.1.0",
+  "description": "Folds the diff under Edit, MultiEdit and Write rows in the terminal while the skins mod's row is closed; the row's chevron opens it",
+  "author": {
+    "name": "Patrick Alves"
+  },
+  "dependencies": ["skins@hellosverre-mods"]
+}

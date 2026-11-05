@@ -5,6 +5,7 @@
     "name": "Patrick Alves",
     "email": "cpatrickalves@gmail.com"
   },
+  "allowCrossMarketplaceDependenciesOn": ["hellosverre-mods"],
   "plugins": [
     {
       "name": "thermos",
@@ -25,6 +26,11 @@
       "name": "chat-inventory",
       "source": "./plugins/chat-inventory",
       "description": "Mod: painel lateral In this chat (/inventory) com a lista de tarefas, os conectores, os arquivos de contexto e as skills que o chat usou."
+    },
+    {
+      "name": "quiet-edits",
+      "source": "./plugins/quiet-edits",
+      "description": "Mod: dobra o diff das linhas de Edit, MultiEdit e Write no terminal enquanto a linha do mod skins está fechada; o ▸ da linha abre. Depende do skins (hellosverre-mods)."
     }
   ]
 }

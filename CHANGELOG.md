@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `quiet-edits` mod (`plugins/quiet-edits`, in `external-mods.yaml`): in the
+  terminal, the diff under an `Edit`, `MultiEdit` or `Write` row is folded away
+  while the row is closed, and the `skins` mod's `▸` on the row opens it. A
+  failed edit and the full transcript (ctrl+o) still show everything. It
+  depends on `skins@hellosverre-mods` and leaves the diff alone while `skins`
+  is missing or off; `marketplace.json` allows that cross-marketplace
+  dependency.
 - `configs/claude-skins` and `scripts/import-skins.sh`: the skins made for the
   `skins` Claude Code mod and the mod's settings, versioned and merged into the
   mod's store on each machine (`--overwrite` replaces a skin that differs,
