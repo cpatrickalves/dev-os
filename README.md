@@ -2,7 +2,7 @@
 
 My personal development operating system — a curated repository of skills, sub-agents, workflows, output styles, hooks, and plugins that power my daily software development workflow with [Claude Code](https://docs.anthropic.com/en/docs/claude-code).
 
-This is where I document and evolve my **Vibe Coding** process.
+This is where I document and evolve my **AI-assisted development** workflow.
 
 ---
 
