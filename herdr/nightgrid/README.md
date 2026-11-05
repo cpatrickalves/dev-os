@@ -8,7 +8,8 @@ the parts of Herdr's default `main` layout that herdr-van leaves out:
 - **Files · Changes · Notes** pills at the top right of the tab bar. Each one
   toggles a 368px side panel (Herdr's `files` and `changes`, plus the `tab-notes`
   mod for one markdown note per tab). The open panel is remembered per space.
-- **A status bar** at the bottom: machine, branch, agent count (the dot turns
+- **A status bar** at the bottom: machine, the focused terminal's folder (its
+  last 3 segments), branch, agent count (the dot turns
   amber while an agent works), blocked agents and the palette key. It has no fill
   of its own, so the grid shows through it.
 - **Settings and Add machine** rows in the sidebar footer.

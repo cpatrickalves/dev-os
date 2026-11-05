@@ -4,7 +4,14 @@ Layouts for the [Herdr app](https://herdr.dev), a desktop app for terminals and
 coding agents. This folder has nothing to do with Claude Code: `external-mods.yaml`
 and the rest of Dev-OS are about Claude Code, while everything here installs into
 the Herdr home (`~/.config/herdr-app`, or `%USERPROFILE%\.config\herdr-app` on
-Windows).
+Windows). The `HERDR_APP_HOME` env var overrides the default in the install
+scripts. From WSL, the Windows Herdr home is reachable at
+`/mnt/c/Users/<user>/.config/herdr-app` — editing it from there works, since
+Herdr only cares about the files. To run the scripts from WSL against that
+home, call the `.ps1` ones through Windows PowerShell
+(`powershell.exe -NoProfile -File 'C:\...\tools\sync-from-live.ps1'`): the `.sh`
+ones default to the WSL home and, in a checkout made by Git for Windows, fail
+on their CRLF line endings (`set: pipefail: invalid option name`).
 
 Each layout is a folder in Herdr's shared-layout format
 ([herdr.dev/gallery](https://herdr.dev/gallery/)). It mirrors the Herdr home

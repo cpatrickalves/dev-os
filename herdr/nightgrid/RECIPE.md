@@ -42,7 +42,9 @@ Top to bottom on the right:
   mods paint their own `chrome` fill, so the grid doesn't show through the panel.
 - **Status bar (28px)**: no fill, 1px `border` line on top, 14px side padding, 16px
   gaps, 11.8px `muted` text. From the left: `monitor.svg` + "This computer" (or
-  `server.svg` + the machine name), `branch.svg` + the active space's branch when
+  `server.svg` + the machine name), `folder.svg` + the focused terminal's folder
+  cut to its last 3 segments (`…/a/b/c`; the active space's folder when no
+  terminal is focused, nothing when neither is known), `branch.svg` + the active space's branch when
   there is one, a 6px dot + "N agents" (the dot is `working` amber while any agent
   works, `dim` otherwise), and "· N needs you" in `blocked` red when agents are
   blocked. On the right is the palette key as bound (`⌘⇧P  commands`) in `dim`.
@@ -84,7 +86,7 @@ The stack and child ids must stay `panel`, `panel-body`, `files`, `changes` and
 | --- | --- |
 | `tabs` | adds `find()`, `syncPanel()` and `panelButton()`, ported from the shipped `tabs` mod, restyled as transparent pills. The pill group is drawn only when the layout has a `panel` node |
 | `footer` | the gear becomes a Settings row, and an Add machine row is added (as in the shipped `workspace-chrome` footer). The prefix chip moves to the Settings row's right end |
-| `status` | new (`status.js`): the shipped `workspace-status` without `.bg(t.chrome)`, with herdr-van's icons and the working-amber dot |
+| `status` | new (`status.js`): the shipped `workspace-status` without `.bg(t.chrome)`, with herdr-van's icons and the working-amber dot, plus the folder label (`focused().cwd`, else the active space's `folder`; `\` normalized to `/`) between the machine and the branch |
 
 `main.js` maps `status: Status`. The Prefix chip's code stays, and it shows only
 when the separate `herdr-tui-prefix` mod sets `prefix.armed`.
@@ -117,7 +119,8 @@ and `herdr-filechanges` (from herdr-van).
 - [ ] Files, Changes and Notes each open their panel. The active pill turns
       accent, and clicking it again closes the panel.
 - [ ] Switching spaces restores each space's last panel, or none.
-- [ ] The status bar shows the grid through it, the machine, the branch and the
+- [ ] The status bar shows the grid through it, the machine, the focused
+      terminal's folder (last 3 segments, following focus), the branch and the
       agent count, and its palette hint opens the palette.
 - [ ] The footer shows Settings and Add machine. Add machine opens the
       machine-add dialog. On the rail the rows show icons only.

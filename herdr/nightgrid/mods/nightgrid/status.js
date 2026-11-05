@@ -4,7 +4,7 @@
 
 import { div, svg } from "gpui-kit";
 import { h_flex } from "gpui-base";
-import { spaces, agents, theme, run, window, keys } from "herdr";
+import { spaces, agents, focused, theme, run, window, keys } from "herdr";
 
 export default class Status {
   init() {}
@@ -19,14 +19,25 @@ export default class Status {
     return key ? `${key}  commands` : "commands";
   }
 
+  // The focused terminal's folder, at most its last 3 segments.
+  path() {
+    const cwd = focused()?.cwd ?? spaces().find(s => s.active)?.folder;
+    if (!cwd) return null;
+    const parts = cwd.replace(/\\/g, "/").split("/").filter(Boolean);
+    const tail = parts.slice(-3).join("/");
+    return parts.length > 3 ? `…/${tail}` : tail;
+  }
+
   render() {
     const t = theme();
     const space = spaces().find(s => s.active);
+    const path = this.path();
     const list = agents();
     const needs = list.filter(a => a.status === "blocked").length;
     const label = (icon, text) => h_flex().gap(6).items_center().child(svg(`mods/nightgrid/icons/${icon}.svg`).size(13).flex_none()).child(text);
     return h_flex().size_full().px(14).gap(16).items_center().border_t(1).border_color(t.border).text_size(11.8).text_color(t.muted)
       .child(label(space?.machine ? "server" : "monitor", space?.machine ?? "This computer"))
+      .when(Boolean(path), el => el.child(label("folder", path)))
       .when(Boolean(space?.branch), el => el.child(label("branch", space.branch)))
       .child(h_flex().gap(6).items_center().child(div().size(6).rounded(3).bg(list.some(a => a.status === "working") ? t.working : t.dim)).child(`${list.length} agents`)
         .when(needs > 0, el => el.child(div().text_color(t.blocked).child(`· ${needs} needs you`))))
