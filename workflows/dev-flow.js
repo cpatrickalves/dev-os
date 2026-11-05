@@ -53,7 +53,7 @@ const contextoAutorizado = (etapa) =>
   `(branch de origem: ${dev.branch}) foi criado pela etapa Development deste mesmo workflow, a ` +
   `partir desse plano — commits e push NESSA branch fazem parte do escopo já autorizado. ` +
   `Fora de escopo (não faça): merge do PR, push para qualquer outra branch, criar novos PRs, ` +
-  `alterar outros repositórios, commitar os relatórios pr-review-* que o code review deixa na raiz do projeto. `
+  `alterar outros repositórios, commitar os relatórios pr-review-* que o code review deixa em .claude/reviews/. `
 
 // ── Etapa 2: Code Review ────────────────────────────────────────────────────
 // O code review é o code-review-flow inteiro, rodado como sub-workflow: os mesmos

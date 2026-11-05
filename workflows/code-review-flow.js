@@ -6,7 +6,7 @@ export const meta = {
   phases: [
     { title: 'Setup', detail: 'resolve o PR uma única vez: branches, commits base/head fixados, diff salvo, uma cópia do head, o estado da CI, os padrões de código do repositório, a issue (com os comentários e as relacionadas) lida do tracker do projeto e o plano da feature, compartilhados com todos os revisores', model: 'sonnet' },
     { title: 'Code Review', detail: '4 revisores em paralelo (thermos + matt-code-review + /code-review embutida + the-judge, todos Opus), consolidação dos relatórios e relatório de avaliação dos revisores' },
-    { title: 'Final Review', detail: 'verifica cada achado contra o código do PR e gera o relatório final em markdown + HTML (html-anything) na raiz do projeto', model: 'opus' },
+    { title: 'Final Review', detail: 'verifica cada achado contra o código do PR e gera o relatório final em markdown + HTML (html-anything) em .claude/reviews/', model: 'opus' },
     { title: 'Review Eval', detail: 'cruza os vereditos com os achados de cada revisor e fecha o relatório de avaliação (eficácia das skills de review)', model: 'sonnet' },
   ],
 }
@@ -32,6 +32,11 @@ const workflowName = input.called_by ? `code-review-flow (chamado pelo ${input.c
 // GitHub (.../pull/1234), GitLab (.../-/merge_requests/1234) ou o número solto.
 // Fallback: última sequência de dígitos.
 const prId = prRef.match(/\/(?:pullrequest|pull|merge_requests)\/(\d+)/i)?.[1] ?? prRef.match(/\d+/g)?.pop() ?? 'pr'
+
+// Os relatórios finais ficam em .claude/reviews/, ignorada pelo git. Na raiz do projeto
+// eles sujavam o git status (o check_proofs.py do tlc-spec-lean recusou a árvore no
+// PR #70 do personal-site) e disparavam o hook de design do impeccable no HTML.
+const reviewDir = '.claude/reviews'
 
 // ── Setup ────────────────────────────────────────────────────────────────────
 // Fixa o snapshot do PR uma única vez. Sem isso, cada revisor resolvia o PR por
@@ -403,10 +408,11 @@ const finalReview = await agent(
     '(3) para sugestões de "implementar direito"/generalizar, grep no codebase — se nada usa, marque como overengineering (YAGNI); ' +
     '(4) se não for possível verificar um achado com o código disponível, registre-o em uma seção "Não verificáveis" do relatório ' +
     'em vez de aceitá-lo ou descartá-lo. ' +
-    `Após o julgamento, gere o relatório final em markdown na raiz do projeto, com o nome "pr-review-${prId}.md". ` +
+    `Após o julgamento, gere o relatório final em markdown em "${reviewDir}/pr-review-${prId}.md", a partir da raiz do projeto, criando a pasta se faltar. ` +
+    `Se o git não ignora "${reviewDir}/" (git check-ignore -q ${reviewDir}/x falha), acrescente a linha "${reviewDir}/" ao arquivo indicado por git rev-parse --git-path info/exclude, que vale só neste clone. ` +
     'IMPORTANTE: o documento final deve conter os itens que devem ser corrigidos (os achados procedentes) e, se houver, a seção "Não verificáveis"; ' +
     'não inclua os achados descartados/rejeitados (overengineering, premissas incorretas, falsos positivos, etc.). ' +
-    `Em seguida use a skill html-anything para gerar uma versão HTML do "pr-review-${prId}.md" (para melhor legibilidade) também na raiz do projeto. ` +
+    `Em seguida use a skill html-anything para gerar uma versão HTML do "pr-review-${prId}.md" (para melhor legibilidade) na mesma pasta, "${reviewDir}/pr-review-${prId}.html". ` +
     'Este workflow não altera o PR: nenhum commit, push ou comentário — apenas os dois arquivos de relatório. ' +
     'Cada achado do relatório consolidado tem um ID (F01, F02, ...): retorne em "verdicts" o veredito de TODOS eles ' +
     '(procedente, improcedente ou nao_verificavel) com um motivo curto — esses vereditos alimentam a avaliação de eficácia dos revisores. ' +
@@ -418,7 +424,7 @@ const finalReview = await agent(
     schema: {
       type: 'object',
       properties: {
-        markdown_path: { type: 'string', description: 'Path do relatório final em markdown na raiz do projeto' },
+        markdown_path: { type: 'string', description: 'Path do relatório final em markdown em .claude/reviews/' },
         html_path: { type: 'string', description: 'Path da versão HTML gerada pela skill html-anything' },
         summary: { type: 'string', description: 'Resumo do julgamento dos achados (procedentes vs. descartados)' },
         judged_sha: { type: 'string', description: 'SHA completo do commit contra o qual os achados foram julgados' },
