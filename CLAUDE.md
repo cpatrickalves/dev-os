@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Dev-OS is a personal development operating system: a curated, version-controlled repository of Claude Code skills, slash commands, sub-agents, hooks, workflows, output styles, and plugins. It is cloned into `~/dev-os` and acts as the single source of truth; its `scripts/` install assets into other projects' `.claude/` directories or globally into `~/.claude/`.
 
-Run `scripts/check.sh` after changing a catalog, a workflow or a script: it validates the YAML catalogs, compiles `workflows/*.js` and runs `bash -n`. `.githooks/pre-commit` runs it once `git config core.hooksPath .githooks` is set in the clone.
+Run `scripts/check.sh` after changing a catalog, a workflow, a file in `configs/` or a script: it validates the YAML catalogs, compiles `workflows/*.js`, validates `configs/claude-skins` and runs `bash -n`. `.githooks/pre-commit` runs it once `git config core.hooksPath .githooks` is set in the clone.
 
 See `CONTEXT.md` for the domain glossary (curated asset, per-project import, global import).
 
@@ -30,6 +30,9 @@ All scripts live in `scripts/`, `source common-functions.sh`, and follow the sam
 # Install/update or uninstall Claude Code mods (external-mods.yaml)
 ~/dev-os/scripts/manage-mods.sh install|uninstall [--all] [--verbose]
 
+# Merge the versioned skins and settings of the skins mod (configs/claude-skins) into its store in ~/.claude
+~/dev-os/scripts/import-skins.sh [--overwrite] [--no-prefs] [--verbose]
+
 # Report, diff or merge (--apply) upstream changes into third-party skills; works on ~/dev-os itself
 ~/dev-os/scripts/sync-third-party-skills.sh [--all] [--apply] [--verbose]
 
@@ -50,6 +53,8 @@ External assets — Claude plugins and `npx skills` packages that are installed 
 Third-party skills (see `CONTEXT.md`) are copied, not installed: a skill is third-party when its frontmatter has `metadata.last_synced`, and its `metadata.source` must be a GitHub `tree/<ref>/<dir>` URL or a gist `#file-<name>` URL. `sync-third-party-skills.sh` uses the last upstream commit up to that date as the merge base, so keep `last_synced` accurate when copying by hand.
 
 `herdr/` holds layouts for the [Herdr app](https://herdr.dev), one folder each in Herdr's shared-layout format (`layouts/`, `mods/`, `themes/`, ... mirroring `~/.config/herdr-app`, plus `RECIPE.md`). They are unrelated to Claude Code mods (`external-mods.yaml`). Each has `tools/install.sh` / `install.ps1` (copy into the Herdr home; never symlink, Herdr's asset loader doesn't follow links) and `tools/sync-from-live.sh` / `.ps1` (copy live edits back before committing).
+
+`configs/` holds settings of tools Dev-OS installs but does not own, one folder per tool (`configs/README.md`). `configs/claude-skins/` is the versioned copy of two keys of the `skins` mod's store (`~/.claude/plugins/store/skins_hellosverre-mods-<hash>.json`): each `<name>.json` is one made skin in the mod's own shape, and `prefs.json` is the mod's settings. The mod has no export or import, so `import-skins.sh` merges them into the store with `node` and leaves the store's other keys alone. The rules live in `check_skin_configs` in `common-functions.sh`, shared with `check.sh`, and mirror what the mod accepts when it reads its store (`buildCustom`, `parsePrefs`; written against skins 0.5.16), so they must follow the mod when that shape changes.
 
 The skill-usage hook has a single source of truth in `hooks/log-skill.sh`; `setup-skill-hook.sh` copies it into `~/.claude/hooks/` and registers it.
 

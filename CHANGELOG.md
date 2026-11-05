@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `configs/claude-skins` and `scripts/import-skins.sh`: the skins made for the
+  `skins` Claude Code mod and the mod's settings, versioned and merged into the
+  mod's store on each machine (`--overwrite` replaces a skin that differs,
+  `--no-prefs` keeps the machine's settings). First skin: `nightgrid`,
+  `tokyo-night` with the secondary text and table zebra of the
+  `herdr/nightgrid` theme. `check.sh` validates the folder with the rules the
+  mod applies to its store. `configs/README.md` explains the folder.
 - `herdr/nightgrid`: a Herdr app layout (herdr-van with a Files / Changes /
   Notes side panel, a transparent status bar and Settings + Add machine in the
   sidebar footer), with copy-based install and sync-from-live scripts for

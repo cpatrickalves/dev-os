@@ -1,0 +1,11 @@
+{
+  "name": "nightgrid",
+  "label": "Nightgrid",
+  "base": "tokyo-night",
+  "palette": {
+    "muted": "#565f89",
+    "zebra": "#16161e"
+  },
+  "spinner": [],
+  "done": []
+}

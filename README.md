@@ -187,6 +187,10 @@ Output styles in `output-styles/`, installed globally with `scripts/import-outpu
 
 `hooks/log-skill.sh` logs every Skill invocation (timestamp, skill, args) to the project's `.claude/skill-usage.log`. Run `scripts/setup-skill-hook.sh` once per machine to copy it into `~/.claude/hooks/` and register it as a `PreToolUse` hook. Requires `jq`.
 
+### Configs
+
+`configs/` versions the settings of tools Dev-OS installs but does not own, so every machine can look the same. `configs/claude-skins/` holds the skins made for the [`skins`](https://github.com/hellosverre/claude-skins) mod (`nightgrid`, which matches the [`herdr/nightgrid`](herdr/nightgrid/) layout's theme) and the mod's settings. The mod has no export or import, so `scripts/import-skins.sh` merges them into the mod's store file; see [`configs/README.md`](configs/README.md). Requires `node`.
+
 ## Project Structure
 
 ```
@@ -200,6 +204,7 @@ dev-os/
 ├── hooks/                 # Hook scripts (single source of truth)
 ├── workflows/             # Multi-agent workflow scripts
 ├── output-styles/         # Output styles
+├── configs/               # Settings of installed tools (skins mod), see configs/README.md
 ├── plugins/               # Dev-OS's own plugin marketplace (thermos)
 ├── scripts/               # Import/install helper scripts + check.sh
 ├── .githooks/             # pre-commit: runs scripts/check.sh
@@ -234,9 +239,11 @@ The skills cover the full stack I work with daily — from FastAPI backends and 
 3. Install external plugins and skill packages with `~/dev-os/scripts/install-plugins.sh`
    and `install-external-skills.sh` (picker; `--all` skips it). Both update entries
    already installed, so rerun them to refresh. Mods go through
-   `~/dev-os/scripts/manage-mods.sh install` (or `uninstall`).
+   `~/dev-os/scripts/manage-mods.sh install` (or `uninstall`). With the `skins` mod
+   installed and Claude Code opened once, `~/dev-os/scripts/import-skins.sh` gives it
+   the skins and settings versioned in [`configs/claude-skins`](configs/README.md).
 4. Once per machine, run `~/dev-os/scripts/setup-skill-hook.sh` to log skill usage
    and, inside `~/dev-os`, `git config core.hooksPath .githooks` so every commit
-   runs `scripts/check.sh` (catalogs, workflow syntax, `bash -n`). Requires `node`.
+   runs `scripts/check.sh` (catalogs, workflow syntax, `configs/`, `bash -n`). Requires `node`.
 5. Open the project with Claude Code
 6. Use `/create-simple-feature-tasks` to break down a feature, `/pr-description` to write a PR description, or any other skill

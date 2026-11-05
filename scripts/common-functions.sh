@@ -216,6 +216,118 @@ load_mods_catalog() {
 }
 
 # -----------------------------------------------------------------------------
+# Tool Configs (configs/)
+# -----------------------------------------------------------------------------
+
+# Validates configs/claude-skins: one made skin per <name>.json plus an
+# optional prefs.json, with the rules the skins mod applies when it reads its
+# store (buildCustom and parsePrefs in skins 0.5.16), so a file the mod would
+# drop or silently reset fails here. Shared by import-skins.sh and check.sh.
+#
+# Usage : check_skin_configs <dir>
+# Returns non-zero (errors on stderr) when a file is invalid. Needs node.
+check_skin_configs() {
+    node -e '
+const fs = require("fs"), path = require("path")
+const dir = process.argv[1]
+const BUILT_IN = ["noir", "tokyo-night", "dracula", "nord", "gruvbox", "catppuccin", "rose-pine", "everforest",
+  "one-dark", "solarized", "github", "kanagawa", "ayu", "night-owl", "mono", "terminal"]
+const SLOTS = ["user", "fg", "muted", "surface", "zebra", "ok", "err", "warn", "read", "write", "run", "search",
+  "web", "mcp", "other"]
+const SKIN_KEYS = ["name", "label", "base", "palette", "spinner", "done"]
+const FLAGS = ["rail", "shimmer", "band", "countdown", "clipOutput", "markdown", "quiet", "charts", "math",
+  "commands", "shell", "highlight", "hints", "links", "copy", "fold", "expand", "compact"]
+const CHOICES = { icons: ["unicode", "ascii"], prompt: ["left", "right", "plain"], words: ["skin", "claude"],
+  tables: ["on", "text", "off"] }
+const NAME = /^[a-z0-9][a-z0-9-]{0,31}$/, HEX = /^#[0-9a-f]{6}$/i
+const isObject = value => typeof value === "object" && value !== null && !Array.isArray(value)
+const errors = []
+const names = []
+let prefs
+
+const checkWords = (file, field, value) => {
+  if (value === undefined) return
+  const valid = Array.isArray(value) && value.length <= 12 &&
+    value.every(word => typeof word === "string" && word.trim() !== "" && word.length <= 24)
+  if (!valid) errors.push(`${file}: ${field} must be up to 12 words of 1-24 characters`)
+}
+
+const checkSkin = (file, skin) => {
+  const name = path.basename(file, ".json")
+  for (const key of Object.keys(skin)) {
+    if (!SKIN_KEYS.includes(key)) errors.push(`${file}: unknown key "${key}"`)
+  }
+  if (skin.name !== name) errors.push(`${file}: name must be "${name}", the file name`)
+  if (!NAME.test(name)) errors.push(`${file}: name must be 1-32 lowercase letters, digits or hyphens`)
+  if (BUILT_IN.includes(name) || name === "off") errors.push(`${file}: "${name}" is taken by a built-in skin`)
+  if (!BUILT_IN.includes(skin.base)) errors.push(`${file}: base must be one of ${BUILT_IN.join(", ")}`)
+  if (skin.label !== undefined && (typeof skin.label !== "string" || skin.label.trim() === "")) {
+    errors.push(`${file}: label must be a non-empty string`)
+  }
+  if (skin.palette !== undefined) {
+    if (!isObject(skin.palette)) {
+      errors.push(`${file}: palette must be an object of slot: "#rrggbb"`)
+    } else {
+      for (const [slot, hex] of Object.entries(skin.palette)) {
+        if (!SLOTS.includes(slot)) errors.push(`${file}: unknown palette slot "${slot}"`)
+        else if (typeof hex !== "string" || !HEX.test(hex)) errors.push(`${file}: palette.${slot} must be #rrggbb`)
+      }
+    }
+  }
+  checkWords(file, "spinner", skin.spinner)
+  checkWords(file, "done", skin.done)
+  names.push(name)
+}
+
+const checkPrefs = file => {
+  for (const [key, value] of Object.entries(prefs)) {
+    if (key === "skin") {
+      if (value !== "off" && !BUILT_IN.includes(value) && !names.includes(value)) {
+        errors.push(`${file}: skin "${value}" is not "off", a built-in skin or a skin in this folder`)
+      }
+    } else if (key in CHOICES) {
+      if (!CHOICES[key].includes(value)) errors.push(`${file}: ${key} must be one of ${CHOICES[key].join(", ")}`)
+    } else if (FLAGS.includes(key)) {
+      if (typeof value !== "boolean") errors.push(`${file}: ${key} must be true or false`)
+    } else if (key === "calm") {
+      const snapshot = isObject(value) && ["shimmer", "rail", "quiet"].every(part => typeof value[part] === "boolean")
+      if (value !== null && !snapshot) errors.push(`${file}: calm must be null or { shimmer, rail, quiet }`)
+    } else {
+      errors.push(`${file}: unknown key "${key}"`)
+    }
+  }
+}
+
+let files = []
+try {
+  files = fs.readdirSync(dir).filter(file => file.endsWith(".json")).sort()
+} catch (e) {
+  errors.push(`${dir}: ${e.message}`)
+}
+for (const file of files) {
+  let data
+  try {
+    data = JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"))
+  } catch (e) {
+    errors.push(`${file}: ${e.message}`)
+    continue
+  }
+  if (!isObject(data)) {
+    errors.push(`${file}: must be a JSON object`)
+  } else if (file === "prefs.json") {
+    prefs = data
+  } else {
+    checkSkin(file, data)
+  }
+}
+if (prefs !== undefined) checkPrefs("prefs.json")
+
+for (const error of errors) console.error(error)
+process.exit(errors.length > 0 ? 1 : 0)
+' "$1"
+}
+
+# -----------------------------------------------------------------------------
 # File Operations
 # -----------------------------------------------------------------------------
 

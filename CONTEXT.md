@@ -12,6 +12,7 @@ Glossário do domínio do Dev-OS, para colaboradores humanos e agentes.
 - **Sync** — trazer para uma third-party skill as mudanças do upstream desde `last_synced`, preservando as adaptações locais, e avançar `last_synced`. Feito com `sync-third-party-skills.sh`. _Evitar_: update, refresh.
 - **Import por projeto** — skills e agents instalados no `.claude/` do projeto alvo (com opção `--global` onde já existe). Feito com `import-skills.sh` e `import-agents.sh`, executados a partir do diretório do projeto alvo.
 - **Import global** — workflows e output styles instalados direto em `~/.claude/`, valendo para todos os projetos. Feito com `import-workflows.sh` e `import-output-styles.sh`.
+- **Config de ferramenta** — ajustes de uma ferramenta que o Dev-OS instala mas não mantém, versionados em `configs/<ferramenta>/` para deixar todas as máquinas iguais. Hoje há `configs/claude-skins/`: as skins criadas e os parâmetros do mod `skins`, mesclados no arquivo de estado do mod por `import-skins.sh`. Difere de um curated asset por não ser copiado como arquivo: é mesclado em um arquivo que pertence à ferramenta.
 - **Standards framework** — antigo sistema de profiles + standards (`profiles/`, `config.yml`, `project-install.sh`, `sync-to-profile.sh`), aposentado na refatoração da issue #7. Recuperação, se necessária, via histórico do git.
 
 ## Premissas

@@ -1,8 +1,8 @@
 #!/bin/bash
 # =============================================================================
 # Dev-OS Check
-# Validates the repo itself: external catalogs, workflow scripts and shell
-# scripts. Run before committing; .githooks/pre-commit runs it too.
+# Validates the repo itself: external catalogs, workflow scripts, tool configs
+# and shell scripts. Run before committing; .githooks/pre-commit runs it too.
 # =============================================================================
 # Usage: ~/dev-os/scripts/check.sh
 # Exit status: non-zero when any check fails.
@@ -57,6 +57,19 @@ try {
 }
 
 # -----------------------------------------------------------------------------
+# Tool configs: the skins mod's made skins and settings, with the mod's rules
+# -----------------------------------------------------------------------------
+
+check_configs() {
+    print_status "Configs"
+    if ! command -v node > /dev/null; then
+        fail "node not found: configs/claude-skins was not checked"
+        return
+    fi
+    check_skin_configs "$BASE_DIR/configs/claude-skins" || fail "configs/claude-skins is invalid"
+}
+
+# -----------------------------------------------------------------------------
 # Shell scripts: bash -n (parse only)
 # -----------------------------------------------------------------------------
 
@@ -71,6 +84,7 @@ check_shell() {
 
 check_catalogs
 check_workflows
+check_configs
 check_shell
 
 if [ "$failures" -gt 0 ]; then
