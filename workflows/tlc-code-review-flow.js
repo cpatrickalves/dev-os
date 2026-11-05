@@ -2,9 +2,7 @@ export const meta = {
   name: 'tlc-code-review-flow',
   description: 'Atalho do code-review-flow para PRs feitos com tlc-spec-lean: os revisores do code-review-flow leem o plano da feature (.specs/features/*/plan.md) e a issue do PR',
   whenToUse:
-    'Quando quiser revisar um PR cuja feature tem plano tlc-spec-lean, sem implementar nada. Sem plano, use code-review-flow. ' +
-    'Uso: Workflow({name: "tlc-code-review-flow", args: {pr: "<PR url ou número>", plan: "<path do plan.md>", issue: "<ID da issue>"}}). ' +
-    'Só pr é obrigatório: sem plan, o plano é procurado em .specs/features/*/plan.md pelo ID da issue; sem issue, o ID é procurado no PR.',
+    'Quando quiser revisar um PR cuja feature tem plano tlc-spec-lean, sem implementar nada. Sem plano, use code-review-flow. Uso: Workflow({name: "tlc-code-review-flow", args: {pr: "<PR url ou número>", plan: "<path do plan.md>", issue: "<ID da issue>"}}). Só pr é obrigatório: sem plan, o plano é procurado em .specs/features/*/plan.md pelo ID da issue; sem issue, o ID é procurado no PR.',
   phases: [
     { title: 'Code Review', detail: 'roda o code-review-flow com o plano da feature (informado ou localizado em .specs/) e a issue do PR' },
   ],
