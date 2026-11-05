@@ -201,7 +201,7 @@
   "font_size": 13,
   "ui_font": "JetBrainsMono Nerd Font Mono",
   "terminal_padding": [
-    14,
+    30,
     2
   ],
   "terminal_opacity": 0,
