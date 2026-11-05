@@ -3,7 +3,7 @@ import type { TestBody } from 'claude-code/testing'
 
 type Skins = { skin?: string; disclosure?: string }
 
-// An edit's result row, as the engine raises it.
+// A result row, as the engine raises it; an edit's unless overridden.
 const row = (overrides: Record<string, unknown> = {}) =>
   ({
     plugin: 'quiet-edits',
@@ -35,7 +35,7 @@ const stage = (on: Parameters<TestBody>[1], skins: Skins) => {
     return { value: { value: skins.disclosure ?? 'auto', version: 1 } }
   })
 
-  // Claude Code's own diff.
+  // What is drawn beneath this mod: Claude Code's diff, or skins' output card.
   on('ui.render', ($, e) => {
     const { Text } = $.ui.resolve(e)
 
@@ -94,22 +94,98 @@ test('without skins the diff stays', async ($, on) => {
   await ui.unmount()
 })
 
-test('a failed edit, the full transcript and other tools keep their result', async ($, on) => {
+// A shell command's result row: both streams, ended on its own.
+const shell = (output: Record<string, unknown> = {}, overrides: Record<string, unknown> = {}) =>
+  row({ tool: 'Bash', output: { stdout: 'ok\n', stderr: '', interrupted: false, ...output }, ...overrides })
+
+test('a closed shell row hides its output in the terminal', async ($, on) => {
   stage(on, { skin: 'nightgrid' })
 
-  for (const overrides of [{ isErrored: true }, { isExpanded: true }, { tool: 'Bash' }, { tool: 'Read' }]) {
-    const ui = await $.ui.mount({ ...row(overrides), surface: 'terminal' })
+  for (const tool of ['Bash', 'PowerShell']) {
+    const ui = await $.ui.mount({ ...shell({}, { tool }), surface: 'terminal' })
+
+    expect(await isShown(ui)).toBe(false)
+    await ui.unmount()
+  }
+})
+
+test('a command with no output folds as well', async ($, on) => {
+  stage(on, { skin: 'nightgrid' })
+
+  const ui = await $.ui.mount({ ...shell({ stdout: '' }), surface: 'terminal' })
+
+  expect(await isShown(ui)).toBe(false)
+  await ui.unmount()
+})
+
+test('an opened shell row is left to skins and the engine', async ($, on) => {
+  stage(on, { skin: 'nightgrid', disclosure: 'open' })
+
+  const ui = await $.ui.mount({ ...shell(), surface: 'terminal' })
+
+  expect(await isShown(ui)).toBe(true)
+  await ui.unmount()
+})
+
+// What happened to these is not output the row can show again.
+test('a command that did not end in the foreground keeps its result', async ($, on) => {
+  stage(on, { skin: 'nightgrid' })
+
+  for (const output of [{ interrupted: true }, { timedOutAfterMs: 120000 }, { backgroundTaskId: 'task-1' }, { isImage: true }]) {
+    const ui = await $.ui.mount({ ...shell(output), surface: 'terminal' })
 
     expect(await isShown(ui)).toBe(true)
     await ui.unmount()
   }
 })
 
-test('the desktop keeps its diff card', async ($, on) => {
+test('a shell result that is not its two streams keeps its drawing', async ($, on) => {
   stage(on, { skin: 'nightgrid' })
 
-  const ui = await $.ui.mount({ ...row(), surface: 'desktop' })
+  for (const output of ['plain text', null, { stdout: 'ok' }]) {
+    const ui = await $.ui.mount({ ...row({ tool: 'Bash', output }), surface: 'terminal' })
+
+    expect(await isShown(ui)).toBe(true)
+    await ui.unmount()
+  }
+})
+
+test('a failed call, the full transcript and other tools keep their result', async ($, on) => {
+  stage(on, { skin: 'nightgrid' })
+
+  const kept = [
+    row({ isErrored: true }),
+    row({ isExpanded: true }),
+    shell({}, { isErrored: true }),
+    shell({}, { isExpanded: true }),
+    row({ tool: 'Read' }),
+    row({ tool: 'Grep' }),
+  ]
+
+  for (const result of kept) {
+    const ui = await $.ui.mount({ ...result, surface: 'terminal' })
+
+    expect(await isShown(ui)).toBe(true)
+    await ui.unmount()
+  }
+})
+
+test('without skins a command keeps its output', async ($, on) => {
+  stage(on, {})
+
+  const ui = await $.ui.mount({ ...shell(), surface: 'terminal' })
 
   expect(await isShown(ui)).toBe(true)
   await ui.unmount()
+})
+
+test('the desktop keeps its diff and terminal cards', async ($, on) => {
+  stage(on, { skin: 'nightgrid' })
+
+  for (const result of [row(), shell()]) {
+    const ui = await $.ui.mount({ ...result, surface: 'desktop' })
+
+    expect(await isShown(ui)).toBe(true)
+    await ui.unmount()
+  }
 })

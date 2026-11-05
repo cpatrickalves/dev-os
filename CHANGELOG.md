@@ -15,7 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   failed edit and the full transcript (ctrl+o) still show everything. It
   depends on `skins@hellosverre-mods` and leaves the diff alone while `skins`
   is missing or off; `marketplace.json` allows that cross-marketplace
-  dependency.
+  dependency. From 0.2.0 it folds the output under a `Bash` or `PowerShell`
+  row the same way: `skins` already hides the output of a command it can tell
+  only reads, and shows a card for every other one (`SP=/tmp/x; git diff
+  --stat` has an assignment). A command that failed, was interrupted, timed
+  out or went to the background keeps its result.
 - `configs/claude-skins` and `scripts/import-skins.sh`: the skins made for the
   `skins` Claude Code mod and the mod's settings, versioned and merged into the
   mod's store on each machine (`--overwrite` replaces a skin that differs,

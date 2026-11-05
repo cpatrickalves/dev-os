@@ -30,7 +30,7 @@
     {
       "name": "quiet-edits",
       "source": "./plugins/quiet-edits",
-      "description": "Mod: dobra o diff das linhas de Edit, MultiEdit e Write no terminal enquanto a linha do mod skins está fechada; o ▸ da linha abre. Depende do skins (hellosverre-mods)."
+      "description": "Mod: dobra o diff das linhas de Edit, MultiEdit e Write e a saída das linhas de Bash e PowerShell no terminal enquanto a linha do mod skins está fechada; o ▸ da linha abre. Depende do skins (hellosverre-mods)."
     }
   ]
 }

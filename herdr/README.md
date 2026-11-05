@@ -53,7 +53,8 @@ like the rest of the window:
   `tokyo-night` with the secondary text and the table zebra set to the colours
   of the nightgrid theme;
 - the [`quiet-edits`](../plugins/quiet-edits/) mod, which folds the diff under
-  `Edit`, `MultiEdit` and `Write` rows until the row is opened. It needs `skins`.
+  `Edit`, `MultiEdit` and `Write` rows and the output under `Bash` and
+  `PowerShell` rows until the row is opened. It needs `skins`.
 
 Run the steps where Claude Code runs (inside WSL if that is where you start
 it), with Dev-OS cloned at `~/dev-os`. They write to `~/.claude`:

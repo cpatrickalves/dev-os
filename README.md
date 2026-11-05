@@ -144,7 +144,7 @@ Third-party assets that are installed, not copied, are declared in two YAML cata
 | `brain-dump` | Dev-OS ([`plugins/brain-dump`](plugins/brain-dump/)), from Ben AI | user | Shapes a long, loose prompt into a four-part brief |
 | `helper-desk` | Dev-OS ([`plugins/helper-desk`](plugins/helper-desk/)), from Ben AI | user | Task progress bar above the prompt and live subagent cards |
 | `chat-inventory` | Dev-OS ([`plugins/chat-inventory`](plugins/chat-inventory/)), from Ben AI | user | Side pane with the to-do list, connectors, context files and skills this chat used |
-| `quiet-edits` | Dev-OS ([`plugins/quiet-edits`](plugins/quiet-edits/)) | user | Folds the diff under `Edit`, `MultiEdit` and `Write` rows in the terminal while the row is closed; the `skins` row's `▸` opens it. Needs `skins`, and does nothing while `skins` is off |
+| `quiet-edits` | Dev-OS ([`plugins/quiet-edits`](plugins/quiet-edits/)) | user | Folds the diff under `Edit`, `MultiEdit` and `Write` rows and the output under `Bash` and `PowerShell` rows in the terminal while the row is closed; the `skins` row's `▸` opens it. Needs `skins`, and does nothing while `skins` is off |
 
 **Skill packages** — [`external-skills.yaml`](external-skills.yaml), installed with `scripts/install-external-skills.sh` through `npx skills add`.
 
