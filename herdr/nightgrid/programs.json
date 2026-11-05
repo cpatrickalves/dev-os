@@ -1,0 +1,9 @@
+{
+  "programs": {
+    "pi": {
+      "name": "Pi",
+      "icon": "custom-icons/pi.svg",
+      "tint": false
+    }
+  }
+}

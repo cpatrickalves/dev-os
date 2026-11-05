@@ -49,6 +49,8 @@ External assets — Claude plugins and `npx skills` packages that are installed 
 
 Third-party skills (see `CONTEXT.md`) are copied, not installed: a skill is third-party when its frontmatter has `metadata.last_synced`, and its `metadata.source` must be a GitHub `tree/<ref>/<dir>` URL or a gist `#file-<name>` URL. `sync-third-party-skills.sh` uses the last upstream commit up to that date as the merge base, so keep `last_synced` accurate when copying by hand.
 
+`herdr/` holds layouts for the [Herdr app](https://herdr.dev), one folder each in Herdr's shared-layout format (`layouts/`, `mods/`, `themes/`, ... mirroring `~/.config/herdr-app`, plus `RECIPE.md`). They are unrelated to Claude Code mods (`external-mods.yaml`). Each has `tools/install.sh` / `install.ps1` (copy into the Herdr home; never symlink, Herdr's asset loader doesn't follow links) and `tools/sync-from-live.sh` / `.ps1` (copy live edits back before committing).
+
 The skill-usage hook has a single source of truth in `hooks/log-skill.sh`; `setup-skill-hook.sh` copies it into `~/.claude/hooks/` and registers it.
 
 ## Conventions

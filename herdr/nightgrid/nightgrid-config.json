@@ -1,0 +1,6 @@
+{
+  "_": "nightgrid layout options. Brand: empty name = this computer's username (else Herdr); any string pins it.",
+  "brand": {
+    "name": ""
+  }
+}

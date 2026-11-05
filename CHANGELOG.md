@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `herdr/nightgrid`: a Herdr app layout (herdr-van with a Files / Changes /
+  Notes side panel, a transparent status bar and Settings + Add machine in the
+  sidebar footer), with copy-based install and sync-from-live scripts for
+  macOS/Linux and Windows. `herdr/README.md` explains the folder.
 - `scripts/check.sh` and a `.githooks/pre-commit` hook that runs it: validates
   the three YAML catalogs with the install scripts' schema, compiles
   `workflows/*.js`, and runs `bash -n` on the scripts. Enable the hook per clone
