@@ -59,7 +59,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `herdr/nightgrid`: the status bar shows the focused terminal's folder (its
-  last 3 segments) between the machine and the branch. `herdr/README.md` notes
+  last 3 segments) between the machine and the branch, and terminal text sits
+  14px from the pane's side borders instead of 5px. `herdr/README.md` notes
   how to reach the Windows Herdr home and run the sync script from WSL.
 - `grill-with-ui`: page restyled with the cpatrickalves.com visual identity (Gelo
   palette, square plates, Outfit and Martian Mono served locally from
