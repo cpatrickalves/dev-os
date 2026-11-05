@@ -97,6 +97,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `code-review-flow`: the Setup now hands every reviewer the same detached
+  worktree at the PR's head, the repository's coding standards
+  (`AGENTS.md`/`CLAUDE.md`, `CODING_STANDARDS.md` and the docs they point to),
+  the CI result on that commit and the related issues' title, status and
+  description. A broken written rule is a finding for every reviewer and a
+  valid verdict in the Final Review; the-judge reuses the CI result and only
+  runs the checks CI does not cover, in its own worktree; each reviewer keeps
+  its scratch files in `/tmp/pr-<n>/<reviewer>/`. Metadata and CI status are
+  read from GitHub, GitLab or Azure DevOps (or the host's equivalent CLI/API),
+  and GitLab merge request URLs set the report suffix. On PR #22 of
+  setur-observatorio-turismo only one of four reviewers had read the coding
+  standards, four reviewers made four copies of the repository, and the-judge
+  rebuilt the stack to repeat checks CI had already passed.
 - `README.md`: the mods table lists the eight mods of `external-mods.yaml`
   again; it still showed only `savvy-progress`, which the catalog no longer has.
 - `herdr/nightgrid`: the status bar shows the focused terminal's folder (its

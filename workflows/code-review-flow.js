@@ -4,7 +4,7 @@ export const meta = {
   whenToUse:
     'Quando quiser revisar um PR existente sem implementar nada. A issue do PR e o tracker são descobertos sozinhos; para fixar a issue ou passar o plano: args: {pr, issue, plan}. Para PRs feitos com tlc-spec-lean, use tlc-code-review-flow. Uso: Workflow({name: "code-review-flow", args: "<PR url ou número>"})',
   phases: [
-    { title: 'Setup', detail: 'resolve o PR uma única vez: branches, commits base/head fixados, diff salvo, a issue (com os comentários) lida do tracker do projeto e o plano da feature, compartilhados com todos os revisores', model: 'sonnet' },
+    { title: 'Setup', detail: 'resolve o PR uma única vez: branches, commits base/head fixados, diff salvo, uma cópia do head, o estado da CI, os padrões de código do repositório, a issue (com os comentários e as relacionadas) lida do tracker do projeto e o plano da feature, compartilhados com todos os revisores', model: 'sonnet' },
     { title: 'Code Review', detail: '4 revisores em paralelo (thermos + matt-code-review + /code-review embutida + the-judge, todos Opus), consolidação dos relatórios e relatório de avaliação dos revisores' },
     { title: 'Final Review', detail: 'verifica cada achado contra o código do PR e gera o relatório final em markdown + HTML (html-anything) na raiz do projeto', model: 'opus' },
     { title: 'Review Eval', detail: 'cruza os vereditos com os achados de cada revisor e fecha o relatório de avaliação (eficácia das skills de review)', model: 'sonnet' },
@@ -29,19 +29,28 @@ const findPlan = planArg === 'auto'
 const workflowName = input.called_by ? `code-review-flow (chamado pelo ${input.called_by})` : 'code-review-flow'
 
 // Sufixo dos relatórios: número do PR — Azure DevOps (.../pullrequest/1234),
-// GitHub (.../pull/1234) ou o número solto. Fallback: última sequência de dígitos.
-const prId = prRef.match(/\/(?:pullrequest|pull)\/(\d+)/i)?.[1] ?? prRef.match(/\d+/g)?.pop() ?? 'pr'
+// GitHub (.../pull/1234), GitLab (.../-/merge_requests/1234) ou o número solto.
+// Fallback: última sequência de dígitos.
+const prId = prRef.match(/\/(?:pullrequest|pull|merge_requests)\/(\d+)/i)?.[1] ?? prRef.match(/\d+/g)?.pop() ?? 'pr'
 
 // ── Setup ────────────────────────────────────────────────────────────────────
 // Fixa o snapshot do PR uma única vez. Sem isso, cada revisor resolvia o PR por
 // conta própria (refs diferentes, 5x o mesmo fetch) e o autor podia publicar
 // commits no meio da revisão: os achados ficavam presos a um head antigo.
 // A issue entra no snapshot pelo mesmo motivo: lida uma vez, igual para todos.
+// Pelo mesmo motivo o Setup cria a cópia do head (no PR #22 do setur-observatorio-turismo,
+// cada revisor criou a sua, e dois usaram a mesma pasta, um com rm -rf), lê o estado
+// da CI (o the-judge subiu a pilha inteira para repetir checks que a CI já aprovara)
+// e lista os padrões de código (só 1 de 4 revisores leu o CODING_STANDARDS.md, e só
+// ele achou a violação de uma regra escrita ali).
 phase('Setup')
 log(`Revisando o PR: ${prRef}`)
 
-const diffPath = `/tmp/pr-${prId}/diff.patch`
-const issuePath = `/tmp/pr-${prId}/issue.md`
+const workDir = `/tmp/pr-${prId}`
+const diffPath = `${workDir}/diff.patch`
+const issuePath = `${workDir}/issue.md`
+const ciPath = `${workDir}/ci.md`
+const headTree = `${workDir}/head`
 
 const PLAN_PROPERTIES = {
   plan_path: { type: 'string', description: 'Path absoluto do plan.md da feature, ou "" quando nenhum corresponde ao PR' },
@@ -58,6 +67,14 @@ const SETUP_SCHEMA = {
     head_sha: { type: 'string', description: 'SHA completo do head do PR' },
     merge_base: { type: 'string', description: 'SHA completo de git merge-base base_sha head_sha' },
     diff_path: { type: 'string', description: 'Path absoluto do diff salvo' },
+    head_tree: { type: 'string', description: 'Path absoluto do worktree destacado no head_sha' },
+    standards_files: {
+      type: 'array',
+      items: { type: 'string' },
+      description: 'Paths, relativos à raiz do repositório, dos arquivos de instruções e padrões de código no head; [] quando não há',
+    },
+    ci_path: { type: 'string', description: 'Path absoluto do estado da CI no head salvo, ou "" quando não foi possível lê-lo' },
+    ci_note: { type: 'string', description: 'Resumo do estado da CI no head (ex.: "7 jobs, todos aprovados"), ou o motivo de não haver' },
     issue_id: { type: 'string', description: 'ID da issue do PR (ex.: DEV-322, #45), ou "" quando não há' },
     issue_tracker: { type: 'string', description: 'Tracker da issue (ex.: Linear, Plane, GitHub Issues, Jira, Azure Boards), ou "" quando não foi identificado' },
     issue_url: { type: 'string', description: 'URL da issue, ou ""' },
@@ -67,21 +84,37 @@ const SETUP_SCHEMA = {
   },
   required: [
     'title', 'base_branch', 'head_branch', 'base_sha', 'head_sha', 'merge_base', 'diff_path',
-    'issue_id', 'issue_tracker', 'issue_path', 'issue_note',
+    'head_tree', 'standards_files', 'ci_path', 'ci_note', 'issue_id', 'issue_tracker', 'issue_path', 'issue_note',
     ...(findPlan ? Object.keys(PLAN_PROPERTIES) : []),
   ],
 }
 
 const pr = await agent(
   `Fixe o escopo da revisão do PR ${prRef}, a partir do repositório atual. ` +
+    'O host do repositório sai da URL do PR ou de `git remote get-url origin`; use a CLI dele, e num host sem exemplo abaixo, a CLI ou a API equivalente. ' +
     '(1) Leia os metadados do PR: no GitHub `gh pr view <PR> --json title,body,baseRefName,headRefName,headRefOid`; ' +
     'no Azure DevOps `az repos pr show --id <número> --org <org da URL> --query ' +
-    '"{title:title,body:description,base:targetRefName,head:sourceRefName,headSha:lastMergeSourceCommit.commitId}"` (tire o prefixo refs/heads/ das branches). ' +
+    '"{title:title,body:description,base:targetRefName,head:sourceRefName,headSha:lastMergeSourceCommit.commitId}"` (tire o prefixo refs/heads/ das branches); ' +
+    'no GitLab `glab mr view <iid> -R <projeto da URL> --output json` (campos title, description, target_branch, source_branch e sha). ' +
     '(2) Rode `git fetch --no-tags origin <base> <head>`: atualiza origin/<base> e origin/<head> sem trocar de branch nem tocar no working tree. ' +
     '(3) head_sha = o commit de head informado pelo PR (confirme com `git cat-file -t <sha>`); base_sha = `git rev-parse origin/<base>`; ' +
     'merge_base = `git merge-base <base_sha> <head_sha>`. ' +
     `(4) Salve \`git diff <merge_base> <head_sha>\` em "${diffPath}" (crie o diretório). ` +
-    '(5) Identifique a issue que originou o PR. ' +
+    `(5) Crie a cópia do head que todos os revisores vão ler: \`git worktree remove --force "${headTree}" 2>/dev/null; git worktree prune; ` +
+    `git worktree add --detach "${headTree}" <head_sha>\`, e retorne o path em head_tree. ` +
+    '(6) Liste em standards_files os arquivos que dizem como o código deste repositório deve ser, como existem no head: ' +
+    'os de instruções para agentes (AGENTS.md, CLAUDE.md, na raiz e em subpastas que o diff toca), ' +
+    'o de padrões de código (CODING_STANDARDS.md ou equivalente) e os documentos que esses arquivos apontam como padrão de código ou de revisão. ' +
+    `(7) Leia o estado da CI no head_sha e salve em "${ciPath}": no GitHub \`gh pr checks <PR>\` ` +
+    '(confira com `gh run list --commit <head_sha>` que as execuções são desse commit); ' +
+    'no GitLab `glab ci status -R <projeto> --branch <head>` ou `glab api "projects/:id/merge_requests/<iid>/pipelines"` (campo sha); ' +
+    'no Azure DevOps `az repos pr policy list --id <número> --org <org>` (as policies de build) e ' +
+    '`az pipelines runs list --org <org> --project <projeto> --branch refs/pull/<número>/merge --top 5` ' +
+    '(o commit do PR fica em triggerInfo."pr.sourceSha"). ' +
+    'Fique só com execuções do head_sha. Para cada job, registre o nome, o resultado (aprovado, falhou, em andamento, pulado) ' +
+    'e os comandos que ele roda, lidos na definição da pipeline no head (.github/workflows/, .gitlab-ci.yml, azure-pipelines.yml ou a do host). ' +
+    'Resuma em ci_note. Sem CI, sem execução no head_sha ou com a CLI inacessível, retorne ci_path = "" e explique em ci_note. ' +
+    '(8) Identifique a issue que originou o PR. ' +
     (issueArg
       ? `O ID foi informado: "${issueArg}". `
       : 'Procure o ID (ex.: DEV-322, #45, AB#123) ou o link da issue no título, na branch, no corpo do PR e nas mensagens dos commits (`git log --format=%B <merge_base>..<head_sha>`). ') +
@@ -90,16 +123,18 @@ const pr = await agent(
     '(procure com ToolSearch por "linear", "plane", "jira" e "github"). "#45" num repositório GitHub é GitHub Issues (`gh issue view 45 --comments`); "AB#123" é Azure Boards; ' +
     '"ABC-123" pode ser Linear, Plane ou Jira: consulte o ID nos trackers acessíveis e fique com o que o encontrar. ' +
     `Leia a issue e TODOS os comentários e salve em "${issuePath}": cabeçalho com ID, tracker, URL, título e status; a descrição completa; ` +
-    'e os comentários em ordem cronológica, com autor e data. Liste os links de anexos e de issues relacionadas, sem baixá-los. ' +
+    'e os comentários em ordem cronológica, com autor e data. Liste os links de anexos, sem baixá-los. ' +
+    'Para cada issue relacionada (pai, filhas, bloqueios e as citadas na descrição), acrescente ID, título, status e a descrição: ' +
+    'os revisores consultam esse trecho para saber o que ficou para outra issue, sem voltar ao tracker. ' +
     'Sem issue, ou com o tracker inacessível, retorne issue_path = "" e explique em issue_note (informe o ID e o tracker se os encontrou). ' +
     (findPlan
-      ? '(6) Localize o plano da feature (tlc-spec-lean) em `.specs/features/*/plan.md` na raiz do repositório. ' +
+      ? '(9) Localize o plano da feature (tlc-spec-lean) em `.specs/features/*/plan.md` na raiz do repositório. ' +
         '`.specs/` costuma estar no .gitignore: procure no working tree, não no git. ' +
-        'Associe pelo ID da issue do passo (5): `grep -l "<ID>" .specs/features/*/plan.md`. ' +
+        'Associe pelo ID da issue do passo (8): `grep -l "<ID>" .specs/features/*/plan.md`. ' +
         'Sem ID, ou com 0 ou 2+ candidatos, compare o nome da pasta da feature com a branch e o título. ' +
         'Retorne o path absoluto em plan_path só quando a associação for inequívoca; senão plan_path = "" e explique em plan_match. '
       : '') +
-    'Use SHAs completos (40 caracteres). Não troque de branch, não altere o working tree e não comente no PR nem na issue. Retorne os campos pedidos.',
+    'Use SHAs completos (40 caracteres). Não troque de branch, não altere o working tree (o worktree do passo 5 fica fora dele) e não comente no PR nem na issue. Retorne os campos pedidos.',
   { label: 'pr-setup', phase: 'Setup', model: 'sonnet', effort: 'low', schema: SETUP_SCHEMA },
 )
 
@@ -110,6 +145,7 @@ if (!pr || ![pr.base_sha, pr.head_sha, pr.merge_base].every((sha) => SHA_RE.test
 const short = (sha) => sha.slice(0, 7)
 const reviewRange = `${pr.base_sha}...${pr.head_sha}`
 log(`Escopo fixado: ${pr.head_branch} → ${pr.base_branch} | head ${short(pr.head_sha)} | merge-base ${short(pr.merge_base)} | diff ${pr.diff_path}`)
+log(`Cópia do head: ${pr.head_tree} | padrões: ${pr.standards_files.length ? pr.standards_files.join(', ') : 'nenhum'} | CI: ${pr.ci_note}`)
 log(pr.issue_path ? `Issue: ${pr.issue_id} (${pr.issue_tracker}) em ${pr.issue_path}` : `⚠️ Sem issue: ${pr.issue_note}. Os revisores trabalham sem o pedido original.`)
 
 const plan = findPlan
@@ -127,7 +163,8 @@ const issueContext = pr.issue_path
     'Os comentários podem mudar o escopo da descrição: quando divergirem, vale o mais recente. ' +
     'Requisito ou critério de aceite da issue não atendido, ou atendido em parte, é achado, citando o trecho da issue; ' +
     'o que a issue ou um comentário deixou para depois não é achado. ' +
-    `Se precisar de algo que não está no arquivo (anexo, issue relacionada), consulte a issue ${pr.issue_id} direto no ${pr.issue_tracker}, só para leitura. `
+    'O arquivo já traz as issues relacionadas, com título, status e descrição. ' +
+    `Se precisar de algo além dele (um anexo), consulte a issue ${pr.issue_id} direto no ${pr.issue_tracker}, só para leitura. `
   : ''
 
 // O plano é o contrato da feature: o que ela precisa garantir, as decisões já tomadas
@@ -146,14 +183,30 @@ const planContext = plan.path
     'se você discordar de uma decisão, reporte UM achado "decisão do plano a rever", citando a decisão e o argumento novo que o plano não considerou. '
   : ''
 
-// Contexto comum a todos os revisores: a mesma issue, o mesmo plano, o mesmo commit, o mesmo diff.
+// Os padrões de código são a régua da revisão: regra escrita e violada é achado, sem
+// depender de a skill do revisor ir atrás do arquivo.
+const standardsContext = pr.standards_files.length
+  ? `Antes de revisar, leia os padrões de código do repositório, na cópia do head: ${pr.standards_files.map((f) => `"${f}"`).join(', ')}. ` +
+    'O diff que viola uma regra escrita neles é achado, citando a regra e o arquivo onde ela está. '
+  : ''
+
+// O estado da CI diz o que já foi checado mecanicamente nesse commit.
+const ciContext = pr.ci_path
+  ? `A CI já rodou no head: o resultado de cada job e os comandos que ele roda estão em "${pr.ci_path}" (${pr.ci_note}). ` +
+    'Não rode de novo um check que a CI aprovou nesse commit; um job que falhou é achado. '
+  : `Sem estado da CI no head (${pr.ci_note}). `
+
+// Contexto comum a todos os revisores: a mesma issue, o mesmo plano, o mesmo commit, o mesmo diff, a mesma cópia.
 const scopeContext =
   issueContext +
   planContext +
   `Escopo fixo desta revisão: PR ${prRef} ("${pr.title}"), ${pr.head_branch} → ${pr.base_branch}. ` +
   `Revise exatamente o commit ${pr.head_sha} contra o merge-base ${pr.merge_base}. ` +
   `O diff completo está em "${pr.diff_path}" e os commits já estão no repositório local, então não é preciso consultar o PR nem rodar fetch. ` +
-  `Leia os arquivos do PR com \`git show ${pr.head_sha}:<path>\`: o working tree não está no PR. ` +
+  `Leia, liste e busque os arquivos do PR na cópia do head em "${pr.head_tree}" (worktree destacado no commit ${short(pr.head_sha)}): ` +
+  'o working tree principal não está no PR. A cópia é compartilhada com os outros revisores: só leia, e não crie outra cópia do repositório. ' +
+  standardsContext +
+  ciContext +
   'Commits publicados depois desse head são tratados na etapa Final Review. '
 
 // ── Code Review ──────────────────────────────────────────────────────────────
@@ -185,8 +238,8 @@ const REPORT_SCHEMA = {
 // A the-judge (tlc-skills) foi feita para rodar sozinha no GitHub: busca o PR com gh
 // (Step 0) e publica a review (Step 7). Aqui o Setup já resolveu o PR (GitHub ou
 // Azure DevOps), então a nota pula as duas pontas e mantém o resto da skill.
-// Os checks do Step 1 rodam num worktree temporário no head do PR: o working tree
-// compartilhado não está no PR e não pode ser alterado.
+// Os checks do Step 1 que a CI não cobre rodam num worktree próprio no head do PR: eles
+// escrevem arquivos, e a cópia do head é só de leitura, compartilhada com os outros revisores.
 const judgeWorktree = `/tmp/the-judge-${prId}`
 const REVIEWERS = [
   { key: 'thermos', skill: 'thermos:thermos' },
@@ -198,10 +251,14 @@ const REVIEWERS = [
     note:
       'Adaptações da the-judge a este fluxo (valem sobre o SKILL.md): ' +
       '(1) pule o Step 0: o PR já está resolvido acima, use o diff salvo e trate a revisão sempre como round 1, sem consultar reviews anteriores; ' +
-      `(2) no Step 1, rode o scan com \`python3 <diretório da skill>/scripts/scan_bypasses.py < "${pr.diff_path}"\` ` +
-      `e rode os checks do repo num worktree temporário (\`git worktree add --detach "${judgeWorktree}" ${pr.head_sha}\`), ` +
-      'só se rodarem sem instalar dependências, sem atualizar snapshots; reproduções do Step 4 também ficam nesse worktree; ' +
-      `ao final remova-o com \`git worktree remove --force "${judgeWorktree}"\`; ` +
+      `(2) no Step 1, rode o scan com \`python3 <diretório da skill>/scripts/scan_bypasses.py < "${pr.diff_path}"\`. ` +
+      (pr.ci_path
+        ? `Os checks do repo que a CI rodou nesse head estão em "${pr.ci_path}": use o resultado registrado, sem rodá-los de novo; ` +
+          'rode só os que a CI não cobre ou que não concluíram, '
+        : 'Rode os checks do repo, ') +
+      'só se rodarem sem instalar dependências e sem atualizar snapshots. Esses checks e as reproduções do Step 4 escrevem arquivos: ' +
+      `rode-os num worktree próprio (\`git worktree add --detach "${judgeWorktree}" ${pr.head_sha}\`), criado só quando houver o que rodar, ` +
+      `e ao final remova-o com \`git worktree remove --force "${judgeWorktree}"\`; ` +
       `(3) grave o findings.json em "/tmp/the-judge-findings-${prId}.json" e rode o gate (Step 6) até exit 0; ` +
       '(4) NÃO execute o Step 7 nem nada que publique no PR: o relatório pedido substitui a review postada, ' +
       'com o veredito, a tabela de achados (severidade, arquivo:linha, evidência e correção sugerida), o research log e os checks rodados. ',
@@ -230,6 +287,7 @@ const reviewPrompt = (r) => {
     invoke +
     (r.note ?? '') +
     'Não troque de branch nem altere o working tree: outros revisores rodam em paralelo no mesmo checkout. ' +
+    `Arquivos temporários seus (scripts, saídas, reproduções) vão em "${workDir}/${r.key}/", uma pasta só sua. ` +
     'Como resultado, retorne o path do relatório gerado.'
   )
 }
@@ -330,10 +388,14 @@ const finalReview = await agent(
       ? `Leia INTEIRO o plano da feature em "${plan.path}" antes de julgar: a alternativa que o plano rejeitou ou um item fora do escopo do plano é improcedente (fora do escopo); ` +
         'código que diverge do plano é procedente. Um achado "decisão do plano a rever" vai para a seção "Decisões a rever" do relatório final, com o argumento, e não entra como item a corrigir. '
       : '') +
-    'Antes de julgar, consulte o head atual do PR (`gh pr view --json headRefOid` ou `az repos pr show`, campo lastMergeSourceCommit.commitId). ' +
-    `Se ainda for ${short(pr.head_sha)}, julgue contra ele, lendo os arquivos com \`git show ${pr.head_sha}:<path>\`. ` +
+    (pr.standards_files.length
+      ? `Os padrões de código do repositório estão em ${pr.standards_files.map((f) => `"${f}"`).join(', ')}: violar uma regra escrita neles é procedente. `
+      : '') +
+    'Antes de julgar, consulte o head atual do PR (`gh pr view --json headRefOid`, `az repos pr show` no campo lastMergeSourceCommit.commitId, ' +
+    '`glab mr view <iid> --output json` no campo sha, ou o equivalente do host). ' +
+    `Se ainda for ${short(pr.head_sha)}, julgue contra ele, lendo os arquivos na cópia do head em "${pr.head_tree}". ` +
     `Se o PR avançou, rode \`git fetch --no-tags origin ${pr.head_branch}\`, liste os commits novos (\`git log ${short(pr.head_sha)}..<novo head>\`) ` +
-    'e julgue cada achado contra o head novo: o achado que um commit novo resolveu é procedente, com o motivo "já corrigido em <commit>". ' +
+    'e julgue cada achado contra o head novo, lendo os arquivos com `git show <novo head>:<path>`: o achado que um commit novo resolveu é procedente, com o motivo "já corrigido em <commit>". ' +
     'Informe no cabeçalho do relatório final o commit revisado e, se diferente, o commit julgado. ' +
     'Julgue cada achado como procedente ou improcedente, verificando-o contra o código real antes de aceitar. Para cada achado: ' +
     '(1) abra o diff/arquivos do PR referenciados e verifique se a premissa procede no código real; ' +
@@ -434,9 +496,13 @@ function buildEvalSections(findings, verdicts, stageTitle) {
 const evaluation = buildEvalSections(consolidated.findings, finalReview?.verdicts ?? [], 'Final Review')
 if (evaluation.missing.length) log(`⚠️ Achados sem veredito: ${evaluation.missing.join(', ')}`)
 
+// A cópia do head sai aqui, quando nenhum agente precisa mais dela. Se o workflow parar
+// antes, o Setup da próxima rodada a recria do zero.
 const evalReport = await agent(
   `Acrescente ao FINAL do arquivo ${consolidated.evaluation_path} o conteúdo markdown abaixo, exatamente como está ` +
-    '(sem reformatar, resumir ou alterar o restante do arquivo). Como resultado, retorne o path do arquivo.\n\n' +
+    '(sem reformatar, resumir ou alterar o restante do arquivo). ' +
+    `Depois remova a cópia do head com \`git worktree remove --force "${pr.head_tree}"; git worktree prune\`. ` +
+    'Como resultado, retorne o path do arquivo.\n\n' +
     evaluation.markdown,
   { label: 'review-eval', phase: 'Review Eval', model: 'sonnet', effort: 'low', schema: REPORT_SCHEMA },
 )
@@ -462,6 +528,8 @@ return {
     head_sha: pr.head_sha,
     merge_base: pr.merge_base,
     diff_path: pr.diff_path,
+    ci_path: pr.ci_path || null,
+    standards_files: pr.standards_files,
     issue_id: pr.issue_id || null,
     issue_tracker: pr.issue_tracker || null,
     issue_url: pr.issue_url || null,
