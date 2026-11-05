@@ -1,4 +1,5 @@
 #!/bin/bash
-# Runs the Dev-OS checks before every commit. Enabled per clone with:
+# Runs the Dev-OS checks before every commit, the mods only where the commit
+# touches them. Enabled per clone with:
 #   git config core.hooksPath .githooks
-exec "$(git rev-parse --show-toplevel)/scripts/check.sh"
+exec "$(git rev-parse --show-toplevel)/scripts/check.sh" --staged

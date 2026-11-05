@@ -1,10 +1,13 @@
 #!/bin/bash
 # =============================================================================
 # Dev-OS Check
-# Validates the repo itself: external catalogs, workflow scripts, tool configs
-# and shell scripts. Run before committing; .githooks/pre-commit runs it too.
+# Validates the repo itself: external catalogs, workflow scripts, tool configs,
+# shell scripts and the mods under plugins/ (validate, tests, types). Run before
+# committing; .githooks/pre-commit runs it too, with --staged.
 # =============================================================================
-# Usage: ~/dev-os/scripts/check.sh
+# Usage: ~/dev-os/scripts/check.sh [--staged]
+#   --staged  check only the mods with staged changes (the rest of the repo is
+#             always checked whole: it takes a second)
 # Exit status: non-zero when any check fails.
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -13,6 +16,8 @@ BASE_DIR="$(dirname "$SCRIPT_DIR")"
 source "$SCRIPT_DIR/common-functions.sh"
 
 failures=0
+STAGED_ONLY=false
+[ "${1:-}" = "--staged" ] && STAGED_ONLY=true
 
 fail() {
     print_error "$1"
@@ -82,10 +87,111 @@ check_shell() {
     done
 }
 
+# -----------------------------------------------------------------------------
+# Mods: every plugin under plugins/ validated the way the engine reads it, its
+# tests run (hooks/*.test.tsx or tests/*.test.ts), and each hooks module
+# type-checked against the engine's API plus the contracts of its dependencies.
+# -----------------------------------------------------------------------------
+
+# The engine's API types for the running Claude Code: written under its temp
+# folder, one file per version, when the plugin-authoring skill loads. Empty
+# when this version has not written them yet.
+mod_api_types() {
+    local version
+    version=$(claude --version 2>/dev/null | awk '{print $1}')
+    [ -n "$version" ] || return 0
+    ls -t "${TMPDIR:-/tmp}"/claude-"$(id -u)"/bundled-skills/"$version"/*/plugin-authoring/types/claude-code.d.ts 2>/dev/null | head -1
+}
+
+# Writes to $3 a tsconfig that type-checks the mod in $1 (hooks/ and types/,
+# test files aside: `claude plugin test` runs those) against the API types in
+# $2 and the `types` contract of each installed plugin its manifest depends on.
+write_mod_tsconfig() {
+    node -e '
+const fs = require("fs"), path = require("path"), os = require("os")
+const [dir, api, out] = process.argv.slice(1)
+const manifest = JSON.parse(fs.readFileSync(path.join(dir, ".claude-plugin/plugin.json"), "utf8"))
+let installed = {}
+try {
+  installed = JSON.parse(fs.readFileSync(path.join(os.homedir(), ".claude/plugins/installed_plugins.json"), "utf8")).plugins ?? {}
+} catch {}
+const deps = (manifest.dependencies ?? []).flatMap(id => {
+  const at = installed[id]?.[0]?.installPath
+  if (!at) return []
+  const types = JSON.parse(fs.readFileSync(path.join(at, ".claude-plugin/plugin.json"), "utf8")).types
+  return types ? [path.join(at, types)] : []
+})
+fs.writeFileSync(out, JSON.stringify({
+  compilerOptions: {
+    target: "es2023", lib: ["es2023"], types: [], module: "esnext", moduleResolution: "bundler",
+    strict: true, noUncheckedIndexedAccess: true, noEmit: true, skipLibCheck: true,
+    jsx: "react", jsxFactory: "h", jsxFragmentFactory: "Fragment",
+  },
+  include: [api, ...deps, path.join(dir, "hooks/**/*"), path.join(dir, "types/**/*")],
+  exclude: [path.join(dir, "**/*.test.*")],
+}))
+' "$1" "$2" "$3"
+}
+
+# The mod folders to check, one per line: every one under plugins/, or with
+# --staged only those the commit touches (a mod takes seconds: tests, tsc).
+mod_dirs() {
+    if [ "$STAGED_ONLY" = true ]; then
+        git -C "$BASE_DIR" diff --cached --name-only -- plugins/ | cut -d/ -f2 | sort -u |
+            while read -r name; do [ -d "$BASE_DIR/plugins/$name" ] && echo "$BASE_DIR/plugins/$name"; done
+    else
+        local dir
+        for dir in "$BASE_DIR"/plugins/*/; do echo "${dir%/}"; done
+    fi
+}
+
+check_mods() {
+    print_status "Mods"
+    local dirs
+    dirs=$(mod_dirs)
+    [ -n "$dirs" ] || return 0
+    if ! command -v claude > /dev/null; then
+        fail "claude not found: plugins/ was not checked"
+        return
+    fi
+    local dir name
+    while read -r dir; do
+        name=${dir#"$BASE_DIR"/}
+        claude plugin validate "$dir" > /dev/null 2>&1 || fail "$name does not validate: claude plugin validate $name"
+        if compgen -G "$dir/hooks/*.test.*" > /dev/null || compgen -G "$dir/tests/*.test.*" > /dev/null; then
+            claude plugin test "$dir" > /dev/null 2>&1 || fail "$name has failing tests: claude plugin test $name"
+        fi
+    done <<< "$dirs"
+
+    local api
+    api=$(mod_api_types)
+    if [ -z "$api" ]; then
+        print_warning "Mod types not checked: this Claude Code version has no API types yet (load the plugin-authoring skill once to write them)"
+        return
+    fi
+    if ! command -v node > /dev/null || ! command -v npx > /dev/null; then
+        fail "node/npx not found: mod types were not checked"
+        return
+    fi
+    local tmp
+    tmp=$(mktemp -d)
+    while read -r dir; do
+        [ -f "$dir/hooks/hooks.json" ] || continue
+        name=${dir#"$BASE_DIR"/}
+        write_mod_tsconfig "$dir" "$api" "$tmp/tsconfig.json"
+        npx -y -p typescript@5 tsc -p "$tmp/tsconfig.json" > "$tmp/out" 2>&1 || {
+            grep 'error TS' "$tmp/out" | sed "s|^$BASE_DIR/||"
+            fail "$name has type errors"
+        }
+    done <<< "$dirs"
+    rm -rf "$tmp"
+}
+
 check_catalogs
 check_workflows
 check_configs
 check_shell
+check_mods
 
 if [ "$failures" -gt 0 ]; then
     print_error "$failures check(s) failed"

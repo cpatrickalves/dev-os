@@ -183,3 +183,5 @@ pyrightconfig.json
 .plans
 .claude/napkin.md
 .claude/logbook.md
+# Mod types the engine writes beside a mod it loads from a dev folder
+plugins/*/.claude-plugin/types/
