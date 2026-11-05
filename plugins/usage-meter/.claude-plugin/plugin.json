@@ -1,0 +1,19 @@
+{
+  "name": "usage-meter",
+  "version": "0.2.0",
+  "description": "The model, the context window's fill, your plan's 5-hour usage and its reset countdown as a row of powerline pills above the prompt. A Dev-OS fork of hamzafer/claude-code-mods' usage-meter.",
+  "author": {
+    "name": "Hamza Zafar",
+    "url": "https://github.com/hamzafer"
+  },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "caps": {
+      "type": "string",
+      "title": "Pill ends",
+      "default": "round",
+      "options": ["round", "none"],
+      "description": "round: powerline half circles between the pills (needs a Nerd Font or another powerline font). none: flat pills, for a font without those glyphs."
+    }
+  }
+}

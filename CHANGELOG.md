@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `usage-meter` and `next-steps` mods (`plugins/usage-meter`,
+  `plugins/next-steps`, in `external-mods.yaml`), both from
+  [hamzafer/claude-code-mods](https://github.com/hamzafer/claude-code-mods)
+  at commit `7e60143` (MIT, `LICENSE` kept in each folder). `next-steps` is an
+  unchanged copy of 0.3.0: after each turn, 2 or 3 likely next prompts above
+  the prompt, drafted with `1` to `3` and dismissed with `0`. `usage-meter` is
+  a restyled fork of 0.1.1: instead of block bars and the session's cost it
+  draws a row of powerline pills in the Tokyo Night colors of `nightgrid`, `Model`, `Ctx Used`, `Session` (the 5-hour
+  window, amber from 75% and red from 90%) and `Reset` (its countdown); the 7-day
+  window joins only once it runs high. The readings, the toasts past 90% and
+  the band order are upstream's. Its `caps` option (`round` or `none`) drops
+  the round pill ends for a terminal font without powerline glyphs.
 - `quiet-edits` mod (`plugins/quiet-edits`, in `external-mods.yaml`): in the
   terminal, the diff under an `Edit`, `MultiEdit` or `Write` row is folded away
   while the row is closed, and the `skins` mod's `▸` on the row opens it. A

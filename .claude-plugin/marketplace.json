@@ -31,6 +31,16 @@
       "name": "quiet-edits",
       "source": "./plugins/quiet-edits",
       "description": "Mod: dobra o diff das linhas de Edit, MultiEdit e Write e a saída das linhas de Bash e PowerShell no terminal enquanto a linha do mod skins está fechada; o ▸ da linha abre. Depende do skins (hellosverre-mods)."
+    },
+    {
+      "name": "usage-meter",
+      "source": "./plugins/usage-meter",
+      "description": "Mod: o modelo, o uso do contexto, o uso da janela de 5 horas do plano e a contagem até o reset como pílulas powerline acima do prompt. Fork com outro visual do usage-meter de hamzafer/claude-code-mods (MIT)."
+    },
+    {
+      "name": "next-steps",
+      "source": "./plugins/next-steps",
+      "description": "Mod: depois de cada turno, 2 ou 3 próximos prompts prováveis acima do prompt; 1, 2 ou 3 num prompt vazio rascunha um, 0 dispensa. Cópia sem alterações do next-steps de hamzafer/claude-code-mods (MIT)."
     }
   ]
 }
