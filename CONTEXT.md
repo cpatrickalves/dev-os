@@ -18,4 +18,4 @@ Glossário do domínio do Dev-OS, para colaboradores humanos e agentes.
 ## Premissas
 
 - O clone do Dev-OS vive fixo em `~/dev-os`; todos os scripts hardcodam esse caminho como fonte.
-- `.claude/` neste repo contém apenas estado/config local de sessão, mais o symlink relativo commitado `.claude/agents → ../agents`. As skills curadas não carregam sozinhas ao abrir o próprio Dev-OS no Claude Code.
+- `.claude/` neste repo é ignorado pelo git e local a cada clone: estado/config de sessão e, nesta máquina, o symlink relativo `.claude/agents → ../agents`. As skills curadas não carregam sozinhas ao abrir o próprio Dev-OS no Claude Code.

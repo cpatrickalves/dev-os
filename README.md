@@ -214,7 +214,7 @@ dev-os/
 ├── workflows/             # Multi-agent workflow scripts
 ├── output-styles/         # Output styles
 ├── configs/               # Settings of installed tools (skins mod), see configs/README.md
-├── plugins/               # Dev-OS's own plugin marketplace (thermos)
+├── plugins/               # Dev-OS's own plugin marketplace (thermos and the mods), see plugins/README.md
 ├── scripts/               # Import/install helper scripts + check.sh
 ├── .githooks/             # pre-commit: runs scripts/check.sh
 ├── docs/                  # Reference notes (LangGraph practices)
@@ -222,7 +222,8 @@ dev-os/
 ├── external-mods.yaml     # Claude Code mods to install or uninstall
 ├── external-skills.yaml   # External skill packages to install
 ├── CONTEXT.md             # Domain glossary
-└── .claude/               # Local session state + agents symlink
+├── .claude-plugin/        # marketplace.json: lists plugins/ as the dev-os marketplace
+└── .claude/               # Local session state (gitignored)
 ```
 
 ---
