@@ -137,7 +137,13 @@ Third-party assets that are installed, not copied, are declared in two YAML cata
 
 | Mod | Marketplace | Scope | Description |
 |-----|-------------|-------|-------------|
-| `savvy-progress` | [JohnnyVizz/claude-kit](https://github.com/JohnnyVizz/claude-kit) | user | Progress bar above the prompt and subagents panel (`/agents-info`) |
+| `cc-plugin-you-should-know` | builtin (ships with Claude Code) | user | Side agent that surfaces things worth knowing above the prompt |
+| `filetree` | [data-goblin/claude-code-filetree](https://github.com/data-goblin/claude-code-filetree) | user | IDE-style file tree pane with git status and the files Claude touches |
+| `reflect-mod` | [BayramAnnakov/claude-reflect](https://github.com/BayramAnnakov/claude-reflect) | user | Checks short prompts for corrections and saves rules from a band above the prompt |
+| `skins` | [hellosverre/claude-skins](https://github.com/hellosverre/claude-skins) | user | Transcript skins with tool row icons, diff, table and Mermaid cards, a usage band and themes. Its skins and settings are versioned in [`configs/claude-skins`](configs/README.md) |
+| `brain-dump` | Dev-OS ([`plugins/brain-dump`](plugins/brain-dump/)), from Ben AI | user | Shapes a long, loose prompt into a four-part brief |
+| `helper-desk` | Dev-OS ([`plugins/helper-desk`](plugins/helper-desk/)), from Ben AI | user | Task progress bar above the prompt and live subagent cards |
+| `chat-inventory` | Dev-OS ([`plugins/chat-inventory`](plugins/chat-inventory/)), from Ben AI | user | Side pane with the to-do list, connectors, context files and skills this chat used |
 | `quiet-edits` | Dev-OS ([`plugins/quiet-edits`](plugins/quiet-edits/)) | user | Folds the diff under `Edit`, `MultiEdit` and `Write` rows in the terminal while the row is closed; the `skins` row's `▸` opens it. Needs `skins`, and does nothing while `skins` is off |
 
 **Skill packages** — [`external-skills.yaml`](external-skills.yaml), installed with `scripts/install-external-skills.sh` through `npx skills add`.
