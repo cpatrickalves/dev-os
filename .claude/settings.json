@@ -1,7 +1,4 @@
 {
-  "env": {
-    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "sonnet"
-  },
   "permissions": {
     "allow": [
       "Bash(python3:*)",
