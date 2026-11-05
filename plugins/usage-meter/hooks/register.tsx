@@ -110,8 +110,9 @@ export const register: Register = (on, options) => {
       if (hasCaps) cells.push(<Text key={`cap-${i}`} color={p.bg} {...(after ? { backgroundColor: after.bg } : {})}>{CAP_RIGHT}</Text>)
     })
 
+    // One empty row above, so the pills do not sit against the transcript; a one-row band has no room for it.
     const mine = (
-      <Box flexDirection="row" paddingX={1}>
+      <Box flexDirection="row" paddingX={1} marginTop={e.props.maxRows >= 2 ? 1 : 0}>
         {cells}
       </Box>
     )

@@ -116,6 +116,27 @@ describe('usage-meter', () => {
     await ui.unmount()
   })
 
+  test('one empty row above the pills, when the band has the rows', async ($, on) => {
+    engine(on, { rateLimits: [{ kind: 'five_hour', percentUsed: 50, resetsAt: at(19 * MIN) }] })
+    await start($)
+    // The band's column holds the mod's keyed Box, and that holds the row of pills.
+    const row = async (ui: any) => ((await ui.drawn()) as any).children.find((c: any) => c.props?.key === 'band:usage-meter').children[0]
+
+    const tall = await $.ui.mount({ plugin: 'usage-meter', surface: 'terminal', ...band() } as any)
+    expect((await row(tall)).props.marginTop).toBe(1)
+    await tall.unmount()
+
+    const short = await $.ui.mount({
+      plugin: 'usage-meter',
+      surface: 'terminal',
+      component: 'AbovePrompt',
+      props: { hasSurvey: false, isWorking: false, maxRows: 1, bodyColumns: 120 },
+    } as any)
+    expect((await row(short)).props.marginTop).toBe(0)
+    expect(await line(short)).toContain(' Session: 50.0% ')
+    await short.unmount()
+  })
+
   test('flat pills off the terminal', async ($, on) => {
     engine(on, { rateLimits: [{ kind: 'five_hour', percentUsed: 50, resetsAt: at(19 * MIN) }] })
     await start($)
