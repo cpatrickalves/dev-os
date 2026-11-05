@@ -1,21 +1,24 @@
 import { describe, expect, mock, test } from 'claude-code/testing'
 
-import { build, countdown, fill, fit, modelName, percent, resetBandOrder, tone } from '../hooks/register'
+import { build, countdown, fill, fit, modelName, percent, resetBandOrder, tint, tone } from '../hooks/register'
 
 const NOW = Date.parse('2026-10-03T12:00:00Z')
 const at = (ms: number) => new Date(NOW + ms).toISOString()
 const MIN = 60_000
 const HOUR = 60 * MIN
 
-// Tokyo Night, the theme of herdr/nightgrid and the nightgrid skin.
-const INK = '#1a1b26'
+// Tokyo Night, the theme of herdr/nightgrid and the nightgrid skin: each pill's text color, and its
+// background, the same color at 25% over the theme's background (#1a1b26).
 const TEXT = '#c0caf5'
 const CYAN = '#7dcfff'
-const SLATE = '#414868'
 const BLUE = '#7aa2f7'
-const NAVY = '#283457'
 const AMBER = '#e0af68'
 const RED = '#f7768e'
+const TEXT_BG = '#44475a'
+const CYAN_BG = '#33485c'
+const BLUE_BG = '#323d5a'
+const AMBER_BG = '#4c4037'
+const RED_BG = '#513240'
 const CAP_LEFT = ''
 const CAP_RIGHT = ''
 
@@ -36,8 +39,9 @@ function engine(on: any, first: First, beneath?: unknown) {
   return { toasts, clock, session }
 }
 
-// The band over the prompt, where the mod draws with `position: above`.
+// The band over the prompt, where the mod draws with `position: above`; ROUND adds the powerline ends.
 const ABOVE = { options: { position: 'above' } }
+const ROUND = { options: { position: 'above', caps: 'round' } }
 const band = (bodyColumns = 120) => ({
   component: 'AbovePrompt',
   props: { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns },
@@ -74,10 +78,13 @@ describe('usage-meter in the band (position: above)', () => {
   test('helpers: percents, tones, context fill, model names and countdowns', () => {
     expect(percent(7)).toBe('7.0%')
     expect(percent(23.46)).toBe('23.5%')
-    expect(tone(74.9).bg).toBe(BLUE)
-    expect(tone(75).bg).toBe(AMBER)
-    expect(tone(89.9).bg).toBe(AMBER)
-    expect(tone(90).bg).toBe(RED)
+    expect(tone(74.9)).toEqual({ bg: BLUE_BG, fg: BLUE })
+    expect(tone(75)).toEqual({ bg: AMBER_BG, fg: AMBER })
+    expect(tone(89.9)).toEqual({ bg: AMBER_BG, fg: AMBER })
+    expect(tone(90)).toEqual({ bg: RED_BG, fg: RED })
+    expect(tint(BLUE, 0.25)).toBe(BLUE_BG)
+    expect(tint(BLUE, 1)).toBe(BLUE) // opaque
+    expect(tint(BLUE, 0)).toBe('#1a1b26') // the theme's background
     expect(percent(fill({ tokens: 37_792, window: 1_000_000, percent: 4 })!)).toBe('3.8%') // from the tokens, not the whole 4
     expect(fill({ window: 200_000, percent: 12 })).toBe(12)
     expect(fill({ window: 200_000 })).toBeUndefined()
@@ -95,6 +102,25 @@ describe('usage-meter in the band (position: above)', () => {
   test('draws the model, the context, the session and its countdown as pills', ABOVE, async ($, on) => {
     engine(on, {
       context: { tokens: 14_000, window: 200_000, percent: 7 },
+      rateLimits: [{ kind: 'five_hour', percentUsed: 50, resetsAt: at(19 * MIN) }],
+    })
+    await start($)
+    const ui = await $.ui.mount({ plugin: 'usage-meter', surface: 'terminal', ...band() } as any)
+    // Flat by default, side by side.
+    expect(await line(ui)).toBe(' Model: Opus 5.5  Ctx Used: 7.0%  Session: 50.0%  Reset: 19m ')
+    // Each pill's text is its color, over that color faded into the theme's background.
+    expect((await pill(ui, /Model/))?.props).toMatchObject({ backgroundColor: CYAN_BG, color: CYAN })
+    expect((await pill(ui, /Ctx Used/))?.props).toMatchObject({ backgroundColor: TEXT_BG, color: TEXT })
+    expect((await pill(ui, /Session/))?.props).toMatchObject({ backgroundColor: BLUE_BG, color: BLUE })
+    expect((await pill(ui, /19m/))?.props).toMatchObject({ backgroundColor: TEXT_BG, color: TEXT })
+    expect(await cells(ui)).toHaveLength(4) // the pills alone, nothing between them
+    expect(await ui.find({ type: 'Text', text: /engine band/ })).toBeDefined() // stacked, not replaced
+    await ui.unmount()
+  })
+
+  test('caps set to round draws powerline ends', ROUND, async ($, on) => {
+    engine(on, {
+      context: { tokens: 14_000, window: 200_000, percent: 7 },
       rateLimits: [
         { kind: 'seven_day', percentUsed: 18, resetsAt: at(80 * HOUR) },
         { kind: 'five_hour', percentUsed: 50, resetsAt: at(19 * MIN) },
@@ -105,24 +131,17 @@ describe('usage-meter in the band (position: above)', () => {
     expect(await line(ui)).toBe(
       `${CAP_LEFT} Model: Opus 5.5 ${CAP_RIGHT} Ctx Used: 7.0% ${CAP_RIGHT} Session: 50.0% ${CAP_RIGHT} Reset: 19m ${CAP_RIGHT}`,
     )
-    expect((await pill(ui, /Model/))?.props?.backgroundColor).toBe(CYAN)
-    expect((await pill(ui, /Model/))?.props?.color).toBe(INK) // the bright pills take the theme's background as text
-    expect((await pill(ui, /Ctx Used/))?.props?.backgroundColor).toBe(SLATE)
-    expect((await pill(ui, /Ctx Used/))?.props?.color).toBe(TEXT)
-    expect((await pill(ui, /Session/))?.props?.backgroundColor).toBe(BLUE)
-    expect((await pill(ui, /19m/))?.props?.backgroundColor).toBe(NAVY)
-    expect((await pill(ui, /19m/))?.props?.color).toBe(TEXT)
+    expect((await pill(ui, /Session/))?.props).toMatchObject({ backgroundColor: BLUE_BG, color: BLUE })
 
     // Each cap is its own pill's color, over the next pill's; the first and the last sit on the terminal's.
     const caps = (await cells(ui)).filter(t => t.text === CAP_LEFT || t.text === CAP_RIGHT)
     expect(caps.map(c => [c.props?.color, c.props?.backgroundColor])).toEqual([
-      [CYAN, undefined],
-      [CYAN, SLATE],
-      [SLATE, BLUE],
-      [BLUE, NAVY],
-      [NAVY, undefined],
+      [CYAN_BG, undefined],
+      [CYAN_BG, TEXT_BG],
+      [TEXT_BG, BLUE_BG],
+      [BLUE_BG, TEXT_BG],
+      [TEXT_BG, undefined],
     ])
-    expect(await ui.find({ type: 'Text', text: /engine band/ })).toBeDefined() // stacked, not replaced
     await ui.unmount()
   })
 
@@ -145,7 +164,7 @@ describe('usage-meter in the band (position: above)', () => {
     }
   })
 
-  test('flat pills off the terminal', ABOVE, async ($, on) => {
+  test('flat pills off the terminal, even with caps set to round', ROUND, async ($, on) => {
     engine(on, { rateLimits: [{ kind: 'five_hour', percentUsed: 50, resetsAt: at(19 * MIN) }] })
     await start($)
     const ui = await $.ui.mount({ plugin: 'usage-meter', surface: 'desktop', ...band() } as any)
@@ -158,7 +177,7 @@ describe('usage-meter in the band (position: above)', () => {
     expect(fit(pills, 30, true).map(p => p.kind)).toEqual(['window']) // 32 with the three caps
   })
 
-  test('caps set to none draws flat pills in the terminal too', { options: { caps: 'none', position: 'above' } }, async ($, on) => {
+  test('caps set to none draws flat pills, as by default', { options: { caps: 'none', position: 'above' } }, async ($, on) => {
     engine(on, { rateLimits: [{ kind: 'five_hour', percentUsed: 50, resetsAt: at(19 * MIN) }] })
     await start($)
     const ui = await $.ui.mount({ plugin: 'usage-meter', surface: 'terminal', ...band() } as any)
@@ -170,18 +189,18 @@ describe('usage-meter in the band (position: above)', () => {
     const { clock } = engine(on, { rateLimits: [{ kind: 'five_hour', percentUsed: 74.9, resetsAt: at(46 * MIN) }] })
     await start($)
     const ui = await $.ui.mount({ plugin: 'usage-meter', surface: 'terminal', ...band() } as any)
-    expect((await pill(ui, /Session: 74\.9%/))?.props?.backgroundColor).toBe(BLUE)
+    expect((await pill(ui, /Session: 74\.9%/))?.props?.backgroundColor).toBe(BLUE_BG)
     expect(await line(ui)).toContain(' Reset: 46m ')
 
     await clock.advance(MIN)
     expect(await line(ui)).toContain(' Reset: 45m ')
 
     await measure($, [{ kind: 'five_hour', percentUsed: 75, resetsAt: at(46 * MIN) }])
-    expect((await pill(ui, /Session: 75\.0%/))?.props?.backgroundColor).toBe(AMBER)
+    expect((await pill(ui, /Session: 75\.0%/))?.props).toMatchObject({ backgroundColor: AMBER_BG, color: AMBER })
     await measure($, [{ kind: 'five_hour', percentUsed: 89.9, resetsAt: at(46 * MIN) }])
-    expect((await pill(ui, /Session: 89\.9%/))?.props?.backgroundColor).toBe(AMBER)
+    expect((await pill(ui, /Session: 89\.9%/))?.props?.backgroundColor).toBe(AMBER_BG)
     await measure($, [{ kind: 'five_hour', percentUsed: 90, resetsAt: at(46 * MIN) }])
-    expect((await pill(ui, /Session: 90\.0%/))?.props?.backgroundColor).toBe(RED)
+    expect((await pill(ui, /Session: 90\.0%/))?.props).toMatchObject({ backgroundColor: RED_BG, color: RED })
     await ui.unmount()
   })
 
@@ -218,8 +237,8 @@ describe('usage-meter in the band (position: above)', () => {
       { kind: 'five_hour', percentUsed: 42, resetsAt: at(2 * HOUR + 10 * MIN) },
       { kind: 'seven_day', percentUsed: 78, resetsAt: at(76 * HOUR) },
     ])
-    expect(await line(ui)).toContain(` Session: 42.0% ${CAP_RIGHT} Reset: 2h10 ${CAP_RIGHT} Week: 78.0% · 3d4h ${CAP_RIGHT}`)
-    expect((await pill(ui, /Week/))?.props?.backgroundColor).toBe(AMBER)
+    expect(await line(ui)).toContain(' Session: 42.0%  Reset: 2h10  Week: 78.0% · 3d4h ')
+    expect((await pill(ui, /Week/))?.props?.backgroundColor).toBe(AMBER_BG)
     await ui.unmount()
   })
 
@@ -260,13 +279,13 @@ describe('usage-meter in the band (position: above)', () => {
     })
     await start($)
     const ui = await $.ui.mount({ plugin: 'usage-meter', surface: 'terminal', ...band() } as any)
-    expect(await line(ui)).toContain(` Session: 96.0% ${CAP_RIGHT} Reset: 10m ${CAP_RIGHT} Spend: 120.0% ${CAP_RIGHT}`)
-    expect((await pill(ui, /Session/))?.props?.backgroundColor).toBe(RED)
-    expect((await pill(ui, /Spend/))?.props?.backgroundColor).toBe(RED)
+    expect(await line(ui)).toContain(' Session: 96.0%  Reset: 10m  Spend: 120.0% ')
+    expect((await pill(ui, /Session/))?.props?.backgroundColor).toBe(RED_BG)
+    expect((await pill(ui, /Spend/))?.props?.backgroundColor).toBe(RED_BG)
 
     await clock.advance(11 * MIN)
     // The spend limit is the first window now, and it has no reset time to count down to.
-    expect(await line(ui)).toBe(`${CAP_LEFT} Model: Opus 5.5 ${CAP_RIGHT} Spend: 120.0% ${CAP_RIGHT}`)
+    expect(await line(ui)).toBe(' Model: Opus 5.5  Spend: 120.0% ')
     await ui.unmount()
   })
 
@@ -288,7 +307,7 @@ describe('usage-meter in the band (position: above)', () => {
     engine(on, { rateLimits: [], context: { tokens: 50_000, window: 200_000, percent: 25 } })
     await start($)
     const ui = await $.ui.mount({ plugin: 'usage-meter', surface: 'terminal', ...band() } as any)
-    expect(await line(ui)).toBe(`${CAP_LEFT} Model: Opus 5.5 ${CAP_RIGHT} Ctx Used: 25.0% ${CAP_RIGHT}`)
+    expect(await line(ui)).toBe(' Model: Opus 5.5  Ctx Used: 25.0% ')
     await ui.unmount()
   })
 
@@ -308,7 +327,28 @@ describe('usage-meter in the band (position: above)', () => {
       rateLimits: [{ kind: 'five_hour', percentUsed: 50, resetsAt: at(19 * MIN) }],
     })
     await start($)
-    // The whole row is 66 cells, padding aside: 18 + 17 + 17 + 13 for the pills and their caps, 1 for the first cap.
+    // The whole row is 61 cells, padding aside: 17 + 16 + 16 + 12 for the pills.
+    const wide = await $.ui.mount({ plugin: 'usage-meter', surface: 'terminal', ...band(63) } as any)
+    expect(await line(wide)).toContain('Model')
+    await wide.unmount()
+
+    const mid = await $.ui.mount({ plugin: 'usage-meter', surface: 'terminal', ...band(62) } as any)
+    expect(await line(mid)).toBe(' Ctx Used: 7.0%  Session: 50.0%  Reset: 19m ')
+    await mid.unmount()
+
+    const thin = await $.ui.mount({ plugin: 'usage-meter', surface: 'terminal', ...band(30) } as any)
+    expect(await line(thin)).toBe(' Session: 50.0%  Reset: 19m ')
+    await thin.unmount()
+
+    const tiny = await $.ui.mount({ plugin: 'usage-meter', surface: 'terminal', ...band(29) } as any)
+    expect(await line(tiny)).toBe(' Session: 50.0% ')
+    await tiny.unmount()
+  })
+
+  test('with round caps, the caps count in the width', ROUND, async ($, on) => {
+    engine(on, { context: { tokens: 14_000, window: 200_000, percent: 7 }, rateLimits: [{ kind: 'five_hour', percentUsed: 50, resetsAt: at(19 * MIN) }] })
+    await start($)
+    // 66 cells, padding aside: 18 + 17 + 17 + 13 for the pills and their caps, 1 for the first cap.
     const wide = await $.ui.mount({ plugin: 'usage-meter', surface: 'terminal', ...band(68) } as any)
     expect(await line(wide)).toContain('Model')
     await wide.unmount()
@@ -316,14 +356,6 @@ describe('usage-meter in the band (position: above)', () => {
     const mid = await $.ui.mount({ plugin: 'usage-meter', surface: 'terminal', ...band(67) } as any)
     expect(await line(mid)).toBe(`${CAP_LEFT} Ctx Used: 7.0% ${CAP_RIGHT} Session: 50.0% ${CAP_RIGHT} Reset: 19m ${CAP_RIGHT}`)
     await mid.unmount()
-
-    const thin = await $.ui.mount({ plugin: 'usage-meter', surface: 'terminal', ...band(33) } as any)
-    expect(await line(thin)).toBe(`${CAP_LEFT} Session: 50.0% ${CAP_RIGHT} Reset: 19m ${CAP_RIGHT}`)
-    await thin.unmount()
-
-    const tiny = await $.ui.mount({ plugin: 'usage-meter', surface: 'terminal', ...band(22) } as any)
-    expect(await line(tiny)).toBe(`${CAP_LEFT} Session: 50.0% ${CAP_RIGHT}`)
-    await tiny.unmount()
   })
 
   test('keys its band and follows the band order file', ABOVE, async ($, on) => {
@@ -352,7 +384,7 @@ describe('usage-meter in the band (position: above)', () => {
 })
 
 describe('usage-meter under the prompt (the default)', () => {
-  const FULL = `${CAP_LEFT} Model: Opus 5.5 ${CAP_RIGHT} Ctx Used: 7.0% ${CAP_RIGHT} Session: 50.0% ${CAP_RIGHT} Reset: 19m ${CAP_RIGHT}`
+  const FULL = ' Model: Opus 5.5  Ctx Used: 7.0%  Session: 50.0%  Reset: 19m '
   const first = {
     context: { tokens: 14_000, window: 200_000, percent: 7 },
     rateLimits: [{ kind: 'five_hour', percentUsed: 50, resetsAt: at(19 * MIN) }],
@@ -368,7 +400,7 @@ describe('usage-meter under the prompt (the default)', () => {
     expect(root.props.flexDirection).toBe('column')
     expect(root.children).toHaveLength(2)
     expect(root.children[1].props.key).toBe('usage-meter')
-    expect(root.children[1].props.marginTop).toBeUndefined() // the gap rows are the band's
+    expect(root.children[1].props.marginTop).toBe(1) // an empty row between the hint line and the pills
     expect(await ui.find({ type: 'Text', text: /engine band/ })).toBeDefined()
     await ui.unmount()
 
@@ -390,17 +422,17 @@ describe('usage-meter under the prompt (the default)', () => {
   test('fits the terminal width, less the footer indent on each side', async ($, on) => {
     engine(on, first)
     await start($)
-    // The whole row is 66 cells; the footer leaves the terminal's columns less 4.
-    const wide = await $.ui.mount({ plugin: 'usage-meter', surface: 'terminal', ...foot(70) } as any)
+    // The whole row is 61 cells; the footer leaves the terminal's columns less 4.
+    const wide = await $.ui.mount({ plugin: 'usage-meter', surface: 'terminal', ...foot(65) } as any)
     expect(await line(wide)).toBe(FULL)
     await wide.unmount()
 
-    const mid = await $.ui.mount({ plugin: 'usage-meter', surface: 'terminal', ...foot(69) } as any)
-    expect(await line(mid)).toBe(`${CAP_LEFT} Ctx Used: 7.0% ${CAP_RIGHT} Session: 50.0% ${CAP_RIGHT} Reset: 19m ${CAP_RIGHT}`)
+    const mid = await $.ui.mount({ plugin: 'usage-meter', surface: 'terminal', ...foot(64) } as any)
+    expect(await line(mid)).toBe(' Ctx Used: 7.0%  Session: 50.0%  Reset: 19m ')
     await mid.unmount()
 
-    const thin = await $.ui.mount({ plugin: 'usage-meter', surface: 'terminal', ...foot(24) } as any)
-    expect(await line(thin)).toBe(`${CAP_LEFT} Session: 50.0% ${CAP_RIGHT}`)
+    const thin = await $.ui.mount({ plugin: 'usage-meter', surface: 'terminal', ...foot(31) } as any)
+    expect(await line(thin)).toBe(' Session: 50.0% ')
     await thin.unmount()
 
     // A surface that does not say its width: 80 columns are assumed, and the whole row fits.
@@ -409,14 +441,14 @@ describe('usage-meter under the prompt (the default)', () => {
     await unsized.unmount()
   })
 
-  test('the countdown ticks, a new reading shows up, and the desktop gets flat pills', async ($, on) => {
+  test('the countdown ticks, a new reading shows up, and the desktop draws the same', async ($, on) => {
     const { clock } = engine(on, first)
     await start($)
     const ui = await $.ui.mount({ plugin: 'usage-meter', surface: 'terminal', ...foot(120) } as any)
     await clock.advance(MIN)
     expect(await line(ui)).toContain(' Reset: 18m ')
     await measure($, [{ kind: 'five_hour', percentUsed: 90, resetsAt: at(19 * MIN) }])
-    expect((await pill(ui, /Session: 90\.0%/))?.props?.backgroundColor).toBe(RED)
+    expect((await pill(ui, /Session: 90\.0%/))?.props?.backgroundColor).toBe(RED_BG)
     await ui.unmount()
 
     const desktop = await $.ui.mount({ plugin: 'usage-meter', surface: 'desktop', ...foot(120) } as any)

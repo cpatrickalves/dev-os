@@ -1,11 +1,12 @@
 // Usage Meter: the model, the context window's fill and the plan's rate-limit windows as one
 // row of powerline pills: "Model: Opus 5.5 | Ctx Used: 7.0% | Session: 50.0% | Reset: 19m".
 // The row sits under the prompt, in the footer, where a status line would; `position: above`
-// puts it back in the band over the prompt, where upstream draws.
+// puts it back in the band over the prompt, where upstream draws. The pills are flat and
+// tinted, to sit quietly by herdr's straight lines; `caps: round` gives them powerline ends.
 //
 // A Dev-OS fork of usage-meter 0.1.1 from https://github.com/hamzafer/claude-code-mods
 // (commit 7e60143, MIT, see ../LICENSE). Upstream draws block bars and the session's cost;
-// this one draws pills in the Tokyo Night colors and leaves the cost out. The readings, the countdown timer, the
+// this one draws tinted pills in the Tokyo Night colors and leaves the cost out. The readings, the countdown timer, the
 // toasts past 90% and the band order (bands.ts, untouched) are upstream's.
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, RenderElement, RenderNode, Timer } from 'claude-code'
@@ -15,6 +16,7 @@ import { bandsFile, parseOrder, stackBands } from './bands'
 
 const TICK_MS = 60_000
 const GAP_ROWS = 2 // in the band: empty rows between the transcript and the pills
+const FOOTER_GAP_ROWS = 1 // in the footer: empty rows between the hint line and the pills
 const FOOTER_MARGIN = 4 // in the footer: the two cells the engine indents its lines by, on each side
 const FOOTER_COLUMNS = 80 // where the surface does not say how wide it is
 const HIGH_AT = 75 // a window past this turns amber, and a secondary window shows up
@@ -24,20 +26,21 @@ const TITLES: Record<string, string> = { five_hour: 'Session', seven_day: 'Week'
 const ORDER = ['five_hour', 'seven_day', 'spend_limit']
 const FAMILIES = ['fable', 'opus', 'sonnet', 'haiku']
 const MODEL_MAX = 24
+const TINT = 0.25 // how much of a pill's color its background takes, over the theme's background: 0 to 1
 
 // Powerline half circles: they need a Nerd Font (or any powerline font) in the terminal.
 const CAP_LEFT = ''
 const CAP_RIGHT = ''
 
 // The colors of Dev-OS's theme: Tokyo Night, as herdr/nightgrid/themes/tokyo-night.json and the
-// nightgrid skin (configs/claude-skins) have them. The bright pills take the theme's background as text,
-// the dark ones (the context and the countdown) its foreground, so bright and dark alternate along the row.
+// nightgrid skin (configs/claude-skins) have them. A pill's text is its color, and its background the
+// same color faded into the theme's background (TINT): a terminal has no alpha, so the fade is mixed
+// here. The model and the windows are colored; the context and the countdown are in the foreground's
+// gray, so colored and gray alternate along the row.
 const INK = '#1a1b26' // background
 const TEXT = '#c0caf5' // foreground
 const CYAN = '#7dcfff'
-const SLATE = '#414868' // bright black
 const BLUE = '#7aa2f7' // accent
-const NAVY = '#283457' // selection
 const AMBER = '#e0af68' // working
 const RED = '#f7768e' // blocked
 
@@ -66,8 +69,8 @@ export function resetBandOrder() {
 
 export const register: Register = (on, options) => {
   const config = (options ?? {}) as Record<string, unknown>
-  // userConfig.caps: 'none' draws flat pills, for a terminal font with no powerline glyphs.
-  const isRound = String(config.caps ?? 'round').trim().toLowerCase() !== 'none'
+  // userConfig.caps: 'round' ends the pills in powerline half circles (a Nerd Font's); flat by default.
+  const isRound = String(config.caps ?? 'none').trim().toLowerCase() === 'round'
   // userConfig.position: 'below' draws under the prompt; 'above' in the band over it.
   const isBelow = String(config.position ?? 'below').trim().toLowerCase() !== 'above'
   let timer: Timer | undefined // one countdown timer, even if session.start fires again
@@ -96,7 +99,8 @@ export const register: Register = (on, options) => {
     return result
   })
 
-  // Under the prompt: the footer's hint line stays, and the pills take a row of their own beneath it.
+  // Under the prompt: the footer's hint line stays, and the pills take a row of their own beneath it,
+  // an empty row apart.
   on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {
     const rest = await next(e) // the engine's hint line, and what other mods draw here
     if (!isBelow) return rest
@@ -107,7 +111,7 @@ export const register: Register = (on, options) => {
     return (
       <Box flexDirection="column">
         {rest}
-        {row(ui, drawn.pills, drawn.hasCaps, {})}
+        {row(ui, drawn.pills, drawn.hasCaps, { marginTop: FOOTER_GAP_ROWS })}
       </Box>
     )
   })
@@ -140,7 +144,7 @@ async function pillsFor($: EngineInterface, surface: string, columns: number, is
 }
 
 // One row of pills. With caps, a half circle opens the row and each pill ends in one of its
-// own color, drawn over the next pill's.
+// own color, drawn over the next pill's; without, the pills sit side by side.
 function row({ Box, Text }: Elements, pills: Pill[], hasCaps: boolean, layout: { paddingX?: number; marginTop?: number }): RenderElement {
   const cells: RenderNode[] = []
   pills.forEach((p, i) => {
@@ -209,9 +213,9 @@ async function warn($: EngineInterface, windows: UsageMeterWindow[]) {
 // countdown, then every other window that runs high.
 export function build(snap: UsageMeterSnapshot, now: number): Pill[] {
   const pills: Pill[] = []
-  if (snap.model) pills.push({ kind: 'model', text: `Model: ${modelName(snap.model)}`, bg: CYAN, fg: INK })
+  if (snap.model) pills.push({ kind: 'model', text: `Model: ${modelName(snap.model)}`, ...colored(CYAN) })
   if (snap.contextPercent !== undefined) {
-    pills.push({ kind: 'context', text: `Ctx Used: ${percent(snap.contextPercent)}`, bg: SLATE, fg: TEXT })
+    pills.push({ kind: 'context', text: `Ctx Used: ${percent(snap.contextPercent)}`, ...colored(TEXT) })
   }
   snap.rateLimits
     .filter(w => !isStale(w, now)) // a window past its reset waits for a fresh reading
@@ -222,7 +226,7 @@ export function build(snap: UsageMeterSnapshot, now: number): Pill[] {
       if (i === 0) {
         // The first window is always there, blue until it runs high, with its countdown in a pill of its own.
         pills.push({ kind: 'window', text: `${title(w.kind)}: ${percent(w.percentUsed)}`, ...tone(w.percentUsed) })
-        if (left) pills.push({ kind: 'reset', text: `Reset: ${left}`, bg: NAVY, fg: TEXT })
+        if (left) pills.push({ kind: 'reset', text: `Reset: ${left}`, ...colored(TEXT) })
       } else if (w.percentUsed >= HIGH_AT) {
         // The others only once they run high, so they are always amber or red.
         pills.push({ kind: 'extra', text: `${title(w.kind)}: ${percent(w.percentUsed)}${left ? ` · ${left}` : ''}`, ...tone(w.percentUsed) })
@@ -251,9 +255,22 @@ function width(pills: Pill[], hasCaps: boolean) {
 
 // The background and text colors of a window's pill.
 export function tone(used: number) {
-  if (used >= WARN_AT) return { bg: RED, fg: INK }
-  if (used >= HIGH_AT) return { bg: AMBER, fg: INK }
-  return { bg: BLUE, fg: INK }
+  if (used >= WARN_AT) return colored(RED)
+  if (used >= HIGH_AT) return colored(AMBER)
+  return colored(BLUE)
+}
+
+// A pill in `color`: the color as text, over the color faded into the theme's background.
+function colored(color: string) {
+  return { bg: tint(color, TINT), fg: color }
+}
+
+// `color` at `alpha` over the theme's background, as one opaque color: `#7aa2f7` at 0.25 -> `#323d5a`.
+export function tint(color: string, alpha: number, under = INK) {
+  const rgb = (hex: string) => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16))
+  const top = rgb(color)
+  const bottom = rgb(under)
+  return `#${top.map((c, i) => Math.round(c * alpha + bottom[i]! * (1 - alpha)).toString(16).padStart(2, '0')).join('')}`
 }
 
 // How full the context window is, 0 to 100: from the token count when there is one, so it
