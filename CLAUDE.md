@@ -33,6 +33,11 @@ All scripts live in `scripts/`, `source common-functions.sh`, and follow the sam
 # Merge the versioned skins and settings of the skins mod (configs/claude-skins) into its store in ~/.claude
 ~/dev-os/scripts/import-skins.sh [--overwrite] [--no-prefs] [--verbose]
 
+# After `git pull`: update every Dev-OS asset already installed on this machine
+# (skills/agents in ~/.claude and in each project in ~/.claude.json, workflows,
+# output styles, the hook, catalog plugins/mods, npx skill packages, skins)
+~/dev-os/scripts/update-all.sh [--dry-run] [--yes] [--project DIR] [--files-only] [--verbose]
+
 # Report, diff or merge (--apply) upstream changes into third-party skills; works on ~/dev-os itself
 ~/dev-os/scripts/sync-third-party-skills.sh [--all] [--apply] [--verbose]
 

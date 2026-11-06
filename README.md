@@ -258,4 +258,11 @@ The skills cover the full stack I work with daily — from FastAPI backends and 
    validate, tests and types of the mods the commit touches; see
    [`plugins/README.md`](plugins/README.md)). Requires `node` and `claude`.
 5. Open the project with Claude Code
-6. Use `/create-simple-feature-tasks` to break down a feature, `/pr-description` to write a PR description, or any other skill
+6. To bring a machine up to date after `git pull`, run `~/dev-os/scripts/update-all.sh`
+   (`--dry-run` to only see the report). It finds what is already installed: the
+   curated skills and agents in `~/.claude` and in every project Claude Code knows
+   (`~/.claude.json`, plus `--project DIR`), the global workflows, output styles and
+   skill hook, the installed plugins and mods of the catalogs, the `npx skills`
+   packages and the skins. It updates only what differs from the clone and installs
+   nothing new. `--files-only` updates only the copied files and skins, skipping plugins, mods and packages.
+7. Use `/create-simple-feature-tasks` to break down a feature, `/pr-description` to write a PR description, or any other skill
