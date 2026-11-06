@@ -3,7 +3,7 @@ name: grill-with-ui
 description: Run a grilling interview on a local browser page instead of the terminal, usually to review one or more plans, technical docs or issues and update them with the decisions. Every question is laid out with its recommendation, answerable in any order, with a per-question discussion thread and one "Send to Agent" button; Finish writes the grill doc, updates the reviewed documents and the glossary, and offers ADRs. Use when the user says "grill with ui", invokes /grill-with-ui with a topic or documents, or says "/grill-with-ui resume".
 metadata:
   last_synced: "2026-10-27"
-  local_changes: "Only the runtime files are copied (upstream docs/, design/, test/, README.md and CI config are left out). Start takes one or more source documents (files, issues, PRs), loads domain-modeling and reads GLOSSARY.md; the doc defaults to .grills/<slug>-grill.md; Interview method asks the whole frontier per round, reviews the sources, challenges glossary terms, writes settled terms to GLOSSARY.md right away, probes edge-case scenarios, cross-checks claims against the code, and sends fact lookups to background subagents (new optional facts key); Finish applies the decisions back to the sources (asking before rewriting issues or PRs) and writes the ADRs the user picks. Description rewritten for these triggers. page.html is restyled with the cpatrickalves.com identity (Gelo palette, square plates without shadows, one accent), so its CSS will conflict on upstream merges: keep the local look. Outfit and Martian Mono ship in fonts/ (SIL OFL), served by a small /fonts/ route in server.mjs."
+  local_changes: "Only the runtime files are copied (upstream docs/, design/, test/, README.md and CI config are left out). Start takes one or more source documents (files, issues, PRs), loads domain-modeling and reads GLOSSARY.md; the doc defaults to .grills/<slug>-grill.md; Interview method asks the whole frontier per round, reviews the sources, challenges glossary terms, writes settled terms to GLOSSARY.md right away, probes edge-case scenarios, cross-checks claims against the code, and sends fact lookups to background subagents (new optional facts key); Finish applies the decisions back to the sources (asking before rewriting issues or PRs) and writes the ADRs the user picks. Description rewritten for these triggers. page.html is restyled with the cpatrickalves.com identity (Gelo palette, square plates without shadows, one accent), so its CSS will conflict on upstream merges: keep the local look. Outfit and Martian Mono ship in fonts/ (SIL OFL), served by a small /fonts/ route in server.mjs. serve picks its port from a fixed range (GRILL_PORTS, default 4700-4704) before falling back to an ephemeral one, so a remote machine needs one SSH forward set up once."
   source: "https://github.com/jasonku09/grill-with-ui/tree/main"
 ---
 
@@ -139,6 +139,11 @@ GRILL_PATCH
    a second tab would only duplicate it. It is best effort: with no usable opener (a
    headless or remote machine) the server says so on stderr and keeps running, and the URL
    you print in step 5 is the way in.
+   Ports: without `--port`, `serve` takes the first free port of `GRILL_PORTS` (default
+   `4700-4704`; `GRILL_PORTS=0` means a random port), so on a remote machine the user
+   forwards those few ports once (`ssh -L` / `LocalForward`, same port number on both ends)
+   and never has to add a forward per grill. If serve warns on stderr that the whole range
+   is taken, tell the user the port it fell back to needs its own forward.
    `--lan` is opt-in, for answering from a second machine on the same network: it listens
    on the LAN interface and prints a LAN URL next to the localhost one (without it no LAN
    socket opens and no LAN URL prints). The LAN URL carries a per-serve `?t=` token that

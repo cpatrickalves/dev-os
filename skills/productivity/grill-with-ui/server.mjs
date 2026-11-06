@@ -5,7 +5,8 @@
 //   serve    --session DIR [--port N] [--host ADDR | --lan] [--open | --open-command P] [--detach]
 //                                                   serve the page; append each Send to events.jsonl AND print the same
 //                                                   line to stdout (this process is the agent's Monitor command).
-//                                                   Without --port it retries the port it used last time, then falls
+//                                                   Without --port it retries the port it used last time, then the
+//                                                   ports of GRILL_PORTS (default 4700-4704, 0 = off), then falls
 //                                                   back to an ephemeral one, so an open tab survives a restart.
 //                                                   Loopback is the default: --lan listens on all interfaces and
 //                                                   prints a LAN URL next to the localhost one; --host ADDR is the
@@ -388,15 +389,21 @@ function cmdServe(o) {
     json(res, 404, { error: "not found" });
   });
   // Port choice: an explicit --port wins; otherwise retry last time's port (so an open tab
-  // just resumes polling after a restart) and fall back to ephemeral if it is taken.
+  // just resumes polling after a restart), then each port of GRILL_PORTS (so a remote machine
+  // needs one SSH forward for a few fixed ports, set up once), then an ephemeral one.
   const explicit = o.port !== undefined && o.port !== true;
-  let attempt = explicit ? Number(o.port) : rememberedPort(serverFile);
+  const range = explicit ? null : portRange();
+  const candidates = explicit ? [Number(o.port)] : portCandidates(rememberedPort(serverFile), range);
+  let tried = 0;
   srv.on("error", (e) => {
-    if (!srv.listening && !explicit && attempt !== 0 && e.code === "EADDRINUSE") { attempt = 0; srv.listen(0, host); return; }
+    if (!srv.listening && !explicit && e.code === "EADDRINUSE" && tried < candidates.length - 1) { srv.listen(candidates[++tried], host); return; }
     die(`server error: ${e.message}`, 1);
   });
   srv.on("listening", () => {
     const { port } = srv.address();
+    if (range && (port < range[0] || port > range[1])) {
+      process.stderr.write(`grill: every port in GRILL_PORTS (${range[0]}-${range[1]}) is taken; listening on ${port}, which a fixed SSH forward will not cover\n`);
+    }
     const display = anyInterface ? "127.0.0.1" : host;
     let url = `http://${display}:${port}/`;
     let lanUrl = null;
@@ -419,7 +426,7 @@ function cmdServe(o) {
     print({ type: "ready", url, session, ...(lanUrl ? { lanUrl } : {}) });
     if (o.open || openCommand) openPage(url, openCommand);
   });
-  srv.listen(attempt, host);
+  srv.listen(candidates[0], host);
   // server.json stays on exit on purpose: it remembers the port for the next serve, and
   // `url` checks the pid before trusting it.
   const bye = () => process.exit(0);
@@ -502,6 +509,29 @@ function cmdWait(o) {
 
 function rememberedPort(serverFile) {
   try { const p = Number(JSON.parse(fs.readFileSync(serverFile, "utf8")).port); return Number.isInteger(p) && p > 0 ? p : 0; } catch { return 0; }
+}
+
+// GRILL_PORTS is the fixed range serve picks from ("4700-4704", or one port "4700"), so a
+// remote machine forwards the same few ports once (ssh LocalForward) instead of a new random
+// port per grill. The forward must keep the port number: the page is answered only on
+// localhost:<the port it listens on> (see hostAllowed). GRILL_PORTS=0 restores ephemeral ports.
+const DEFAULT_PORTS = "4700-4704";
+function portRange() {
+  const raw = (process.env.GRILL_PORTS ?? DEFAULT_PORTS).trim();
+  if (raw === "" || raw === "0") return null;
+  const m = /^(\d+)(?:\s*-\s*(\d+))?$/.exec(raw);
+  const lo = m ? Number(m[1]) : NaN, hi = m ? Number(m[2] ?? m[1]) : NaN;
+  if (!(lo >= 1 && hi <= 65535 && lo <= hi && hi - lo < 100)) die(`GRILL_PORTS must be a port or a range like 4700-4704 (at most 100 ports), or 0; got "${raw}"`);
+  return [lo, hi];
+}
+// Last time's port first (only if the range still covers it: a port outside it is not
+// forwarded), then the range in order, then 0 (ephemeral) as the last resort.
+function portCandidates(remembered, range) {
+  if (!range) return remembered ? [remembered, 0] : [0];
+  const list = remembered >= range[0] && remembered <= range[1] ? [remembered] : [];
+  for (let p = range[0]; p <= range[1]; p++) if (p !== remembered) list.push(p);
+  list.push(0);
+  return list;
 }
 
 // ---- url ----
