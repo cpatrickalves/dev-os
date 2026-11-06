@@ -97,6 +97,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `grill-with-ui` serves from a fixed port range (`GRILL_PORTS`, default
+  `4700-4704`) before falling back to a random port, so a remote machine needs
+  one SSH forward set up once instead of a new one per grill.
+  `GRILL_PORTS=0` restores the random port. Setup guide in
+  `docs/grill-with-ui-remote.md`.
+
 - `code-review-flow`: the Setup now hands every reviewer the same detached
   worktree at the PR's head, the repository's coding standards
   (`AGENTS.md`/`CLAUDE.md`, `CODING_STANDARDS.md` and the docs they point to),
