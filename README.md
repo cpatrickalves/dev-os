@@ -177,9 +177,9 @@ Multi-agent workflow scripts in `workflows/`, installed globally into `~/.claude
 |----------|-------------|
 | `dev-flow` | Implement a markdown plan, open a PR, review it with the `code-review-flow` reviewers, apply the fixes, and audit the docs |
 | `code-review-flow` | Review an existing PR with several reviewers in parallel (`REVIEWERS` in the script) and produce a verified final report; every reviewer reads the PR's issue and its comments (tracker detected per project), the related issues, the repository's coding standards, the CI result on the head and, when given, the feature plan, from one shared worktree at the head; works with GitHub, GitLab and Azure DevOps |
-| `tlc-code-review-flow` | Shortcut for `code-review-flow` on PRs with a `tlc-plan` plan: `args: {pr, plan, issue}`; without `plan`, finds the feature plan in `.specs/features/*/plan.md` |
+| `tlc-dev-flow` | Implement an approved `tlc-plan` plan with `tlc-implement`, open a PR, review it with `code-review-flow` and the plan, apply the fixes with `tlc-implement`, and audit the docs |
 
-`dev-flow` and `tlc-code-review-flow` run `code-review-flow` as a sub-workflow (`workflow()`), so the review logic lives in one script. Nesting goes one level deep, so `code-review-flow` cannot call another workflow.
+`dev-flow` and `tlc-dev-flow` run `code-review-flow` as a sub-workflow (`workflow()`), so the review logic lives in one script. Nesting goes one level deep, so `code-review-flow` cannot call another workflow.
 
 All of them rely on the `thermos` and `mattpocock-skills` plugins and on the `the-judge` skill (`tlc-skills` in `external-skills.yaml`).
 

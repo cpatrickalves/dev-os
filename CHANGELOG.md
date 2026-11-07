@@ -83,9 +83,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `grill-with-docs`: it asks the whole frontier per round, sends fact lookups
   to background subagents, writes terms to `GLOSSARY.md` as they settle, and
   probes edge cases and claims against the code (through `domain-modeling`).
-- `tlc-code-review-flow` workflow: a shortcut for `code-review-flow` on
-  `tlc-spec-lean` PRs. It takes `args: {pr, plan, issue}`; without `plan`, the
-  Setup finds the feature plan in `.specs/features/*/plan.md` by the issue ID.
+- `tlc-dev-flow` workflow: implements an approved `tlc-plan` plan end to end.
+  `tlc-implement` builds it, the PR is reviewed by `code-review-flow` with the
+  plan, `tlc-implement` applies the accepted findings, and the docs are
+  audited. `code-review-flow` takes `plan: "auto"` to find the feature plan in
+  `.specs/features/*/plan.md` by the issue ID.
 - `sync-third-party-skills.sh`: reports which third-party skills have upstream
   changes since `metadata.last_synced`, shows the upstream diff, and with
   `--apply` merges it in (three-way, per file) and bumps `last_synced`.
@@ -98,8 +100,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `tlc-skills` in `external-skills.yaml` installs `tlc-plan` and
-  `tlc-implement` in place of `tlc-spec-lean`. `code-review-flow` and
-  `tlc-code-review-flow` now describe the plan as a `tlc-plan` plan, with its
+  `tlc-implement` in place of `tlc-spec-lean`. `code-review-flow` now
+  describes the plan as a `tlc-plan` plan, with its
   `Surface` and `Differences from the source` sections. For a plan in
   `.../features/<feature>/plan.md`, the reviewers and the Final Review also
   read the `**Settled mid-build:**` line of the `checks.md` beside it and the
@@ -137,9 +139,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Catalog schemas moved into `load_plugins_catalog`, `load_skills_catalog` and
   `load_mods_catalog` (`common-functions.sh`), shared by the install scripts and
   `check.sh`.
-- `dev-flow`, `tlc-code-review-flow` and the README no longer state how many
+- `dev-flow` and the README no longer state how many
   reviewers `code-review-flow` runs; only its own `meta` does.
-- `code-review-flow` workflow (and so `dev-flow` and `tlc-code-review-flow`):
+- `code-review-flow` workflow (and so `dev-flow`):
   `the-judge` joins as a 4th reviewer, in report-only mode. The Setup already
   resolves the PR (GitHub or Azure DevOps), so the reviewer skips the skill's
   `gh` steps (fetching and posting the review), runs the repo checks in a
@@ -169,7 +171,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - `claude-security-review` reviewer from `code-review-flow` (and so from
-  `dev-flow` and `tlc-code-review-flow`), which now run 4 reviewers. Across 22
+  `dev-flow`), which now run 4 reviewers. Across 22
   reviewed PRs it found no accepted issue that another reviewer had not also
   found.
 - `claude-security-review` skill: it was no longer used by any workflow and
@@ -181,8 +183,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `html-it` skill. `code-review-flow` now renders the final review's HTML
   version with `html-anything`.
 - `ce-code-review` skill, and with it the `ce-code-review` reviewer from
-  `code-review-flow` (and so from `dev-flow` and `tlc-code-review-flow`), which
-  now run 3 reviewers.
+  `code-review-flow` (and so from `dev-flow`), which now run 3 reviewers.
 - `compound-engineering` plugin from `external-plugins.yaml`, and the
   `ce-code-simplicity-reviewer` agent copied from it.
 

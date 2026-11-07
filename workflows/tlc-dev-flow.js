@@ -121,8 +121,7 @@ if (!pr.gate_ok) {
 }
 
 // ── Etapa 3: Code Review ────────────────────────────────────────────────────
-// O tlc-code-review-flow não roda aqui: workflow() aninha só um nível, e ele já chama o
-// code-review-flow. Passar o plano direto dá o mesmo resultado, sem a busca "auto".
+// O plano vai direto para o code-review-flow, sem a busca "auto": o path já é conhecido.
 phase('Code Review')
 
 const review = await workflow('code-review-flow', {

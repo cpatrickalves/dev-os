@@ -2,7 +2,7 @@ export const meta = {
   name: 'code-review-flow',
   description: 'Code review com 4 revisores (thermos + matt-code-review + /code-review + the-judge, todos Opus) de um PR, com a issue do PR (e o plano da feature, se houver) como contexto, e consolidação dos relatórios',
   whenToUse:
-    'Quando quiser revisar um PR existente sem implementar nada. A issue do PR e o tracker são descobertos sozinhos; para fixar a issue ou passar o plano: args: {pr, issue, plan}. Para PRs com plano da tlc-plan, use tlc-code-review-flow. Uso: Workflow({name: "code-review-flow", args: "<PR url ou número>"})',
+    'Quando quiser revisar um PR existente sem implementar nada. A issue do PR e o tracker são descobertos sozinhos; para fixar a issue ou passar o plano: args: {pr, issue, plan}. Para PRs com plano da tlc-plan, passe plan com o path do plan.md, ou plan: "auto" para procurá-lo em .specs/features/*/plan.md. Uso: Workflow({name: "code-review-flow", args: "<PR url ou número>"})',
   phases: [
     { title: 'Setup', detail: 'resolve o PR uma única vez: branches, commits base/head fixados, diff salvo, uma cópia do head, o estado da CI, os padrões de código do repositório, a issue (com os comentários e as relacionadas) lida do tracker do projeto e o plano da feature, compartilhados com todos os revisores', model: 'sonnet' },
     { title: 'Code Review', detail: '4 revisores em paralelo (thermos + matt-code-review + /code-review embutida + the-judge, todos Opus), consolidação dos relatórios e relatório de avaliação dos revisores' },
@@ -16,7 +16,7 @@ export const meta = {
 // - plan: path do plano da feature, ou "auto" para procurar em .specs/features/*/plan.md
 //   (tlc-plan). Sem ele, a revisão segue sem plano.
 // - called_by: nome do workflow que chamou este, registrado no relatório de avaliação.
-// O dev-flow e o tlc-code-review-flow chamam este workflow com workflow(). O aninhamento
+// O dev-flow e o tlc-dev-flow chamam este workflow com workflow(). O aninhamento
 // só vai até um nível, então este script não pode chamar workflow().
 const input = typeof args === 'string' ? { pr: args } : args ?? {}
 const prRef = String(input.pr ?? '').trim()
