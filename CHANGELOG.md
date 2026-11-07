@@ -97,6 +97,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `tlc-skills` in `external-skills.yaml` installs `tlc-plan` and
+  `tlc-implement` in place of `tlc-spec-lean`. `code-review-flow` and
+  `tlc-code-review-flow` now describe the plan as a `tlc-plan` plan, with its
+  `Surface` and `Differences from the source` sections. For a plan in
+  `.../features/<feature>/plan.md`, the reviewers and the Final Review also
+  read the `**Settled mid-build:**` line of the `checks.md` beside it and the
+  `AD-NNN` decisions in `.specs/STATE.md`. Before, a change the user settled
+  during the build was reported as a divergence from the plan.
 - `grill-with-ui` serves from a fixed port range (`GRILL_PORTS`, default
   `4700-4704`) before falling back to a random port, so a remote machine needs
   one SSH forward set up once instead of a new one per grill.

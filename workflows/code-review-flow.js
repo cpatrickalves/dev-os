@@ -2,7 +2,7 @@ export const meta = {
   name: 'code-review-flow',
   description: 'Code review com 4 revisores (thermos + matt-code-review + /code-review + the-judge, todos Opus) de um PR, com a issue do PR (e o plano da feature, se houver) como contexto, e consolidação dos relatórios',
   whenToUse:
-    'Quando quiser revisar um PR existente sem implementar nada. A issue do PR e o tracker são descobertos sozinhos; para fixar a issue ou passar o plano: args: {pr, issue, plan}. Para PRs feitos com tlc-spec-lean, use tlc-code-review-flow. Uso: Workflow({name: "code-review-flow", args: "<PR url ou número>"})',
+    'Quando quiser revisar um PR existente sem implementar nada. A issue do PR e o tracker são descobertos sozinhos; para fixar a issue ou passar o plano: args: {pr, issue, plan}. Para PRs com plano da tlc-plan, use tlc-code-review-flow. Uso: Workflow({name: "code-review-flow", args: "<PR url ou número>"})',
   phases: [
     { title: 'Setup', detail: 'resolve o PR uma única vez: branches, commits base/head fixados, diff salvo, uma cópia do head, o estado da CI, os padrões de código do repositório, a issue (com os comentários e as relacionadas) lida do tracker do projeto e o plano da feature, compartilhados com todos os revisores', model: 'sonnet' },
     { title: 'Code Review', detail: '4 revisores em paralelo (thermos + matt-code-review + /code-review embutida + the-judge, todos Opus), consolidação dos relatórios e relatório de avaliação dos revisores' },
@@ -14,7 +14,7 @@ export const meta = {
 // O input é o PR a ser revisado: string com a URL/número, ou {pr, issue?, plan?, called_by?}.
 // - issue: ID da issue do PR (ex.: "DEV-322", "#45"). Sem ele, o Setup procura no PR.
 // - plan: path do plano da feature, ou "auto" para procurar em .specs/features/*/plan.md
-//   (tlc-spec-lean). Sem ele, a revisão segue sem plano.
+//   (tlc-plan). Sem ele, a revisão segue sem plano.
 // - called_by: nome do workflow que chamou este, registrado no relatório de avaliação.
 // O dev-flow e o tlc-code-review-flow chamam este workflow com workflow(). O aninhamento
 // só vai até um nível, então este script não pode chamar workflow().
@@ -34,7 +34,7 @@ const workflowName = input.called_by ? `code-review-flow (chamado pelo ${input.c
 const prId = prRef.match(/\/(?:pullrequest|pull|merge_requests)\/(\d+)/i)?.[1] ?? prRef.match(/\d+/g)?.pop() ?? 'pr'
 
 // Os relatórios finais ficam em .claude/reviews/, ignorada pelo git. Na raiz do projeto
-// eles sujavam o git status (o check_proofs.py do tlc-spec-lean recusou a árvore no
+// eles sujavam o git status (o check_proofs.py da tlc-spec-lean, hoje na tlc-implement, recusou a árvore no
 // PR #70 do personal-site) e disparavam o hook de design do impeccable no HTML.
 const reviewDir = '.claude/reviews'
 
@@ -133,7 +133,7 @@ const pr = await agent(
     'os revisores consultam esse trecho para saber o que ficou para outra issue, sem voltar ao tracker. ' +
     'Sem issue, ou com o tracker inacessível, retorne issue_path = "" e explique em issue_note (informe o ID e o tracker se os encontrou). ' +
     (findPlan
-      ? '(9) Localize o plano da feature (tlc-spec-lean) em `.specs/features/*/plan.md` na raiz do repositório. ' +
+      ? '(9) Localize o plano da feature (tlc-plan) em `.specs/features/*/plan.md` na raiz do repositório. ' +
         '`.specs/` costuma estar no .gitignore: procure no working tree, não no git. ' +
         'Associe pelo ID da issue do passo (8): `grep -l "<ID>" .specs/features/*/plan.md`. ' +
         'Sem ID, ou com 0 ou 2+ candidatos, compare o nome da pasta da feature com a branch e o título. ' +
@@ -177,10 +177,25 @@ const issueContext = pr.issue_path
 // reabrem decisões tomadas e reportam trabalho de outras issues, ruído que a Final
 // Review depois descarta (no PR #12 do setur-observatorio-turismo, 23 de 28).
 // Issue e plano vão por path, e não inline: o script não lê arquivos, e os dois são lidos inteiros.
+//
+// Num plano da tlc-plan, o contrato não cabe no plan.md: a tlc-implement grava no
+// checks.md, ao lado dele, o que o usuário decidiu durante o build, e as decisões
+// AD-NNN ficam em .specs/STATE.md. Sem eles, o revisor reporta como divergência o
+// que o usuário já mudou, e a Final Review confirma. O trecho só entra para um plano
+// em .../features/<feature>/plan.md; um plano qualquer passado em args segue como antes.
+const tlcPlan = plan.path.match(/^(.*)\/features\/[^/]+\/plan\.md$/)
+const tlcContext = tlcPlan
+  ? `Leia também, se existirem: a linha "**Settled mid-build:**" de "${plan.path.replace(/plan\.md$/, 'checks.md')}" ` +
+    '(o que o usuário decidiu durante o build; quando contradiz o plano, vale ela) ' +
+    `e, em "${tlcPlan[1]}/STATE.md", as decisões AD-NNN que o plano cita. `
+  : ''
+
 const planContext = plan.path
   ? `Antes de revisar, leia INTEIRO o plano da feature em "${plan.path}" (leia do disco, não com git show: o plano pode estar fora do git). ` +
     'Ele é o contrato do PR: o que precisa valer, as decisões já tomadas (cada uma com a alternativa rejeitada) e o que fica fora do escopo. ' +
-    'Num plano tlc-spec-lean, são as seções Criteria, Landing (portas de mão única), Out of scope, Assumptions e os ajustes "Settled mid-build". ' +
+    'Num plano da tlc-plan, são as seções Criteria, Surface, Landing (portas de mão única), Out of scope, Assumptions ' +
+    'e Differences from the source (desvios de uma captura já aprovados pelo usuário). ' +
+    tlcContext +
     'Use o plano para classificar cada achado antes de reportá-lo: ' +
     '(a) o código diverge do plano, ou um item ou critério do plano não está implementado (ou está só em parte): achado, citando o item; ' +
     '(b) bug, falha de segurança ou risco que o plano não decidiu: achado; ' +
@@ -391,7 +406,11 @@ const finalReview = await agent(
       : '') +
     (plan.path
       ? `Leia INTEIRO o plano da feature em "${plan.path}" antes de julgar: a alternativa que o plano rejeitou ou um item fora do escopo do plano é improcedente (fora do escopo); ` +
-        'código que diverge do plano é procedente. Um achado "decisão do plano a rever" vai para a seção "Decisões a rever" do relatório final, com o argumento, e não entra como item a corrigir. '
+        'código que diverge do plano é procedente' +
+        (tlcPlan
+          ? ', salvo a divergência que o usuário já aprovou (em Differences from the source, no Settled mid-build ou numa decisão AD-NNN). ' + tlcContext
+          : '. ') +
+        'Um achado "decisão do plano a rever" vai para a seção "Decisões a rever" do relatório final, com o argumento, e não entra como item a corrigir. '
       : '') +
     (pr.standards_files.length
       ? `Os padrões de código do repositório estão em ${pr.standards_files.map((f) => `"${f}"`).join(', ')}: violar uma regra escrita neles é procedente. `

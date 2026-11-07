@@ -154,7 +154,7 @@ Third-party assets that are installed, not copied, are declared in two YAML cata
 |---------|--------|-------|-------------|
 | `langchain-skills` | [langchain-ai/langchain-skills](https://github.com/langchain-ai/langchain-skills) | project | LangChain, LangGraph and Deep Agents skills |
 | `shadcn-ui` | [shadcn/ui](https://ui.shadcn.com/docs/skills) | project | shadcn/ui skills |
-| `tlc-skills` | [tech-leads-club/agent-skills](https://github.com/tech-leads-club/agent-skills) | global | Tech Leads Club skills: `tlc-spec-lean`, `tlc-discover`, `technical-design-doc-creator`, `security-threat-model`, `the-fool`, `the-judge`, `demo` |
+| `tlc-skills` | [tech-leads-club/agent-skills](https://github.com/tech-leads-club/agent-skills) | global | Tech Leads Club skills: `tlc-plan`, `tlc-implement`, `tlc-discover`, `technical-design-doc-creator`, `security-threat-model`, `the-fool`, `the-judge`, `demo` |
 | `tlc-playwright` | [tech-leads-club/agent-skills](https://github.com/tech-leads-club/agent-skills) | project | Tech Leads Club skill: `playwright-skill` (browser automation and testing) |
 
 Third-party skills copied into `skills/` (such as `unslop`, `show-me` and `grill-with-ui`) record their upstream in frontmatter: `metadata.source` (a GitHub `tree/<ref>/<dir>` URL of the skill directory, or a gist URL with a `#file-<name>` anchor), `metadata.last_synced` (the date of the last copy from upstream, which is what marks a skill as third-party) and `metadata.local_changes` (what was adapted locally, or `"None."`). Own skills that are only inspired by external material cite it in `metadata.reference` instead.
@@ -177,7 +177,7 @@ Multi-agent workflow scripts in `workflows/`, installed globally into `~/.claude
 |----------|-------------|
 | `dev-flow` | Implement a markdown plan, open a PR, review it with the `code-review-flow` reviewers, apply the fixes, and audit the docs |
 | `code-review-flow` | Review an existing PR with several reviewers in parallel (`REVIEWERS` in the script) and produce a verified final report; every reviewer reads the PR's issue and its comments (tracker detected per project), the related issues, the repository's coding standards, the CI result on the head and, when given, the feature plan, from one shared worktree at the head; works with GitHub, GitLab and Azure DevOps |
-| `tlc-code-review-flow` | Shortcut for `code-review-flow` on `tlc-spec-lean` PRs: `args: {pr, plan, issue}`; without `plan`, finds the feature plan in `.specs/features/*/plan.md` |
+| `tlc-code-review-flow` | Shortcut for `code-review-flow` on PRs with a `tlc-plan` plan: `args: {pr, plan, issue}`; without `plan`, finds the feature plan in `.specs/features/*/plan.md` |
 
 `dev-flow` and `tlc-code-review-flow` run `code-review-flow` as a sub-workflow (`workflow()`), so the review logic lives in one script. Nesting goes one level deep, so `code-review-flow` cannot call another workflow.
 
