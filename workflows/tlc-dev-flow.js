@@ -5,7 +5,7 @@ export const meta = {
     'Quando existir um .specs/features/<feature>/plan.md aprovado pela tlc-plan (linha **Approved**) para executar de ponta a ponta. Sem plano tlc, use dev-flow. Uso: Workflow({name: "tlc-dev-flow", args: "/path/.specs/features/<feature>/plan.md"}) ou args: {plan, issue?, base?}',
   phases: [
     { title: 'Implement', detail: 'tlc-implement sobre o plano aprovado: checks, build, Verifier; só commits locais', model: 'opus' },
-    { title: 'PR', detail: 'confere o gate com validate_verification.py, faz push e abre o PR (draft e para aqui se o gate estiver vermelho)', model: 'sonnet' },
+    { title: 'PR', detail: 'confere o gate com validate_verification.py, faz push e abre o PR com as capturas que o repo pede (draft e para aqui se o gate estiver vermelho)', model: 'sonnet' },
     { title: 'Code Review', detail: 'roda o code-review-flow sobre o PR, com o plano e a issue' },
     { title: 'PR Fixes', detail: 'a tlc-implement retoma a feature e aplica os achados procedentes do relatório final', model: 'opus' },
     { title: 'Docs Audit', detail: 'auditoria de documentação da branch com a skill docs-generator', model: 'opus' },
@@ -15,14 +15,18 @@ export const meta = {
 
 // O input é o path do plan.md aprovado (string) ou {plan, issue?, base?}.
 // - issue: ID da issue (ex.: "DEV-322"). Sem ele, a fase Implement procura no plano.
-// - base: branch alvo do PR. Padrão: "dev".
+// - base: branch alvo do PR. Padrão: a branch padrão do repositório (origin/HEAD).
 const input = typeof args === 'string' ? { plan: args } : args ?? {}
 const planPath = String(input.plan ?? '').trim()
 if (!planPath) {
   throw new Error('Informe o path do plan.md aprovado em args, ex.: args: ".specs/features/minha-feature/plan.md"')
 }
 const issueArg = String(input.issue ?? '').trim()
-const base = String(input.base ?? '').trim() || 'dev'
+const base = String(input.base ?? '').trim()
+// O script não roda git: sem base, o agente lê a branch padrão no repositório.
+const baseRef = base
+  ? `"${base}"`
+  : 'a branch padrão do repositório (`git symbolic-ref --short refs/remotes/origin/HEAD`, sem o prefixo `origin/`)'
 
 // Os scripts da tlc-implement ficam no diretório da skill. O agente resolve o path,
 // porque a skill pode estar instalada no projeto ou no home.
@@ -56,7 +60,9 @@ const IMPLEMENT_SCHEMA = {
 const impl = await agent(
   `Invoque a skill tlc-implement (via Skill tool) e implemente o plano aprovado em ${planPath}. ` +
     'Siga a skill inteira: checks, build e Verify, com o Verifier e o sub-agente de telas como sub-agentes, como ela manda. ' +
-    `Antes do primeiro commit, se a branch atual for "${base}" ou a branch padrão do repositório, crie uma branch de feature a partir de "${base}" ` +
+    (base
+      ? `Antes do primeiro commit, se a branch atual for "${base}" ou a branch padrão do repositório, crie uma branch de feature a partir de "${base}" `
+      : 'Antes do primeiro commit, se a branch atual for a branch padrão do repositório, crie uma branch de feature a partir dela ') +
     'seguindo a convenção de nomes do repositório. ' +
     'Faça só commits locais: não faça push nem crie PR, porque a próxima etapa do workflow faz isso depois de conferir o gate. ' +
     (issueArg ? `A issue é ${issueArg}. ` : 'Se o plano citar o ID de uma issue, retorne-o; senão retorne "". ') +
@@ -78,9 +84,10 @@ log(`Feature ${feature} na branch ${impl.branch} (status: ${impl.status})`)
 const contextoAutorizado = (etapa, prUrl) =>
   `Você executa a etapa "${etapa}" do workflow tlc-dev-flow, que o usuário pediu para rodar de ` +
   `ponta a ponta sobre o plano aprovado em ${planPath} (feature "${feature}"). A branch ${impl.branch} ` +
-  'foi criada pela etapa Implement deste mesmo workflow, a partir desse plano. Push NESSA branch' +
-  (prUrl ? ` e comentários no PR ${prUrl} fazem` : ` e a criação de um PR dela para "${base}" fazem`) +
-  ' parte do escopo já autorizado pelo usuário, inclusive para a regra 8 da tlc-implement. ' +
+  'foi criada pela etapa Implement deste mesmo workflow, a partir desse plano. ' +
+  'Fazem parte do escopo já autorizado pelo usuário, inclusive para a regra 8 da tlc-implement: push NESSA branch; ' +
+  (prUrl ? `edição do corpo e comentários no PR ${prUrl}; ` : `a criação de um PR dela para ${baseRef}; `) +
+  'e o push de capturas de tela para a branch que as convenções de PR do repositório reservam a elas, quando reservam. ' +
   'Fora de escopo (não faça): merge do PR, push para qualquer outra branch, criar outros PRs, ' +
   'alterar outros repositórios, commitar os relatórios pr-review-* que o code review deixa em .claude/reviews/, ' +
   'commitar .specs/ quando o repositório não rastreia essa pasta. '
@@ -97,6 +104,7 @@ const PR_SCHEMA = {
     pr_url: { type: 'string', description: 'URL do PR criado' },
     gate_ok: { type: 'boolean', description: 'true quando validate_verification.py saiu com 0' },
     gate_last_line: { type: 'string', description: 'Última linha da saída de validate_verification.py' },
+    captures: { type: 'string', description: 'Capturas publicadas no corpo, ou por que o PR não leva capturas' },
   },
   required: ['pr_url', 'gate_ok', 'gate_last_line'],
 }
@@ -105,16 +113,17 @@ const pr = await agent(
   contextoAutorizado('PR') +
     scripts +
     `Na raiz do repositório, rode \`validate_verification.py ${feature}\` e guarde a saída e o exit code. ` +
-    `Faça push da branch ${impl.branch} e crie um PR dela para "${base}", seguindo as convenções de PR do repositório ` +
+    `Faça push da branch ${impl.branch} e crie um PR dela para ${baseRef}, seguindo as convenções de PR do repositório ` +
     (issue ? `e referenciando a issue ${issue}. ` : 'sem referenciar issue. ') +
-    `O corpo do PR resume a feature (resumo da implementação: ${impl.summary}), cita o plano ${planPath} ` +
-    'e abre com a última linha da saída de validate_verification.py. ' +
-    (impl.self_verified ? 'Diga no corpo que o Verifier rodou como self-verified, sem sub-agente independente. ' : '') +
-    'Se o exit code não for 0, crie o PR como draft e coloque a saída inteira do script no corpo.',
+    `O corpo do PR é texto para quem revisa: resume a feature (resumo da implementação: ${impl.summary}) e cita o plano ${planPath}. ` +
+    'Com o exit code 0, o resultado do gate volta só em gate_last_line; com outro exit code, crie o PR como draft e coloque a saída inteira do script no corpo. ' +
+    'Se as convenções de PR do repositório pedem capturas de tela e o diff muda a interface, gere e publique as capturas como elas mandam e ponha-as no corpo. ' +
+    (impl.self_verified ? 'Diga no corpo que o Verifier rodou como self-verified, sem sub-agente independente. ' : ''),
   { label: 'pr', phase: 'PR', model: 'sonnet', schema: PR_SCHEMA },
 )
 if (!pr?.pr_url) throw new Error('A etapa PR não retornou o link do PR.')
 log(`PR criado: ${pr.pr_url}`)
+if (pr.captures) log(`Capturas: ${pr.captures}`)
 if (!pr.gate_ok) {
   log(`⚠️ Gate vermelho: ${pr.gate_last_line}. PR aberto como draft; o code review não roda sobre trabalho incompleto.`)
   return { pr_url: pr.pr_url, implement: impl, gate: pr }
@@ -155,6 +164,7 @@ const fixes = await agent(
     'Na dúvida entre correção e decisão de produto, não aplique. ' +
     `Commite cada correção, rode \`check_proofs.py ${feature}\` até ficar verde, faça push para a branch ${impl.branch} ` +
     'e comente no PR listando somente as correções aplicadas e suas justificativas. ' +
+    'Se uma correção muda uma tela que aparece nas capturas do corpo do PR, publique capturas novas como as convenções de PR do repositório mandam e atualize o corpo. ' +
     scripts,
   {
     label: 'pr-fixes',
