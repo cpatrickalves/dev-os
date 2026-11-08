@@ -2,7 +2,7 @@ export const meta = {
   name: 'code-review-flow',
   description: 'Code review com 4 revisores (thermos + matt-code-review + /code-review + the-judge, todos Opus) de um PR, com a issue do PR (e o plano da feature, se houver) como contexto, e consolidação dos relatórios',
   whenToUse:
-    'Quando quiser revisar um PR existente sem implementar nada. A issue do PR e o tracker são descobertos sozinhos; para fixar a issue ou passar o plano: args: {pr, issue, plan}. Para PRs com plano da tlc-plan, passe plan com o path do plan.md, ou plan: "auto" para procurá-lo em .specs/features/*/plan.md. Uso: Workflow({name: "code-review-flow", args: "<PR url ou número>"})',
+    'Quando quiser revisar um PR existente sem implementar nada. A issue do PR e o tracker são descobertos sozinhos; para fixar a issue ou passar o plano: args: {pr, issue, plan}. Sem plan, o plano da feature é procurado em .specs/features/*/plan.md; passe plan com o path do plan.md para fixá-lo, ou plan: "none" para revisar sem plano. Uso: Workflow({name: "code-review-flow", args: "<PR url ou número>"})',
   phases: [
     { title: 'Setup', detail: 'resolve o PR uma única vez: branches, commits base/head fixados, diff salvo, uma cópia do head, o estado da CI, os padrões de código do repositório, a issue (com os comentários e as relacionadas) lida do tracker do projeto e o plano da feature, compartilhados com todos os revisores', model: 'sonnet' },
     { title: 'Code Review', detail: '4 revisores em paralelo (thermos + matt-code-review + /code-review embutida + the-judge, todos Opus), consolidação dos relatórios e relatório de avaliação dos revisores' },
@@ -13,8 +13,8 @@ export const meta = {
 
 // O input é o PR a ser revisado: string com a URL/número, ou {pr, issue?, plan?, called_by?}.
 // - issue: ID da issue do PR (ex.: "DEV-322", "#45"). Sem ele, o Setup procura no PR.
-// - plan: path do plano da feature, ou "auto" para procurar em .specs/features/*/plan.md
-//   (tlc-plan). Sem ele, a revisão segue sem plano.
+// - plan: path do plano da feature, "auto" (o padrão) para procurar em .specs/features/*/plan.md
+//   (tlc-plan), ou "none" para revisar sem plano.
 // - called_by: nome do workflow que chamou este, registrado no relatório de avaliação.
 // O dev-flow e o tlc-dev-flow chamam este workflow com workflow(). O aninhamento
 // só vai até um nível, então este script não pode chamar workflow().
@@ -25,7 +25,9 @@ if (!prRef) {
 }
 const issueArg = String(input.issue ?? '').trim()
 const planArg = String(input.plan ?? '').trim()
-const findPlan = planArg === 'auto'
+// Sem plan, procura o plano como no "auto": um revisor sem o plano reporta como defeito o que o
+// plano decidiu. "none" desliga a busca.
+const findPlan = planArg === '' || planArg === 'auto'
 const workflowName = input.called_by ? `code-review-flow (chamado pelo ${input.called_by})` : 'code-review-flow'
 
 // Sufixo dos relatórios: número do PR — Azure DevOps (.../pullrequest/1234),
@@ -155,7 +157,9 @@ log(pr.issue_path ? `Issue: ${pr.issue_id} (${pr.issue_tracker}) em ${pr.issue_p
 
 const plan = findPlan
   ? { path: pr.plan_path, match: pr.plan_match }
-  : { path: planArg, match: planArg ? 'informado em args' : '' }
+  : planArg === 'none'
+    ? { path: '', match: '' }
+    : { path: planArg, match: 'informado em args' }
 if (plan.path) log(`Plano da feature: ${plan.path} (${plan.match})`)
 else if (findPlan) log(`⚠️ Sem plano da feature: ${plan.match}. Os revisores trabalham sem o contrato.`)
 
