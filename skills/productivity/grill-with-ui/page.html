@@ -59,8 +59,22 @@
   .dot.gone { background: var(--muted-foreground); }
   .dot.unheard { background: transparent; box-shadow: inset 0 0 0 1.5px var(--warning); }
   @keyframes pulse { 50% { opacity: .3; } }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .spin { display: inline-block; width: 11px; height: 11px; border: 2px solid currentColor; border-right-color: transparent; animation: spin .8s linear infinite; vertical-align: -1px; flex-shrink: 0; }
+  /* Working indicator: three square bars rising in turn, square like the rest of the page.
+     Drawn with backgrounds so every .spin call site stays an empty span; the bars sit at
+     0/50/100%, so a narrower box (#visualize) only closes the gaps. */
+  .spin {
+    --bar: no-repeat linear-gradient(currentColor 0 0);
+    display: inline-block; width: 13px; height: 11px; vertical-align: -1px; flex-shrink: 0;
+    background: var(--bar) 0 50%, var(--bar) 50% 50%, var(--bar) 100% 50%;
+    background-size: 3px 35%; animation: bars 1s ease-in-out infinite;
+  }
+  @keyframes bars {
+    0%, 100% { background-size: 3px 35%, 3px 35%, 3px 35%; }
+    20% { background-size: 3px 100%, 3px 35%, 3px 35%; }
+    40% { background-size: 3px 35%, 3px 100%, 3px 35%; }
+    60% { background-size: 3px 35%, 3px 35%, 3px 100%; }
+    80% { background-size: 3px 35%, 3px 35%, 3px 35%; }
+  }
   #progress { display: none; position: absolute; left: 0; right: 0; bottom: -2px; height: 2px; overflow: hidden; background: var(--border); }
   header.working #progress { display: block; }
   #progress::after { content: ""; position: absolute; top: 0; bottom: 0; width: 30%; background: var(--accent-ink); animation: slide 1.4s ease-in-out infinite; }
@@ -71,7 +85,7 @@
   #levels-toggle:active:not(:disabled), #terms-toggle:active:not(:disabled), #visualize:active:not(:disabled), #theme-toggle:active:not(:disabled) { transform: none; box-shadow: none; }
   #theme-toggle svg { display: none; width: 15px; height: 15px; }
   #theme-toggle[data-mode="system"] .i-system, #theme-toggle[data-mode="light"] .i-light, #theme-toggle[data-mode="dark"] .i-dark { display: block; }
-  #visualize .spin { width: 9px; height: 9px; margin-right: 4px; }
+  #visualize .spin { width: 11px; height: 9px; margin-right: 4px; }
   #subagent-opt { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; color: var(--muted-foreground); white-space: nowrap; }
   #subagent-opt[hidden] { display: none; }
   #subagent-opt input { margin: 0; }
@@ -287,8 +301,8 @@
   /* Five looping animations had no escape hatch. The blanket reset below stops
      everything that travels or rotates, but three of them are progress indicators
      rather than decoration: freezing them removes the only sign that the agent is
-     working, because .spin has border-right-color:transparent and reads as a broken
-     ring, and #progress::after starts at left:-30% so a stopped one is invisible.
+     working, because a frozen .spin is three short bars that read as a glyph,
+     and #progress::after starts at left:-30% so a stopped one is invisible.
      Those fade instead, legible with nothing moving. */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
@@ -299,8 +313,8 @@
     }
     /* buttons keep their state colours but stop moving */
     button:hover:not(:disabled), button:active:not(:disabled), footer button:hover:not(:disabled), footer button:active:not(:disabled) { transform: none; }
-    /* spinner: stop rotating, close the ring so it does not look broken */
-    .spin { animation: pulse 1.6s ease-in-out infinite !important; border-right-color: currentColor !important; }
+    /* working bars: stop rising, stand at full height and pulse */
+    .spin { animation: pulse 1.6s ease-in-out infinite !important; background-size: 3px 100% !important; }
     /* progress bar: stop travelling, become a full-width bar that pulses */
     #progress::after { animation: pulse 1.6s ease-in-out infinite !important; left: 0 !important; width: 100% !important; }
     /* status dot & Finish button: opacity/colour only, nothing moves — just slow them */
