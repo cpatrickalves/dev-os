@@ -21,7 +21,7 @@ failures=0
 STAGED_ONLY=false
 [ "${1:-}" = "--staged" ] && STAGED_ONLY=true
 
-# A skill's metadata.version and a workflow's version line: quoted semver.
+# A skill's metadata.version and a workflow's meta.version: quoted semver.
 semver_re='^"[0-9]+\.[0-9]+\.[0-9]+"$'
 
 fail() {
@@ -41,31 +41,37 @@ check_catalogs() {
 }
 
 # -----------------------------------------------------------------------------
-# Workflows: each carries a `// version: "X.Y.Z"` line, raised by every commit
-# that changes it (with --staged), and is compiled, not run. A workflow script
-# has a top-level `return` and `export const meta`, so the body is wrapped in an
-# async function first.
+# Workflows: each carries `meta.version: 'X.Y.Z'`, raised by every commit that
+# changes it (with --staged), and is compiled, not run. A workflow script has a
+# top-level `return` and `export const meta`, so the body is wrapped in an async
+# function first.
 # -----------------------------------------------------------------------------
 
-# The raw value (quotes kept) of the `// version: "X.Y.Z"` line of the workflow
-# on stdin. It is a comment, not a `meta` key: `meta` is read by Claude Code,
-# which documents only name, description, whenToUse and phases.
+# `meta.version` of the workflow on stdin, JSON-encoded (so a string comes out
+# double-quoted, like a skill's metadata.version); nothing when it is missing.
+# `meta` is a pure literal, so it is evaluated on its own, without the body.
 workflow_version() {
-    sed -n 's|^// version:[[:space:]]*||p' | sed 's/[[:space:]]*$//' | head -1
+    node -e '
+const vm = require("vm")
+const m = require("fs").readFileSync(0, "utf8").match(/^export const meta = (\{[\s\S]*?\n\})/m)
+let meta
+try { meta = m && vm.runInNewContext(`(${m[1]})`) } catch {}
+if (meta && meta.version !== undefined) console.log(JSON.stringify(meta.version))
+'
 }
 
 check_workflows() {
     print_status "Workflows"
+    if ! command -v node > /dev/null; then
+        fail "node not found: workflow syntax and versions were not checked"
+        return
+    fi
     local file version
     for file in "$BASE_DIR"/workflows/*.js; do
         version=$(workflow_version < "$file")
-        [[ "$version" =~ $semver_re ]] || fail "workflows/$(basename "$file"): needs a \`// version: \"X.Y.Z\"\` line after meta (got ${version:-nothing})"
+        [[ "$version" =~ $semver_re ]] || fail "workflows/$(basename "$file"): meta.version must be 'X.Y.Z' (got ${version:-nothing})"
     done
     [ "$STAGED_ONLY" = true ] && check_workflow_bumps
-    if ! command -v node > /dev/null; then
-        fail "node not found: workflow syntax was not checked"
-        return
-    fi
     for file in "$BASE_DIR"/workflows/*.js; do
         node -e '
 const fs = require("fs"), vm = require("vm")
@@ -87,7 +93,7 @@ check_workflow_bumps() {
         [ -n "$path" ] || continue
         old=$(git -C "$BASE_DIR" show "HEAD:$path" 2>/dev/null | workflow_version)
         new=$(git -C "$BASE_DIR" show ":$path" | workflow_version)
-        require_bump "$path" version "$old" "$new"
+        require_bump "$path" meta.version "$old" "$new"
     done < <(git -C "$BASE_DIR" diff --cached --name-only --diff-filter=M -- 'workflows/*.js')
 }
 

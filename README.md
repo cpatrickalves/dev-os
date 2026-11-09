@@ -179,7 +179,7 @@ Multi-agent workflow scripts in `workflows/`, installed globally into `~/.claude
 | `code-review-flow` | Review an existing PR with several reviewers in parallel (`REVIEWERS` in the script) and produce a verified final report; every reviewer reads the PR's issue and its comments (tracker detected per project), the related issues, the repository's coding standards, the CI result on the head and, when given, the feature plan, from one shared worktree at the head; works with GitHub, GitLab and Azure DevOps |
 | `tlc-dev-flow` | Implement an approved `tlc-plan` plan with `tlc-implement`, open a PR, review it with `code-review-flow` and the plan, apply the fixes with `tlc-implement`, and audit the docs |
 
-Each script carries a `// version: "X.Y.Z"` line right after its `meta` block, raised by every commit that changes it (`scripts/check.sh` enforces it).
+Each script carries `version: 'X.Y.Z'` in its `meta`, raised by every commit that changes it (`scripts/check.sh` enforces it).
 
 `dev-flow` and `tlc-dev-flow` run `code-review-flow` as a sub-workflow (`workflow()`), so the review logic lives in one script. Nesting goes one level deep, so `code-review-flow` cannot call another workflow.
 

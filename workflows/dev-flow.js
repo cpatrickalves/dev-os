@@ -1,5 +1,6 @@
 export const meta = {
   name: 'dev-flow',
+  version: '1.0.0',
   description: 'Fluxo de desenvolvimento: implementação do plano → code review com os revisores do code-review-flow → correções no PR → auditoria de docs',
   whenToUse: 'Quando existir um plano de implementação em markdown pronto para executar de ponta a ponta. Uso: Workflow({name: "dev-flow", args: "/path/do/plano.md"})',
   phases: [
@@ -9,7 +10,6 @@ export const meta = {
     { title: 'Docs Audit', detail: 'auditoria de documentação da branch com a skill docs-generator (sincronia /docs + ADRs/guides)', model: 'opus' },
   ],
 }
-// version: "1.0.0"
 
 // O input é o path do plano de implementação (string ou {plan: "..."}).
 const planPath = typeof args === 'string' ? args.trim() : args?.plan
