@@ -1,6 +1,8 @@
 ---
 name: cognicode-sow
 description: Gera documento de escopo de projeto (SOW — Statement of Work) em Markdown para a Cognicode, usando a hierarquia Fase → Capability → Critério de aceite. Use esta skill SEMPRE que o usuário mencionar "criar escopo", "SOW", "documento de escopo", "proposta técnica", "template de projeto", "definir escopo de projeto", "escopo para cliente", "statement of work", ou descrever um novo projeto (software, AI/LLM, RAG, agente, automação) que precisa ser escopado para cliente — mesmo que não peça explicitamente um "SOW". Também acione quando o usuário fornecer briefing de projeto e pedir para "transformar em documento", "gerar template", "estruturar como escopo" ou similar. Cobre projetos de AI/LLM (RAG, agentes), desenvolvimento web/mobile e mix dos dois, com blindagem contratual (deemed acceptance, change request, SLA de decisão) e conformidade com Lei 14.133/2021 para setor público brasileiro.
+metadata:
+  version: "1.0.0"
 ---
 
 # Cognicode SOW Generator

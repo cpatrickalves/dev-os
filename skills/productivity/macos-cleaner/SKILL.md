@@ -1,6 +1,8 @@
 ---
 name: macos-cleaner
 description: Analyze and reclaim macOS disk space through intelligent cleanup recommendations. This skill should be used when users report disk space issues, need to clean up their Mac, or want to understand what's consuming storage. Focus on safe, interactive analysis with user confirmation before any deletions.
+metadata:
+  version: "1.0.0"
 ---
 
 # macOS Cleaner

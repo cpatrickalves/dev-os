@@ -6,6 +6,8 @@ model: haiku
 allowed-tools: Bash(git diff *), Bash(git status), Bash(git log *)
 context: fork
 disable-model-invocation: true
+metadata:
+  version: "1.0.0"
 ---
 
 # Use the following rules when crafting each commit:

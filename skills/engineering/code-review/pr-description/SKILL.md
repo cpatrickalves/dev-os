@@ -2,6 +2,7 @@
 name: pr-description
 description: "Use when writing a PR title and body."
 metadata:
+  version: "1.0.0"
   last_synced: "2026-10-08"
   local_changes: "Renamed to pr-description; added Title section; no Mermaid on Azure DevOps remotes; optional screenshots for UI changes."
   author: Matt Pocock

@@ -1,6 +1,8 @@
 ---
 name: user-story-spec-writer
 description: Transform vague user stories into system-first specifications optimized for AI coding agents. Use when creating new feature specs, improving existing user stories, reviewing specs for ambiguity, or when the user says "write a spec", "improve this story", "spec this out", or "make this AI-ready". Applies the WHAT/WHO/WHY/HOW framework to eliminate ambiguity that causes AI agents to make silent, unreviewed decisions.
+metadata:
+  version: "1.0.0"
 ---
 
 # Agent Spec Writer

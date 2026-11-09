@@ -4,6 +4,8 @@ description: Generate a phased, step-by-step task list from requirements, saved 
 argument-hint: "[feature request or path to PRD]"
 context: fork
 disable-model-invocation: true
+metadata:
+  version: "1.0.0"
 ---
 
 # Generating a Task List from User Requirements

@@ -2,6 +2,7 @@
 name: frontend-testing
 description: Generates Vitest + React Testing Library tests for frontend components, hooks, and utilities. Use when writing tests, reviewing spec files, improving coverage, or when the user mentions Vitest, RTL, unit tests, or integration tests.
 metadata:
+  version: "1.0.0"
   last_synced: "2026-03-12"
   local_changes: "Dify references generalized (title, description, examples); dropped web/docs/test.md and Dify file references; Project Configuration made generic."
   source: "https://github.com/langgenius/dify/tree/main/.agents/skills/frontend-testing"

@@ -254,7 +254,8 @@ The skills cover the full stack I work with daily — from FastAPI backends and 
    the skins and settings versioned in [`configs/claude-skins`](configs/README.md).
 4. Once per machine, run `~/dev-os/scripts/setup-skill-hook.sh` to log skill usage
    and, inside `~/dev-os`, `git config core.hooksPath .githooks` so every commit
-   runs `scripts/check.sh` (catalogs, workflow syntax, `configs/`, `bash -n`, and the
+   runs `scripts/check.sh` (catalogs, workflow syntax, `configs/`, skill versions and
+   the version bump of each skill the commit touches, `bash -n`, and the
    validate, tests and types of the mods the commit touches; see
    [`plugins/README.md`](plugins/README.md)). Requires `node` and `claude`.
 5. Open the project with Claude Code

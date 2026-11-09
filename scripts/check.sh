@@ -2,12 +2,13 @@
 # =============================================================================
 # Dev-OS Check
 # Validates the repo itself: external catalogs, workflow scripts, tool configs,
-# shell scripts and the mods under plugins/ (validate, tests, types). Run before
-# committing; .githooks/pre-commit runs it too, with --staged.
+# skill versions, shell scripts and the mods under plugins/ (validate, tests,
+# types). Run before committing; .githooks/pre-commit runs it too, with --staged.
 # =============================================================================
 # Usage: ~/dev-os/scripts/check.sh [--staged]
 #   --staged  check only the mods with staged changes (the rest of the repo is
-#             always checked whole: it takes a second)
+#             always checked whole: it takes a second), and require a
+#             metadata.version bump in every skill the commit changes
 # Exit status: non-zero when any check fails.
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -85,6 +86,71 @@ check_shell() {
         [ -f "$file" ] || continue
         bash -n "$file" || fail "${file#"$BASE_DIR"/} has a syntax error"
     done
+}
+
+# -----------------------------------------------------------------------------
+# Skills: every SKILL.md under skills/ carries `metadata.version: "X.Y.Z"`, and
+# with --staged a skill whose folder the commit touches must raise it over HEAD.
+# -----------------------------------------------------------------------------
+
+# The raw value of `metadata.version` (quotes kept) in the SKILL.md on stdin,
+# then `top-level` on a second line when the frontmatter has a bare `version:`.
+skill_version() {
+    awk '
+        NR == 1 && /^---[[:space:]]*$/ { fm = 1; next }
+        !fm || /^---[[:space:]]*$/ { exit }
+        /^version:/ { top = 1 }
+        /^metadata:[[:space:]]*$/ { inmeta = 1; next }
+        inmeta && /^[^[:space:]]/ { inmeta = 0 }
+        inmeta && !found && /^[[:space:]]+version:/ {
+            sub(/^[[:space:]]+version:[[:space:]]*/, ""); sub(/[[:space:]]+$/, "")
+            print; found = 1
+        }
+        END { if (top) print "top-level" }
+    '
+}
+
+semver_re='^"[0-9]+\.[0-9]+\.[0-9]+"$'
+
+check_skill_versions() {
+    print_status "Skills"
+    local file name out version
+    while IFS= read -r file; do
+        name=${file#"$BASE_DIR"/}
+        name=${name%/SKILL.md}
+        out=$(skill_version < "$file")
+        version=$(head -1 <<< "$out")
+        grep -qx top-level <<< "$out" && fail "$name: move \`version\` under \`metadata:\`"
+        [[ "$version" =~ $semver_re ]] || fail "$name: metadata.version must be \"X.Y.Z\" (got ${version:-nothing})"
+    done < <(find "$BASE_DIR/skills" -name SKILL.md | sort)
+
+    [ "$STAGED_ONLY" = true ] && check_skill_bumps
+}
+
+# Each skill with staged changes must raise metadata.version over HEAD's. A
+# skill new to the commit (or moved), deleted, or without a valid version in
+# HEAD has nothing to raise.
+check_skill_bumps() {
+    local skill_dirs changed dir old new
+    skill_dirs=$(git -C "$BASE_DIR" ls-files -- 'skills/*SKILL.md' | sed 's|/SKILL.md$||')
+    changed=$(git -C "$BASE_DIR" diff --cached --name-only -- skills/ |
+        while read -r path; do
+            # The skill a path belongs to is the longest skill folder that prefixes it.
+            while read -r dir; do
+                [[ "$path" == "$dir"/* ]] && echo "$dir"
+            done <<< "$skill_dirs" | awk '{ print length, $0 }' | sort -rn | head -1 | cut -d' ' -f2-
+        done | sort -u)
+    while read -r dir; do
+        [ -n "$dir" ] || continue
+        old=$(git -C "$BASE_DIR" show "HEAD:$dir/SKILL.md" 2>/dev/null | skill_version | head -1)
+        new=$(git -C "$BASE_DIR" show ":$dir/SKILL.md" | skill_version | head -1)
+        [[ "$old" =~ $semver_re && "$new" =~ $semver_re ]] || continue
+        old=${old//\"/}
+        new=${new//\"/}
+        if [ "$old" = "$new" ] || [ "$(printf '%s\n%s\n' "$old" "$new" | sort -V | tail -1)" != "$new" ]; then
+            fail "$dir: changed without a version bump: raise metadata.version above $old"
+        fi
+    done <<< "$changed"
 }
 
 # -----------------------------------------------------------------------------
@@ -190,6 +256,7 @@ check_mods() {
 check_catalogs
 check_workflows
 check_configs
+check_skill_versions
 check_shell
 check_mods
 

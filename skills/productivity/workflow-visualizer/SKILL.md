@@ -7,6 +7,8 @@ triggers:
   - diagram my workflow
   - show how this works
 context: fork
+metadata:
+  version: "1.0.0"
 ---
 
 # Workflow Visualizer

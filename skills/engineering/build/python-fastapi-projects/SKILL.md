@@ -1,6 +1,8 @@
 ---
 name: python-fastapi-projects
 description: Creates production-ready FastAPI projects with async SQLAlchemy, dependency injection, and layered architecture. Use when building new FastAPI applications, setting up backend API projects, implementing async REST APIs, or creating microservices with Python.
+metadata:
+  version: "1.0.0"
 ---
 
 # FastAPI Project Templates

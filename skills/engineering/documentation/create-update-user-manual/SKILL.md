@@ -9,7 +9,7 @@ description: >-
   de desenvolvedor (README, ADR, arquitetura), use docs-generator.
 metadata:
   author: Patrick Alves
-  version: "1.0"
+  version: "1.0.0"
 ---
 
 # Manual de uso
