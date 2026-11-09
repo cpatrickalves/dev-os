@@ -171,7 +171,7 @@ Multi-agent workflow scripts in `workflows/`, installed globally into `~/.claude
 |----------|-------------|
 | `dev-flow` | Implement a markdown plan, open a PR, review it with the `code-review-flow` reviewers, apply the fixes, and audit the docs |
 | `code-review-flow` | Review an existing PR with several reviewers in parallel (`REVIEWERS` in the script) and produce a verified final report; every reviewer reads the PR's issue and its comments (tracker detected per project), the related issues, the repository's coding standards, the CI result on the head and, when given, the feature plan, from one shared worktree at the head; works with GitHub, GitLab and Azure DevOps |
-| `tlc-dev-flow` | Implement an approved `tlc-plan` plan with `tlc-implement`, open a PR, review it with `code-review-flow` and the plan, apply the fixes with `tlc-implement`, and audit the docs |
+| `tlc-dev-flow` | Implement an approved `tlc-plan` plan with `tlc-implement`, have a fresh Verifier stage judge it, open a PR, review it with `code-review-flow` and the plan, apply the fixes with `tlc-implement`, re-verify the checks those fixes added, and audit the docs |
 
 Each script carries `version: 'X.Y.Z'` in its `meta`, raised by every commit that changes it (`scripts/check.sh` enforces it).
 
