@@ -3,7 +3,7 @@ name: python-fastapi-api-key-auth
 description: Adds header-based API key authentication to FastAPI applications using pydantic-settings. Use when the user wants to secure endpoints with API keys, implement X-API-Key header validation, or protect routes with simple token-based authentication. Triggers on requests like "add API key auth", "secure my endpoints", or "protect my FastAPI routes".
 metadata:
   author: Patrick Alves
-  version: "1.0"
+  version: "1.0.0"
 ---
 
 # FastAPI API Key Authentication

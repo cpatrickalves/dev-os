@@ -13,6 +13,8 @@ description: >
   updating before this PR", "after-ship docs") instead of scanning the whole codebase.
   Works with any tech stack — Python, TypeScript, Rust, Go, Java, etc. Even if the user
   just says "document this repo" or "what docs are missing", use this skill.
+metadata:
+  version: "1.0.0"
 ---
 
 # Docs Generator

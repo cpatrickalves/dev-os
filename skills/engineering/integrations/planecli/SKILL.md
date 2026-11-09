@@ -6,7 +6,7 @@ metadata:
   last_synced: "2026-10-26"
   local_changes: "None."
   author: Patrick Alves
-  version: "1.7"
+  version: "1.7.0"
   source: https://github.com/cpatrickalves/plane-cli/tree/main/skills
   requirements: https://github.com/cpatrickalves/plane-cli
 ---

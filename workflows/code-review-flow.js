@@ -1,5 +1,6 @@
 export const meta = {
   name: 'code-review-flow',
+  version: '1.0.0',
   description: 'Code review com 4 revisores (thermos + matt-code-review + /code-review + the-judge, todos Opus) de um PR, com a issue do PR (e o plano da feature, se houver) como contexto, e consolidação dos relatórios',
   whenToUse:
     'Quando quiser revisar um PR existente sem implementar nada. A issue do PR e o tracker são descobertos sozinhos; para fixar a issue ou passar o plano: args: {pr, issue, plan}. Sem plan, o plano da feature é procurado em .specs/features/*/plan.md; passe plan com o path do plan.md para fixá-lo, ou plan: "none" para revisar sem plano. Uso: Workflow({name: "code-review-flow", args: "<PR url ou número>"})',

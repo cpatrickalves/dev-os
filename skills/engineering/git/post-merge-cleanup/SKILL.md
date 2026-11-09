@@ -5,7 +5,7 @@ description: After a PR is merged, delete the local and remote branches already 
 disable-model-invocation: true
 metadata:
   author: Patrick Alves
-  version: "1.0"
+  version: "1.0.0"
 ---
 
 # Post-merge cleanup

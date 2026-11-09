@@ -2,6 +2,8 @@
 name: create-update-readme
 description: Create or update the project README.md (PT-BR) following the standard entry-point structure
 disable-model-invocation: true
+metadata:
+  version: "1.0.0"
 ---
 
 # Crie ou atualize o README.md do projeto

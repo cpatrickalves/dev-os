@@ -3,6 +3,8 @@ name: logbook
 description: |
   Update the project's daily work logbook at `.claude/logbook.md` with a succinct, dated, PT-BR record of what was done — written so the user can paste the day's block straight into their Notion logbook. Safe to run many times a day: it merges new work into today's entry instead of duplicating it. Use whenever the user says "logbook", "atualiza o logbook", "registra no log", "log do dia", "anota o que fizemos", "o que fiz hoje", or asks to record/summarize progress so far in a session — even mid-session and even if they don't name the file. Prefer this over end-session when the user wants a short daily record rather than a full end-of-session report.
 disable-model-invocation: true
+metadata:
+  version: "1.1.0"
 ---
 
 # Logbook
@@ -28,7 +30,7 @@ Two sources:
 2. **Today's git activity**, which catches work from other sessions of this project:
 
    ```bash
-   git log --all --since="$(date +%F) 00:00" --author="$(git config user.email)" --format='%h %ad %s (%D)' --date=format:%H:%M
+   git log --all --since="$(date +%F) 00:00" --author="$(git config user.email)" --format='%ad %s (%D)' --date=format:%H:%M
    git branch --show-current
    ```
 
@@ -91,10 +93,11 @@ Match the user's own logbook voice:
 - **PT-BR, first person, past tense**, with the user as the actor even if Claude did the typing: "Implementei", "Revisei", "Iniciei", "Continuei", "Finalizei", "Corrigi", "Investiguei", "Aprovei", "Decidimos".
 - **One bullet per task or outcome**, not per step. "Revisei o PR 1364" — not "abri o PR, li o diff, comentei".
 - **Sub-bullets only when they carry something worth remembering**: a decision and its reason, a root cause, a key number, the main files/ADRs produced. At most ~3 per item, one line each.
-- **Keep identifiers**: issue keys, PR numbers, commit hashes, branch or session names, and file paths, in backticks where they're code. They're what the user searches for later. Section or item numbers inside a document are not identifiers in this sense (see "Say what changed, not where").
+- **Keep identifiers**: issue keys, PR numbers, branch or session names, and file paths, in backticks where they're code. They're what the user searches for later. Section or item numbers inside a document are not identifiers in this sense (see "Say what changed, not where").
 - **Every issue key carries its title**: write `FRONTACAI-646 (Corrigir paginação do extrato)`, never the bare key — a week later the user won't remember what the number was about. Take the title from the conversation, the branch or commit messages, or the issue tracker (e.g. `planecli`, `gh issue view`) if one is available. If none of these gives it, use a short description of what the issue is about instead. Only the first mention in a day's block needs the title; later mentions in the same block can use the bare key.
 - **Issue keys are Markdown links** whenever you can find the tracker's URL: `[FRONTACAI-646](http://plane.tce.pa/setin/browse/FRONTACAI-646/) (Corrigir paginação do extrato)`. This applies to every mention, not just the first. See "Linking issue keys" below.
 - **Say what changed, not where.** Section numbers, clause letters, line numbers and function names are addresses, not content: "TR 7.1.1 'd', 11.8.1 'g', 15.1" tells the reader nothing without opening the file. Describe the change in plain words ("reservas de capacidade com pagamento antecipado", "nota fiscal única mensal") and add the number only as a complement, in parentheses, when it helps find the spot. A bullet that is mostly a list of numbers is wrong.
+- **No commit ids.** Never cite a commit hash, short or full, not even in parentheses: it says nothing in Notion a week later, and the issue key, PR number or branch already locate the work. Describe what the commit did instead.
 - **Open items as checkboxes**: `- [ ] Aprovar o PR 1350`. Only real pending actions, not vague "next steps".
 - **Leave out** tool mechanics (read files, ran grep), routine test runs unless they revealed something, and assistant-speak ("com sucesso", "de forma robusta").
 
@@ -120,10 +123,10 @@ When steps 2–5 give you the base, write it to the `Issue Tracker:` line (Step 
 Before saving, reread each bullet and ask: would the user understand it a week from now without opening the file it mentions? If not, rewrite it.
 
 Bad:
-- Alinhei o TR ao novo ETP (`223b9a3`): 5.6.6 novo, 7.1.1 "d" e 11.8.1 "g", 15.1 com NF única, 16.6.2, 16.7.1 "b" e 16.8.1
+- Alinhei o TR ao novo ETP: 5.6.6 novo, 7.1.1 "d" e 11.8.1 "g", 15.1 com NF única, 16.6.2, 16.7.1 "b" e 16.8.1
 
 Good:
-- Levei ao TR as regras que saíram do ETP (`223b9a3`)
+- Levei ao TR as regras que saíram do ETP
   - Novos: controles de segurança da SETIN nos acessos delegados; reservas pagas antecipadamente, com devolução se não houver execução
   - Pagamento numa só nota fiscal mensal; parceria Microsoft com o nome novo (*Cloud & AI Platforms*)
 

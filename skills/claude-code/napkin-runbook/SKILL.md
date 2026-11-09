@@ -3,8 +3,9 @@ name: napkin
 description: |
   Napkin — this repo's runbook of reusable rules, at `.claude/napkin.md`. Use at the start of every session to read and curate it, and again mid-session whenever work surfaces a gotcha, a user directive, or a tactic worth reusing next time.
 author: Codex
-version: 7.1.0
 date: 2026-08-03
+metadata:
+  version: "7.1.0"
 ---
 
 # Napkin

@@ -47,13 +47,11 @@ Legend: `/name` = invoked only as a slash command (`disable-model-invocation: tr
 | `/create-update-makefile` | Create or update a self-documenting Makefile |
 | `/setup-automated-checks` | Set up or audit deterministic checks (lint, types, tests, hooks, CI) and the review files (`CODING_STANDARDS.md`, `AGENTS.md` pointers) for Python and TypeScript projects |
 | `frontend-design` | Create distinctive, production-grade frontend interfaces |
-| `frontend-testing` | Generate Vitest + React Testing Library tests |
 | `playwright-expert` | Write and debug Playwright E2E tests |
 | `python-async-postgres` | Set up async PostgreSQL with SQLAlchemy and test fixtures |
 | `python-cashews-cache` | Add caching with cashews and a diskcache backend |
 | `python-fastapi-api-key-auth` | Add X-API-Key header authentication to FastAPI apps |
 | `python-fastapi-projects` | Create production-ready FastAPI projects with async SQLAlchemy |
-| `python-testing` | Generate pytest suites with fixtures, parametrization, and mocking |
 
 #### `engineering/code-review/` — reviewing code and PRs
 
@@ -66,11 +64,7 @@ Legend: `/name` = invoked only as a slash command (`disable-model-invocation: tr
 
 | Skill | Description |
 |-------|-------------|
-| `/blitzy-create-codebase-docs` | Generate a codebase-ingestion doc at `docs/02-codebase.md` |
-| `/blitzy-create-comprehensive-documentation` | Add module- and code-level documentation across the project |
-| `/blitzy-create-product-description` | Create a structured product description |
 | `/create-simple-feature-prd` | Create a single-feature PRD through clarifying questions |
-| `/create-simple-feature-tasks` | Generate a phased task list from requirements |
 | `/create-update-changelog` | Create or update CHANGELOG.md and tag the release |
 | `create-update-readme` | Create or update the project README.md (PT-BR) |
 | `create-update-user-manual` **global** | Create or update a product's user manual: chapters by user journey, regenerable screenshots, link and image checks |
@@ -179,6 +173,8 @@ Multi-agent workflow scripts in `workflows/`, installed globally into `~/.claude
 | `code-review-flow` | Review an existing PR with several reviewers in parallel (`REVIEWERS` in the script) and produce a verified final report; every reviewer reads the PR's issue and its comments (tracker detected per project), the related issues, the repository's coding standards, the CI result on the head and, when given, the feature plan, from one shared worktree at the head; works with GitHub, GitLab and Azure DevOps |
 | `tlc-dev-flow` | Implement an approved `tlc-plan` plan with `tlc-implement`, open a PR, review it with `code-review-flow` and the plan, apply the fixes with `tlc-implement`, and audit the docs |
 
+Each script carries `version: 'X.Y.Z'` in its `meta`, raised by every commit that changes it (`scripts/check.sh` enforces it).
+
 `dev-flow` and `tlc-dev-flow` run `code-review-flow` as a sub-workflow (`workflow()`), so the review logic lives in one script. Nesting goes one level deep, so `code-review-flow` cannot call another workflow.
 
 All of them rely on the `thermos` and `mattpocock-skills` plugins and on the `the-judge` skill (`tlc-skills` in `external-skills.yaml`).
@@ -254,7 +250,9 @@ The skills cover the full stack I work with daily — from FastAPI backends and 
    the skins and settings versioned in [`configs/claude-skins`](configs/README.md).
 4. Once per machine, run `~/dev-os/scripts/setup-skill-hook.sh` to log skill usage
    and, inside `~/dev-os`, `git config core.hooksPath .githooks` so every commit
-   runs `scripts/check.sh` (catalogs, workflow syntax, `configs/`, `bash -n`, and the
+   runs `scripts/check.sh` (catalogs, workflow syntax, `configs/`, skill and workflow
+   versions and the version bump of each skill and workflow the commit touches,
+   `bash -n`, and the
    validate, tests and types of the mods the commit touches; see
    [`plugins/README.md`](plugins/README.md)). Requires `node` and `claude`.
 5. Open the project with Claude Code
@@ -265,4 +263,4 @@ The skills cover the full stack I work with daily — from FastAPI backends and 
    skill hook, the installed plugins and mods of the catalogs, the `npx skills`
    packages and the skins. It updates only what differs from the clone and installs
    nothing new. `--files-only` updates only the copied files and skins, skipping plugins, mods and packages.
-7. Use `/create-simple-feature-tasks` to break down a feature, `/pr-description` to write a PR description, or any other skill
+7. Use `/create-simple-feature-prd` to write a feature PRD, `/pr-description` to write a PR description, or any other skill

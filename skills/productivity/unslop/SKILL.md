@@ -2,6 +2,7 @@
 name: unslop
 description: Cut AI tells from writing and restore human voice. Use when drafting or editing prose people will read (READMEs, docs, blog posts, PR descriptions, release notes, changelogs, emails, marketing copy), or when the user says "unslop", "sounds like AI", "make this sound human", "less slop", or asks to review a text for AI writing patterns.
 metadata:
+  version: "1.0.0"
   last_synced: "2026-10-26"
   local_changes: "Description rewritten to follow the repo's trigger-phrase convention."
   source: "https://github.com/cursor/plugins/tree/main/pstack/skills/unslop"

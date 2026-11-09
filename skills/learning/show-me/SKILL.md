@@ -3,6 +3,7 @@ name: show-me
 description: Help the user understand the current topic visually with concise diagrams, code-shape sketches, and focused HTML artifacts.
 disable-model-invocation: true
 metadata:
+  version: "1.0.0"
   last_synced: "2026-10-26"
   local_changes: "None."
   source: "https://github.com/humanlayer/skills/tree/main/plugins/show-me/skills/show-me"

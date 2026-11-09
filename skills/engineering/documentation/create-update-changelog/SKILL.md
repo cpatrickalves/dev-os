@@ -3,6 +3,8 @@ name: create-update-changelog
 description: Create or update CHANGELOG.md (Keep a Changelog) and tag the release
 argument-hint: "[version]"
 disable-model-invocation: true
+metadata:
+  version: "1.0.0"
 ---
 
 # Create or Update Changelog

@@ -3,6 +3,7 @@ name: handover
 description: Use when the user asks to create a handover, session handover, or context dump to pass to a fresh Claude session. Triggers on "handover", "session handover", "context dump for another session", or when the current context is getting too long and the user wants to continue elsewhere. Generates a structured summary and saves it to a timestamped file under `.claude/handovers/` so the user can paste it into a fresh session.
 disable-model-invocation: true
 metadata:
+    version: "1.0.0"
     last_synced: "2026-05-01"
     local_changes: "Delivery changed from clipboard + macOS notification to a timestamped file in .claude/handovers/; added ready-to-paste next-session prompt; added disable-model-invocation."
     source: "https://gist.github.com/vedovelli/6200225227eb0f801517ebd52e825788#file-handover-skill-public-md"

@@ -1,6 +1,8 @@
 ---
 name: knowledge-distiller
 description: Distill a raw input — transcript, article, talk, notes, book excerpt — into a PT-BR knowledge document faithful to the author, with translated direct quotes and a practical application guide. Use when the user shares such material and asks to "destilar", "transformar em conhecimento", "sintetizar", "extrair insights", "organizar essas notas", or "resumir essa transcrição/aula/palestra".
+metadata:
+  version: "1.0.0"
 ---
 
 # Destilador de conhecimento

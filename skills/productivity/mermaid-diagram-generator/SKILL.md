@@ -3,6 +3,8 @@ name: mermaid-diagram-generator
 description: Generate interactive HTML diagrams with Mermaid.js for visualizing flows, sequences, architectures, and processes. Use when the user asks to "create a diagram", "visualize the flow", "draw a sequence diagram", "show me how X works", or needs visual documentation of system interactions, workflows, database schemas, or technical processes.
 allowed-tools: Write, Read, Bash, Grep, Glob
 disable-model-invocation: true
+metadata:
+  version: "1.0.0"
 ---
 
 # Mermaid Diagram Generator

@@ -2,6 +2,8 @@
 name: prompt-optimizer
 description: Rightsize prompts and context documents for Claude 5-generation models — system prompts, CLAUDE.md, SKILL.md files, tool and agent descriptions. Use when the user asks to optimize, simplify, or review a prompt or context file, says "rightsize", or mentions Claude 5 / Fable / Opus 5 prompting rules.
 disable-model-invocation: true
+metadata:
+  version: "1.0.0"
 ---
 
 # Prompt Optimizer

@@ -8,6 +8,8 @@ triggers:
   - create a graphic
 context: fork
 disable-model-invocation: true
+metadata:
+  version: "1.0.0"
 ---
 
 # Explainer Graphic

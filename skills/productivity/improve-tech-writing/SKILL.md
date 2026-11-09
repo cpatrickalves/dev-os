@@ -1,6 +1,8 @@
 ---
 name: improve-tech-writing
 description: Apply clear technical writing patterns in Brazilian Portuguese — cut anglicisms, forced metaphors, parenthesis-as-dumping-ground, performative bold, defensive justifications, and tables used as prose. Use when writing or reviewing technical documents (plans, ADRs, PRDs, READMEs, PR descriptions, commit messages, doc comments) especially in PT-BR, or when the user says "melhorar a escrita", "revisar o doc", "deixar mais claro", "ficou denso", "não entendi essa frase", "reescrever isso", or points out that a text is dense or hard to follow.
+metadata:
+  version: "1.0.0"
 ---
 
 # Escrita técnica clara (PT-BR)

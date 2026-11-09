@@ -2,12 +2,14 @@
 # =============================================================================
 # Dev-OS Check
 # Validates the repo itself: external catalogs, workflow scripts, tool configs,
-# shell scripts and the mods under plugins/ (validate, tests, types). Run before
-# committing; .githooks/pre-commit runs it too, with --staged.
+# skill and workflow versions, shell scripts and the mods under plugins/
+# (validate, tests, types). Run before committing; .githooks/pre-commit runs it
+# too, with --staged.
 # =============================================================================
 # Usage: ~/dev-os/scripts/check.sh [--staged]
 #   --staged  check only the mods with staged changes (the rest of the repo is
-#             always checked whole: it takes a second)
+#             always checked whole: it takes a second), and require a
+#             version bump in every skill and workflow the commit changes
 # Exit status: non-zero when any check fails.
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -18,6 +20,9 @@ source "$SCRIPT_DIR/common-functions.sh"
 failures=0
 STAGED_ONLY=false
 [ "${1:-}" = "--staged" ] && STAGED_ONLY=true
+
+# A skill's metadata.version and a workflow's meta.version: quoted semver.
+semver_re='^"[0-9]+\.[0-9]+\.[0-9]+"$'
 
 fail() {
     print_error "$1"
@@ -36,17 +41,37 @@ check_catalogs() {
 }
 
 # -----------------------------------------------------------------------------
-# Workflows: compiled, not run. A workflow script has a top-level `return` and
-# `export const meta`, so the body is wrapped in an async function first.
+# Workflows: each carries `meta.version: 'X.Y.Z'`, raised by every commit that
+# changes it (with --staged), and is compiled, not run. A workflow script has a
+# top-level `return` and `export const meta`, so the body is wrapped in an async
+# function first.
 # -----------------------------------------------------------------------------
+
+# `meta.version` of the workflow on stdin, JSON-encoded (so a string comes out
+# double-quoted, like a skill's metadata.version); nothing when it is missing.
+# `meta` is a pure literal, so it is evaluated on its own, without the body.
+workflow_version() {
+    node -e '
+const vm = require("vm")
+const m = require("fs").readFileSync(0, "utf8").match(/^export const meta = (\{[\s\S]*?\n\})/m)
+let meta
+try { meta = m && vm.runInNewContext(`(${m[1]})`) } catch {}
+if (meta && meta.version !== undefined) console.log(JSON.stringify(meta.version))
+'
+}
 
 check_workflows() {
     print_status "Workflows"
     if ! command -v node > /dev/null; then
-        fail "node not found: workflow syntax was not checked"
+        fail "node not found: workflow syntax and versions were not checked"
         return
     fi
-    local file
+    local file version
+    for file in "$BASE_DIR"/workflows/*.js; do
+        version=$(workflow_version < "$file")
+        [[ "$version" =~ $semver_re ]] || fail "workflows/$(basename "$file"): meta.version must be 'X.Y.Z' (got ${version:-nothing})"
+    done
+    [ "$STAGED_ONLY" = true ] && check_workflow_bumps
     for file in "$BASE_DIR"/workflows/*.js; do
         node -e '
 const fs = require("fs"), vm = require("vm")
@@ -59,6 +84,17 @@ try {
 }
 ' "$file" || fail "workflows/$(basename "$file") has a syntax error"
     done
+}
+
+# Each workflow with staged changes must raise its version over HEAD's.
+check_workflow_bumps() {
+    local path old new
+    while read -r path; do
+        [ -n "$path" ] || continue
+        old=$(git -C "$BASE_DIR" show "HEAD:$path" 2>/dev/null | workflow_version)
+        new=$(git -C "$BASE_DIR" show ":$path" | workflow_version)
+        require_bump "$path" meta.version "$old" "$new"
+    done < <(git -C "$BASE_DIR" diff --cached --name-only --diff-filter=M -- 'workflows/*.js')
 }
 
 # -----------------------------------------------------------------------------
@@ -85,6 +121,77 @@ check_shell() {
         [ -f "$file" ] || continue
         bash -n "$file" || fail "${file#"$BASE_DIR"/} has a syntax error"
     done
+}
+
+# -----------------------------------------------------------------------------
+# Skills: every SKILL.md under skills/ carries `metadata.version: "X.Y.Z"`, and
+# with --staged a skill whose folder the commit touches must raise it over HEAD.
+# -----------------------------------------------------------------------------
+
+# The raw value of `metadata.version` (quotes kept) in the SKILL.md on stdin,
+# then `top-level` on a second line when the frontmatter has a bare `version:`.
+skill_version() {
+    awk '
+        NR == 1 && /^---[[:space:]]*$/ { fm = 1; next }
+        !fm || /^---[[:space:]]*$/ { exit }
+        /^version:/ { top = 1 }
+        /^metadata:[[:space:]]*$/ { inmeta = 1; next }
+        inmeta && /^[^[:space:]]/ { inmeta = 0 }
+        inmeta && !found && /^[[:space:]]+version:/ {
+            sub(/^[[:space:]]+version:[[:space:]]*/, ""); sub(/[[:space:]]+$/, "")
+            print; found = 1
+        }
+        END { if (top) print "top-level" }
+    '
+}
+
+check_skill_versions() {
+    print_status "Skills"
+    local file name out version
+    while IFS= read -r file; do
+        name=${file#"$BASE_DIR"/}
+        name=${name%/SKILL.md}
+        out=$(skill_version < "$file")
+        version=$(head -1 <<< "$out")
+        grep -qx top-level <<< "$out" && fail "$name: move \`version\` under \`metadata:\`"
+        [[ "$version" =~ $semver_re ]] || fail "$name: metadata.version must be \"X.Y.Z\" (got ${version:-nothing})"
+    done < <(find "$BASE_DIR/skills" -name SKILL.md | sort)
+
+    [ "$STAGED_ONLY" = true ] && check_skill_bumps
+}
+
+# Each skill with staged changes must raise metadata.version over HEAD's. A
+# skill new to the commit (or moved), deleted, or without a valid version in
+# HEAD has nothing to raise.
+check_skill_bumps() {
+    local skill_dirs changed dir old new
+    skill_dirs=$(git -C "$BASE_DIR" ls-files -- 'skills/*SKILL.md' | sed 's|/SKILL.md$||')
+    changed=$(git -C "$BASE_DIR" diff --cached --name-only -- skills/ |
+        while read -r path; do
+            # The skill a path belongs to is the longest skill folder that prefixes it.
+            while read -r dir; do
+                [[ "$path" == "$dir"/* ]] && echo "$dir"
+            done <<< "$skill_dirs" | awk '{ print length, $0 }' | sort -rn | head -1 | cut -d' ' -f2-
+        done | sort -u)
+    while read -r dir; do
+        [ -n "$dir" ] || continue
+        old=$(git -C "$BASE_DIR" show "HEAD:$dir/SKILL.md" 2>/dev/null | skill_version | head -1)
+        new=$(git -C "$BASE_DIR" show ":$dir/SKILL.md" | skill_version | head -1)
+        require_bump "$dir" metadata.version "$old" "$new"
+    done <<< "$changed"
+}
+
+# Fails unless the staged version ($4) is above HEAD's ($3); both are quoted
+# semver. Nothing to raise when either is not valid semver (new, moved, or
+# invalid in HEAD; an invalid staged one is reported by the format check).
+require_bump() {
+    local name=$1 field=$2 old=$3 new=$4
+    [[ "$old" =~ $semver_re && "$new" =~ $semver_re ]] || return 0
+    old=${old//\"/}
+    new=${new//\"/}
+    if [ "$old" = "$new" ] || [ "$(printf '%s\n%s\n' "$old" "$new" | sort -V | tail -1)" != "$new" ]; then
+        fail "$name: changed without a version bump: raise $field above $old"
+    fi
 }
 
 # -----------------------------------------------------------------------------
@@ -190,6 +297,7 @@ check_mods() {
 check_catalogs
 check_workflows
 check_configs
+check_skill_versions
 check_shell
 check_mods
 

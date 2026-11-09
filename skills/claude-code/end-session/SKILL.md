@@ -3,6 +3,8 @@ name: end-session
 description: End session
 model: sonnet
 disable-model-invocation: true
+metadata:
+  version: "1.0.0"
 ---
 
 Create the folder '/logbook' if it doesn't exist.

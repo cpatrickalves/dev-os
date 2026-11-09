@@ -1,5 +1,6 @@
 export const meta = {
   name: 'tlc-dev-flow',
+  version: '1.0.0',
   description: 'Fluxo de desenvolvimento a partir de um plano aprovado da tlc-plan: tlc-implement → PR → code review com o plano → correções pela tlc-implement → auditoria de docs → gate final',
   whenToUse:
     'Quando existir um .specs/features/<feature>/plan.md aprovado pela tlc-plan (linha **Approved**) para executar de ponta a ponta. Sem plano tlc, use dev-flow. Uso: Workflow({name: "tlc-dev-flow", args: "/path/.specs/features/<feature>/plan.md"}) ou args: {plan, issue?, base?}',

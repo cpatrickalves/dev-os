@@ -5,6 +5,8 @@ context: fork
 agent: general-purpose
 allowed-tools: Read, Grep, Glob, Bash(git *), Bash(mkdir *), Bash(ls *), Bash(wc *)
 argument-hint: [product-name] [competitor-url]
+metadata:
+  version: "1.0.0"
 ---
 
 # Competitors Analysis

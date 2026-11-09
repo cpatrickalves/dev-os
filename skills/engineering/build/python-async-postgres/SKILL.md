@@ -1,6 +1,8 @@
 ---
 name: python-async-postgres
 description: Sets up asynchronous PostgreSQL with SQLAlchemy for FastAPI applications. Use when creating new projects that need async database access, adding PostgreSQL to existing applications, setting up database test fixtures, configuring database migrations, or when the user asks about async database patterns, asyncpg, SQLAlchemy async sessions, Alembic, or database testing with aiosqlite.
+metadata:
+  version: "1.0.0"
 ---
 
 # Async PostgreSQL with SQLAlchemy

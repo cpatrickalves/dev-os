@@ -1,5 +1,6 @@
 export const meta = {
   name: 'dev-flow',
+  version: '1.0.0',
   description: 'Fluxo de desenvolvimento: implementação do plano → code review com os revisores do code-review-flow → correções no PR → auditoria de docs',
   whenToUse: 'Quando existir um plano de implementação em markdown pronto para executar de ponta a ponta. Uso: Workflow({name: "dev-flow", args: "/path/do/plano.md"})',
   phases: [
