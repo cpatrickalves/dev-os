@@ -10,6 +10,7 @@ export const meta = {
     { title: 'Review Eval', detail: 'cruza os vereditos com os achados de cada revisor e fecha o relatório de avaliação (eficácia das skills de review)', model: 'sonnet' },
   ],
 }
+// version: "1.0.0"
 
 // O input é o PR a ser revisado: string com a URL/número, ou {pr, issue?, plan?, called_by?}.
 // - issue: ID da issue do PR (ex.: "DEV-322", "#45"). Sem ele, o Setup procura no PR.

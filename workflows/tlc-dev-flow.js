@@ -12,6 +12,7 @@ export const meta = {
     { title: 'Gate', detail: 'check_proofs.py e validate_verification.py no HEAD final, resultado comentado no PR', model: 'sonnet' },
   ],
 }
+// version: "1.0.0"
 
 // O input é o path do plan.md aprovado (string) ou {plan, issue?, base?}.
 // - issue: ID da issue (ex.: "DEV-322"). Sem ele, a fase Implement procura no plano.

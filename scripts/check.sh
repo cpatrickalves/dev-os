@@ -2,13 +2,14 @@
 # =============================================================================
 # Dev-OS Check
 # Validates the repo itself: external catalogs, workflow scripts, tool configs,
-# skill versions, shell scripts and the mods under plugins/ (validate, tests,
-# types). Run before committing; .githooks/pre-commit runs it too, with --staged.
+# skill and workflow versions, shell scripts and the mods under plugins/
+# (validate, tests, types). Run before committing; .githooks/pre-commit runs it
+# too, with --staged.
 # =============================================================================
 # Usage: ~/dev-os/scripts/check.sh [--staged]
 #   --staged  check only the mods with staged changes (the rest of the repo is
 #             always checked whole: it takes a second), and require a
-#             metadata.version bump in every skill the commit changes
+#             version bump in every skill and workflow the commit changes
 # Exit status: non-zero when any check fails.
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -19,6 +20,9 @@ source "$SCRIPT_DIR/common-functions.sh"
 failures=0
 STAGED_ONLY=false
 [ "${1:-}" = "--staged" ] && STAGED_ONLY=true
+
+# A skill's metadata.version and a workflow's version line: quoted semver.
+semver_re='^"[0-9]+\.[0-9]+\.[0-9]+"$'
 
 fail() {
     print_error "$1"
@@ -37,17 +41,31 @@ check_catalogs() {
 }
 
 # -----------------------------------------------------------------------------
-# Workflows: compiled, not run. A workflow script has a top-level `return` and
-# `export const meta`, so the body is wrapped in an async function first.
+# Workflows: each carries a `// version: "X.Y.Z"` line, raised by every commit
+# that changes it (with --staged), and is compiled, not run. A workflow script
+# has a top-level `return` and `export const meta`, so the body is wrapped in an
+# async function first.
 # -----------------------------------------------------------------------------
+
+# The raw value (quotes kept) of the `// version: "X.Y.Z"` line of the workflow
+# on stdin. It is a comment, not a `meta` key: `meta` is read by Claude Code,
+# which documents only name, description, whenToUse and phases.
+workflow_version() {
+    sed -n 's|^// version:[[:space:]]*||p' | sed 's/[[:space:]]*$//' | head -1
+}
 
 check_workflows() {
     print_status "Workflows"
+    local file version
+    for file in "$BASE_DIR"/workflows/*.js; do
+        version=$(workflow_version < "$file")
+        [[ "$version" =~ $semver_re ]] || fail "workflows/$(basename "$file"): needs a \`// version: \"X.Y.Z\"\` line after meta (got ${version:-nothing})"
+    done
+    [ "$STAGED_ONLY" = true ] && check_workflow_bumps
     if ! command -v node > /dev/null; then
         fail "node not found: workflow syntax was not checked"
         return
     fi
-    local file
     for file in "$BASE_DIR"/workflows/*.js; do
         node -e '
 const fs = require("fs"), vm = require("vm")
@@ -60,6 +78,17 @@ try {
 }
 ' "$file" || fail "workflows/$(basename "$file") has a syntax error"
     done
+}
+
+# Each workflow with staged changes must raise its version over HEAD's.
+check_workflow_bumps() {
+    local path old new
+    while read -r path; do
+        [ -n "$path" ] || continue
+        old=$(git -C "$BASE_DIR" show "HEAD:$path" 2>/dev/null | workflow_version)
+        new=$(git -C "$BASE_DIR" show ":$path" | workflow_version)
+        require_bump "$path" version "$old" "$new"
+    done < <(git -C "$BASE_DIR" diff --cached --name-only --diff-filter=M -- 'workflows/*.js')
 }
 
 # -----------------------------------------------------------------------------
@@ -110,8 +139,6 @@ skill_version() {
     '
 }
 
-semver_re='^"[0-9]+\.[0-9]+\.[0-9]+"$'
-
 check_skill_versions() {
     print_status "Skills"
     local file name out version
@@ -144,13 +171,21 @@ check_skill_bumps() {
         [ -n "$dir" ] || continue
         old=$(git -C "$BASE_DIR" show "HEAD:$dir/SKILL.md" 2>/dev/null | skill_version | head -1)
         new=$(git -C "$BASE_DIR" show ":$dir/SKILL.md" | skill_version | head -1)
-        [[ "$old" =~ $semver_re && "$new" =~ $semver_re ]] || continue
-        old=${old//\"/}
-        new=${new//\"/}
-        if [ "$old" = "$new" ] || [ "$(printf '%s\n%s\n' "$old" "$new" | sort -V | tail -1)" != "$new" ]; then
-            fail "$dir: changed without a version bump: raise metadata.version above $old"
-        fi
+        require_bump "$dir" metadata.version "$old" "$new"
     done <<< "$changed"
+}
+
+# Fails unless the staged version ($4) is above HEAD's ($3); both are quoted
+# semver. Nothing to raise when either is not valid semver (new, moved, or
+# invalid in HEAD; an invalid staged one is reported by the format check).
+require_bump() {
+    local name=$1 field=$2 old=$3 new=$4
+    [[ "$old" =~ $semver_re && "$new" =~ $semver_re ]] || return 0
+    old=${old//\"/}
+    new=${new//\"/}
+    if [ "$old" = "$new" ] || [ "$(printf '%s\n%s\n' "$old" "$new" | sort -V | tail -1)" != "$new" ]; then
+        fail "$name: changed without a version bump: raise $field above $old"
+    fi
 }
 
 # -----------------------------------------------------------------------------

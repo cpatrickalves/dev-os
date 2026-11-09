@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Dev-OS is a personal development operating system: a curated, version-controlled repository of Claude Code skills, slash commands, sub-agents, hooks, workflows, output styles, and plugins. It is cloned into `~/dev-os` and acts as the single source of truth; its `scripts/` install assets into other projects' `.claude/` directories or globally into `~/.claude/`.
 
-Run `scripts/check.sh` after changing a catalog, a workflow, a file in `configs/`, a skill, a script or a mod: it validates the YAML catalogs, compiles `workflows/*.js`, validates `configs/claude-skins`, checks every skill's `metadata.version`, runs `bash -n`, and validates, tests and type-checks the mods in `plugins/`. `.githooks/pre-commit` runs it with `--staged` (only the mods the commit touches, plus a required version bump in every skill the commit changes) once `git config core.hooksPath .githooks` is set in the clone.
+Run `scripts/check.sh` after changing a catalog, a workflow, a file in `configs/`, a skill, a script or a mod: it validates the YAML catalogs, compiles `workflows/*.js`, validates `configs/claude-skins`, checks every skill's `metadata.version` and every workflow's `// version:` line, runs `bash -n`, and validates, tests and type-checks the mods in `plugins/`. `.githooks/pre-commit` runs it with `--staged` (only the mods the commit touches, plus a required version bump in every skill and workflow the commit changes) once `git config core.hooksPath .githooks` is set in the clone.
 
 See `CONTEXT.md` for the domain glossary (curated asset, per-project import, global import).
 
@@ -67,6 +67,7 @@ The skill-usage hook has a single source of truth in `hooks/log-skill.sh`; `setu
 
 - Kebab-case for all file and directory names.
 - Every skill carries `metadata.version: "X.Y.Z"` (semver, quoted, under `metadata:`, never a top-level `version`). Bump it in the same commit as any change to the skill's folder: patch for wording or a fix that keeps the behavior, minor for a new rule or behavior, major when how it is invoked or what it produces changes. A new skill starts at `1.0.0`. `check.sh` enforces the format, and the pre-commit hook rejects a changed skill whose version did not go up.
+- Every workflow in `workflows/` carries a `// version: "X.Y.Z"` line right after its `meta` block (a comment, not a `meta` key: Claude Code reads `meta` and documents only `name`, `description`, `whenToUse` and `phases`). Same bump rule as skills, in the same commit as any change to the script; a new workflow starts at `1.0.0`. `check.sh` enforces the line, and the pre-commit hook rejects a changed workflow whose version did not go up.
 - Interactive *slash commands* ask one question at a time via the `AskUserQuestion` tool; interactive *scripts* use the shared `select_items` picker instead.
 - Skill-usage logging: `setup-skill-hook.sh` registers a `PreToolUse` hook (`~/.claude/hooks/log-skill.sh`) that appends every Skill invocation to the target project's `.claude/skill-usage.log`.
 - `.claude/settings.json` (local, not versioned) holds enabled plugins and permissions; `plansDirectory` is `./.plans`.

@@ -179,6 +179,8 @@ Multi-agent workflow scripts in `workflows/`, installed globally into `~/.claude
 | `code-review-flow` | Review an existing PR with several reviewers in parallel (`REVIEWERS` in the script) and produce a verified final report; every reviewer reads the PR's issue and its comments (tracker detected per project), the related issues, the repository's coding standards, the CI result on the head and, when given, the feature plan, from one shared worktree at the head; works with GitHub, GitLab and Azure DevOps |
 | `tlc-dev-flow` | Implement an approved `tlc-plan` plan with `tlc-implement`, open a PR, review it with `code-review-flow` and the plan, apply the fixes with `tlc-implement`, and audit the docs |
 
+Each script carries a `// version: "X.Y.Z"` line right after its `meta` block, raised by every commit that changes it (`scripts/check.sh` enforces it).
+
 `dev-flow` and `tlc-dev-flow` run `code-review-flow` as a sub-workflow (`workflow()`), so the review logic lives in one script. Nesting goes one level deep, so `code-review-flow` cannot call another workflow.
 
 All of them rely on the `thermos` and `mattpocock-skills` plugins and on the `the-judge` skill (`tlc-skills` in `external-skills.yaml`).
@@ -254,8 +256,9 @@ The skills cover the full stack I work with daily — from FastAPI backends and 
    the skins and settings versioned in [`configs/claude-skins`](configs/README.md).
 4. Once per machine, run `~/dev-os/scripts/setup-skill-hook.sh` to log skill usage
    and, inside `~/dev-os`, `git config core.hooksPath .githooks` so every commit
-   runs `scripts/check.sh` (catalogs, workflow syntax, `configs/`, skill versions and
-   the version bump of each skill the commit touches, `bash -n`, and the
+   runs `scripts/check.sh` (catalogs, workflow syntax, `configs/`, skill and workflow
+   versions and the version bump of each skill and workflow the commit touches,
+   `bash -n`, and the
    validate, tests and types of the mods the commit touches; see
    [`plugins/README.md`](plugins/README.md)). Requires `node` and `claude`.
 5. Open the project with Claude Code
