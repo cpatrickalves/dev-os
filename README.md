@@ -47,13 +47,11 @@ Legend: `/name` = invoked only as a slash command (`disable-model-invocation: tr
 | `/create-update-makefile` | Create or update a self-documenting Makefile |
 | `/setup-automated-checks` | Set up or audit deterministic checks (lint, types, tests, hooks, CI) and the review files (`CODING_STANDARDS.md`, `AGENTS.md` pointers) for Python and TypeScript projects |
 | `frontend-design` | Create distinctive, production-grade frontend interfaces |
-| `frontend-testing` | Generate Vitest + React Testing Library tests |
 | `playwright-expert` | Write and debug Playwright E2E tests |
 | `python-async-postgres` | Set up async PostgreSQL with SQLAlchemy and test fixtures |
 | `python-cashews-cache` | Add caching with cashews and a diskcache backend |
 | `python-fastapi-api-key-auth` | Add X-API-Key header authentication to FastAPI apps |
 | `python-fastapi-projects` | Create production-ready FastAPI projects with async SQLAlchemy |
-| `python-testing` | Generate pytest suites with fixtures, parametrization, and mocking |
 
 #### `engineering/code-review/` — reviewing code and PRs
 
@@ -66,11 +64,7 @@ Legend: `/name` = invoked only as a slash command (`disable-model-invocation: tr
 
 | Skill | Description |
 |-------|-------------|
-| `/blitzy-create-codebase-docs` | Generate a codebase-ingestion doc at `docs/02-codebase.md` |
-| `/blitzy-create-comprehensive-documentation` | Add module- and code-level documentation across the project |
-| `/blitzy-create-product-description` | Create a structured product description |
 | `/create-simple-feature-prd` | Create a single-feature PRD through clarifying questions |
-| `/create-simple-feature-tasks` | Generate a phased task list from requirements |
 | `/create-update-changelog` | Create or update CHANGELOG.md and tag the release |
 | `create-update-readme` | Create or update the project README.md (PT-BR) |
 | `create-update-user-manual` **global** | Create or update a product's user manual: chapters by user journey, regenerable screenshots, link and image checks |
@@ -269,4 +263,4 @@ The skills cover the full stack I work with daily — from FastAPI backends and 
    skill hook, the installed plugins and mods of the catalogs, the `npx skills`
    packages and the skins. It updates only what differs from the clone and installs
    nothing new. `--files-only` updates only the copied files and skins, skipping plugins, mods and packages.
-7. Use `/create-simple-feature-tasks` to break down a feature, `/pr-description` to write a PR description, or any other skill
+7. Use `/create-simple-feature-prd` to write a feature PRD, `/pr-description` to write a PR description, or any other skill

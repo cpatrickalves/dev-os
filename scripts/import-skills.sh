@@ -32,7 +32,7 @@ GLOBAL_SKILLS_DEST="$HOME/.claude/skills"
 declare -a GLOBAL_SKILLS=("docs-generator" "planecli" "azure-devops-cli" "napkin-runbook" "unslop" "logbook" "end-session" "pr-description" "pr-review-to-subtasks" "post-merge-cleanup" "create-update-changelog" "create-update-readme" "create-update-user-manual" "show-me" "grill-with-ui")
 
 # Arrays for skill handling. SKILL_PATHS holds each skill's path relative to
-# $SKILLS_SOURCE (e.g. engineering/build/python-testing); SKILL_DIRS its basename.
+# $SKILLS_SOURCE (e.g. engineering/build/python-fastapi-projects); SKILL_DIRS its basename.
 declare -a SKILL_PATHS
 declare -a SKILL_DIRS
 declare -a SKILL_NAMES
