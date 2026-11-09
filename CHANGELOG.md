@@ -99,6 +99,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `tlc-dev-flow` 1.1.0 runs the `tlc-implement` Verifier as stages of its own
+  (#15). Workflow agents have no `Agent` tool, even with `agentType`, so
+  `tlc-implement` used to fall back to `self-verified`. Now the Implement stage
+  stops once `check_proofs.py` is green; a fresh Verifier, plus the screens
+  sub-agent when a criterion cites a capture, judges the work in the new
+  Verify stage; and `tlc-implement` closes each finding with its commit in
+  `Closed` (Verify Fixes, then screens round 2 when the code changed). After
+  PR Fixes, a Re-verify stage sends a new Verifier over only the checks that
+  stage added, so the gate finds their rows in `## Checks`. A Verifier that
+  fails twice is reported in the PR and leaves the gate red; there is no
+  `self-verified` path left.
 - `tlc-skills` in `external-skills.yaml` installs `tlc-plan` and
   `tlc-implement` in place of `tlc-spec-lean`. `code-review-flow` now
   describes the plan as a `tlc-plan` plan, with its
