@@ -248,7 +248,9 @@ The skills cover the full stack I work with daily — from FastAPI backends and 
    `~/dev-os/scripts/manage-mods.sh install` (or `uninstall`). With the `skins` mod
    installed and Claude Code opened once, `~/dev-os/scripts/import-skins.sh` gives it
    the skins and settings versioned in [`configs/claude-skins`](configs/README.md).
-4. Once per machine, run `~/dev-os/scripts/setup-skill-hook.sh` to log skill usage
+4. Once per machine, run `~/dev-os/scripts/setup-skill-hook.sh` to log skill usage,
+   `~/dev-os/herdr/setup-hccr.sh` on machines with herdr-core to get
+   [`hccr`](herdr/README.md#hccr),
    and, inside `~/dev-os`, `git config core.hooksPath .githooks` so every commit
    runs `scripts/check.sh` (catalogs, workflow syntax, `configs/`, skill and workflow
    versions and the version bump of each skill and workflow the commit touches,
