@@ -99,6 +99,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `tlc-dev-flow` 1.2.0 targets the PR base branch named in the repository's
+  `CONTRIBUTING.md`, `AGENTS.md` or `CLAUDE.md` when `base` is not passed, and
+  falls back to `origin/HEAD` only when none of them names one: the remote's
+  default branch does not always receive PRs (default `prod`, PRs into `dev`).
+  Before writing the checks, the Implement stage also compares each plan
+  criterion with `CONTRIBUTING.md` and refuses the plan, returning it to
+  `tlc-plan`, when a criterion contradicts one of its rules.
 - `tlc-dev-flow` 1.1.0 runs the `tlc-implement` Verifier as stages of its own
   (#15). Workflow agents have no `Agent` tool, even with `agentType`, so
   `tlc-implement` used to fall back to `self-verified`. Now the Implement stage

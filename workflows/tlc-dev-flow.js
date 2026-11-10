@@ -1,6 +1,6 @@
 export const meta = {
   name: 'tlc-dev-flow',
-  version: '1.1.0',
+  version: '1.2.0',
   description: 'Fluxo de desenvolvimento a partir de um plano aprovado da tlc-plan: tlc-implement → Verifier independente → PR → code review com o plano → correções pela tlc-implement → Verifier dos checks novos → auditoria de docs → gate final',
   whenToUse:
     'Quando existir um .specs/features/<feature>/plan.md aprovado pela tlc-plan (linha **Approved**) para executar de ponta a ponta. Sem plano tlc, use dev-flow. Uso: Workflow({name: "tlc-dev-flow", args: "/path/.specs/features/<feature>/plan.md"}) ou args: {plan, issue?, base?}',
@@ -19,7 +19,8 @@ export const meta = {
 
 // O input é o path do plan.md aprovado (string) ou {plan, issue?, base?}.
 // - issue: ID da issue (ex.: "DEV-322"). Sem ele, a fase Implement procura no plano.
-// - base: branch alvo do PR. Padrão: a branch padrão do repositório (origin/HEAD).
+// - base: branch alvo do PR. Padrão: a branch que o CONTRIBUTING.md, o AGENTS.md ou o
+//   CLAUDE.md do repositório indicam para PRs; sem regra escrita, a branch padrão (origin/HEAD).
 const input = typeof args === 'string' ? { plan: args } : args ?? {}
 const planPath = String(input.plan ?? '').trim()
 if (!planPath) {
@@ -27,10 +28,12 @@ if (!planPath) {
 }
 const issueArg = String(input.issue ?? '').trim()
 const base = String(input.base ?? '').trim()
-// O script não roda git: sem base, o agente lê a branch padrão no repositório.
+// O script não roda git: sem base, o agente lê a branch alvo nas convenções do repositório.
+// A branch padrão do remoto nem sempre recebe os PRs (ex.: padrão prod, PRs para dev).
 const baseRef = base
   ? `"${base}"`
-  : 'a branch padrão do repositório (`git symbolic-ref --short refs/remotes/origin/HEAD`, sem o prefixo `origin/`)'
+  : 'a branch alvo de PRs que o CONTRIBUTING.md, o AGENTS.md ou o CLAUDE.md do repositório indicam; ' +
+    'sem regra escrita, a branch padrão do repositório (`git symbolic-ref --short refs/remotes/origin/HEAD`, sem o prefixo `origin/`)'
 
 // Os scripts da tlc-implement ficam no diretório da skill. O agente resolve o path,
 // porque a skill pode estar instalada no projeto ou no home.
@@ -77,9 +80,10 @@ const impl = await agent(
     'Quando um critério cita uma captura, salve os `<capture>.running.png` como a regra 9 manda antes de retornar. ' +
     'Na linha `**Dispatched:**` do `## Handoff` de checks.md, escreva que o Verifier' +
     ' (e o sub-agente de telas, round 1, quando devido) é despachado pela etapa Verify do workflow tlc-dev-flow no HEAD em que check_proofs.py rodou. ' +
-    (base
-      ? `Antes do primeiro commit, se a branch atual for "${base}" ou a branch padrão do repositório, crie uma branch de feature a partir de "${base}" `
-      : 'Antes do primeiro commit, se a branch atual for a branch padrão do repositório, crie uma branch de feature a partir dela ') +
+    'Antes de escrever os checks, confira cada critério do plano contra o CONTRIBUTING.md do repositório. ' +
+    'Um critério que contradiz uma regra dele (por exemplo, citar ID de issue onde o CONTRIBUTING.md não permite) é trabalho da tlc-plan: ' +
+    'pare e retorne status "refused", com o critério e a regra em summary. ' +
+    `Antes do primeiro commit, se a branch atual for ${baseRef} ou a branch padrão do repositório, crie uma branch de feature a partir de ${baseRef} ` +
     'seguindo a convenção de nomes do repositório. ' +
     'Faça só commits locais: não faça push nem crie PR, porque uma etapa seguinte do workflow faz isso depois de conferir o gate. ' +
     (issueArg ? `A issue é ${issueArg}. ` : 'Se o plano citar o ID de uma issue, retorne-o; senão retorne "". ') +
