@@ -1,6 +1,6 @@
 export const meta = {
   name: 'tlc-dev-flow',
-  version: '1.2.0',
+  version: '1.3.0',
   description: 'Fluxo de desenvolvimento a partir de um plano aprovado da tlc-plan: tlc-implement → Verifier independente → PR → code review com o plano → correções pela tlc-implement → Verifier dos checks novos → auditoria de docs → gate final',
   whenToUse:
     'Quando existir um .specs/features/<feature>/plan.md aprovado pela tlc-plan (linha **Approved**) para executar de ponta a ponta. Sem plano tlc, use dev-flow. Uso: Workflow({name: "tlc-dev-flow", args: "/path/.specs/features/<feature>/plan.md"}) ou args: {plan, issue?, base?}',
@@ -153,13 +153,19 @@ const FIX_SCHEMA = {
   type: 'object',
   properties: {
     closed: { type: 'array', items: { type: 'string' }, description: 'Cada achado fechado, com o commit e o check que agora o prova' },
+    checks_added: { type: 'array', items: { type: 'string' }, description: 'Só os IDs dos checks acrescentados em checks.md nesta passada (ex.: "C42"), ou vazio' },
     code_changed: { type: 'boolean', description: 'true quando algum commit desta etapa mudou código fora de .specs/' },
     proofs_green: { type: 'boolean', description: 'true quando check_proofs.py saiu com 0 no HEAD final' },
     head: { type: 'string', description: 'SHA curto do HEAD final' },
     summary: { type: 'string' },
   },
-  required: ['closed', 'code_changed', 'proofs_green', 'head', 'summary'],
+  required: ['closed', 'checks_added', 'code_changed', 'proofs_green', 'head', 'summary'],
 }
+
+// Um check que o autor acrescenta ao fechar um achado ainda não tem linha em `## Checks`,
+// e o gate a exige. Um Verifier novo julga esses checks, e o autor fecha o que ele achar.
+// O limite corta o ciclo em que cada correção cria um check que o Verifier seguinte recusa.
+const MAX_EXTRA_VERIFIER_ROUNDS = 2
 
 // O Verifier e as telas não corrigem nada; a árvore tem que voltar limpa fora de .specs/,
 // porque check_proofs.py e o gate leem o HEAD.
@@ -208,6 +214,7 @@ const fixFindings = (contexto, phaseTitle, label, verifier, screens) =>
       'Corrija tudo isso numa passada, como a skill manda, e commite cada correção. ' +
       'Um achado que mostra uma obrigação que nenhum check cobre ganha um check com teste (regra 4). ' +
       'Rode `check_proofs.py <feature>` até ficar verde e escreva em `Closed` de cada achado do verification.md o commit que o fecha e o check que agora o prova. ' +
+      'Devolva em checks_added os IDs dos checks que você acrescentou ao checks.md, sem julgá-los: um Verifier novo do workflow faz isso. ' +
       'Quando a correção mudou código e a feature tem telas, salve de novo cada `<capture>.running.png` no HEAD novo; ' +
       'não julgue as telas você mesmo: o workflow manda o round 2. ' +
       'Não rode validate_verification.py: o gate é de uma etapa seguinte. ' +
@@ -221,8 +228,10 @@ const unverified = []
 
 // Uma rodada de verificação: Verifier e/ou telas em paralelo no mesmo HEAD, depois o autor
 // fecha o que eles acharam, depois o round 2 das telas se o código mudou e ainda há round.
+// Quando o autor acrescenta checks, a função chama a si mesma para um Verifier novo julgá-los,
+// até MAX_EXTRA_VERIFIER_ROUNDS vezes.
 // Devolve o HEAD final; `fixContext` é o prefixo do prompt do autor (autorização de push ou não).
-const verifyRound = async ({ phaseTitle, fixPhase, labelPrefix, range, newChecks, withVerifier, withScreens, fixContext }) => {
+const verifyRound = async ({ phaseTitle, fixPhase, labelPrefix, range, newChecks, withVerifier, withScreens, fixContext, extraRound = 0 }) => {
   const wantScreens = withScreens && impl.screens_owed && screensRound < 2
   const [verifier, screens] = await parallel([
     () =>
@@ -260,6 +269,7 @@ const verifyRound = async ({ phaseTitle, fixPhase, labelPrefix, range, newChecks
   const open = (verifier?.findings?.length ?? 0) + (screens?.differs?.length ?? 0)
   if (!open) return verifier?.head ?? head
 
+  const headBeforeFix = verifier?.head ?? head
   if (fixPhase !== phaseTitle) phase(fixPhase)
   const fix = await fixFindings(fixContext, fixPhase, `${labelPrefix}fix`, verifier, screens)
   if (!fix) {
@@ -285,7 +295,26 @@ const verifyRound = async ({ phaseTitle, fixPhase, labelPrefix, range, newChecks
   } else if (fix.code_changed && screensRound === 2 && impl.screens_owed) {
     log('⚠️ O código mudou depois do round 2 das telas: não há round 3, a revisão das telas vai para o usuário.')
   }
-  return fix.head
+
+  const added = fix.checks_added ?? []
+  if (!added.length) return fix.head
+  if (extraRound >= MAX_EXTRA_VERIFIER_ROUNDS) {
+    unverified.push(`${added.join(', ')} (o limite de ${MAX_EXTRA_VERIFIER_ROUNDS} rounds extras do Verifier acabou)`)
+    log(`⚠️ O autor acrescentou ${added.join(', ')} depois do último round extra do Verifier; o gate vai acusar e a decisão fica com o usuário.`)
+    return fix.head
+  }
+  log(`O autor acrescentou ${added.join(', ')}: um Verifier novo julga esses checks (round extra ${extraRound + 1} de ${MAX_EXTRA_VERIFIER_ROUNDS}).`)
+  return verifyRound({
+    phaseTitle: fixPhase,
+    fixPhase,
+    labelPrefix: `${labelPrefix}x${extraRound + 1}-`,
+    range: `${headBeforeFix}..HEAD`,
+    newChecks: added,
+    withVerifier: true,
+    withScreens: false,
+    fixContext,
+    extraRound: extraRound + 1,
+  })
 }
 
 // ── Etapas 2 e 3: Verify e Verify Fixes ────────────────────────────────────────────────────
@@ -382,6 +411,8 @@ const fixes = await agent(
     fixesSource +
     'Para cada achado procedente: se ele aponta uma obrigação que nenhum check cobre, acrescente um check com teste (regra 4 da skill); ' +
     'se ele corrige código que um check existente já cobre, corrija sem mudar o teste. ' +
+    'Um achado que só pede mudança de documentação (CHANGELOG, docs/, README, docstring ou comentário) é corrigido sem ganhar check: ' +
+    'a etapa Docs Audit confere a documentação depois. ' +
     'Um achado que contradiz uma decisão do plano, ou que pede uma decisão de produto, não é aplicado: registre-o entre os rejeitados. ' +
     'Na dúvida entre correção e decisão de produto, não aplique. ' +
     `Commite cada correção, rode \`check_proofs.py ${feature}\` até ficar verde, faça push para a branch ${impl.branch} ` +

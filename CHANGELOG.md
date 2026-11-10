@@ -107,6 +107,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `tlc-dev-flow` 1.3.0 sends a fresh Verifier over the checks the author adds
+  while closing findings, in Verify Fixes and in Re-verify. Before, no Verifier
+  judged those checks and the final gate failed on their missing rows in
+  `## Checks`. The author returns them in `checks_added`, and up to 2 extra
+  rounds run; past that, the checks go to `unverified` and the gate comment
+  says why. PR Fixes now fixes a documentation-only finding (CHANGELOG,
+  `docs/`, README, docstring or comment) without adding a check, since the
+  Docs Audit stage reviews documentation afterwards.
 - `tlc-dev-flow` 1.2.0 targets the PR base branch named in the repository's
   `CONTRIBUTING.md`, `AGENTS.md` or `CLAUDE.md` when `base` is not passed, and
   falls back to `origin/HEAD` only when none of them names one: the remote's
