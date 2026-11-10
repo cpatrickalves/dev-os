@@ -1,8 +1,9 @@
 # herdr
 
 Layouts for the [Herdr app](https://herdr.dev), a desktop app for terminals and
-coding agents. This folder has nothing to do with Claude Code: `external-mods.yaml`
-and the rest of Dev-OS are about Claude Code, while everything here installs into
+coding agents, plus [`hccr`](#hccr), a zsh function for the herdr-core server.
+The layouts have nothing to do with Claude Code: `external-mods.yaml`
+and the rest of Dev-OS are about Claude Code, while the layouts install into
 the Herdr home (`~/.config/herdr-app`, or `%USERPROFILE%\.config\herdr-app` on
 Windows). The `HERDR_APP_HOME` env var overrides the default in the install
 scripts. From WSL, the Windows Herdr home is reachable at
@@ -82,3 +83,40 @@ it), with Dev-OS cloned at `~/dev-os`. They write to `~/.claude`:
 
 [`configs/README.md`](../configs/README.md) has the details of the import, and
 `~/dev-os/scripts/manage-mods.sh uninstall` removes the mods.
+
+## hccr
+
+`hccr.zsh` defines two zsh functions for machines that run herdr-core (`hc`),
+the server the Herdr app connects to:
+
+- `hccr <name> [claude args...]` opens Claude Code with
+  `--remote-control --name <name>` in a herdr-core terminal and names the
+  Herdr tab `<name>`. Inside a Herdr tab (`HC_TERMINAL_ID` set) it runs there;
+  over plain SSH it creates a terminal with the labels the app uses
+  (`herdr.space`, `herdr.tab`) and attaches to it.
+- `_hc_tab_name <terminal> <name> [wait]` is its helper. `hc` has no command
+  to rename a tab: the app keeps tab names in the core's `herdr-app` document
+  (`spaces[].tabs[].name`), so it reads and writes that document over
+  `hc connect` (`doc.get`, `doc.set`, retrying on a version conflict). A tab
+  the app has not registered yet is waited for up to `wait` seconds. An OSC
+  title escape does not rename the tab: the app ignores the terminal's title.
+
+`setup-hccr.sh` makes `~/.zshrc` source the file from `~/dev-os`, so a
+`git pull` updates the functions. Run it once per machine:
+
+```sh
+~/dev-os/herdr/setup-hccr.sh            # back up ~/.zshrc, then change it
+~/dev-os/herdr/setup-hccr.sh --dry-run  # show the change only
+```
+
+- It removes any `hccr` or `_hc_tab_name` defined in `~/.zshrc` itself (with
+  the comment lines right above it), so the versioned copy is the only one,
+  and writes a marked `source` block at the end, replacing an older one.
+  Running it again changes nothing.
+- Requires `zsh`, `python3` and `hc` on the PATH.
+- `_hc_tab_name` writes a document the app treats as its own. Written against
+  herdr-core 0.1.17; if a later version changes that document's shape, the
+  function needs to follow.
+
+`scripts/check.sh` parses `hccr.zsh` with `zsh -n` and `setup-hccr.sh` with
+`bash -n`.

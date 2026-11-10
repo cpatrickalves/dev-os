@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `herdr/hccr.zsh` and `herdr/setup-hccr.sh`: the `hccr <name>` zsh
+  function (Claude Code with `--remote-control --name <name>` in a herdr-core
+  terminal) now also names the Herdr tab `<name>`, through its helper
+  `_hc_tab_name`, which writes the tab's name into the core's `herdr-app`
+  document since `hc` has no rename command. `setup-hccr.sh` makes `~/.zshrc`
+  source the file, replacing a copy pasted there by hand. `check.sh` parses
+  `herdr/*.zsh` with `zsh -n` and `herdr/*.sh` with `bash -n`.
+
 - `usage-meter` and `next-steps` mods (`plugins/usage-meter`,
   `plugins/next-steps`, in `external-mods.yaml`), both from
   [hamzafer/claude-code-mods](https://github.com/hamzafer/claude-code-mods)

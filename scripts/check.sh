@@ -111,15 +111,23 @@ check_configs() {
 }
 
 # -----------------------------------------------------------------------------
-# Shell scripts: bash -n (parse only)
+# Shell scripts: bash -n, and zsh -n for the zsh files (parse only)
 # -----------------------------------------------------------------------------
 
 check_shell() {
     print_status "Shell scripts"
     local file
-    for file in "$BASE_DIR"/scripts/*.sh "$BASE_DIR"/hooks/*.sh "$BASE_DIR"/.githooks/*; do
+    for file in "$BASE_DIR"/scripts/*.sh "$BASE_DIR"/hooks/*.sh "$BASE_DIR"/herdr/*.sh "$BASE_DIR"/.githooks/*; do
         [ -f "$file" ] || continue
         bash -n "$file" || fail "${file#"$BASE_DIR"/} has a syntax error"
+    done
+    if ! command -v zsh > /dev/null; then
+        fail "zsh not found: herdr/*.zsh was not checked"
+        return
+    fi
+    for file in "$BASE_DIR"/herdr/*.zsh; do
+        [ -f "$file" ] || continue
+        zsh -n "$file" || fail "${file#"$BASE_DIR"/} has a syntax error"
     done
 }
 
