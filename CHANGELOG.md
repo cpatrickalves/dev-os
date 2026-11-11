@@ -107,6 +107,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `knowledge-distiller` 1.2.0 is a rewrite of the skill's text, about a third
+  shorter, meant to keep the document it produces. The "Checklist final" is
+  gone: its 16 questions repeated the rules, and step 7 of the process now
+  rereads the document against each rule section. Steps 4, 6 and 7 gain a
+  completion criterion, and step 1 separates the noise. The document template
+  keeps only the skeleton; counts and formats live in "Ganchos de encoding".
+  The reading order for the human reader and the four-layer list are cut from
+  "Papel do documento", which is now one paragraph. Prohibitions are reworded
+  as the target behavior, and rationale sentences that did not change the
+  output are dropped. The delivery rule moves to the top with the same meaning;
+  the `description` is unchanged.
+
 - `knowledge-distiller` 1.1.0 adds encoding hooks to the document: relations
   the author states ("Como os conceitos se ligam"), a "Antes de ler" block with
   priming questions, retrieval questions that point to a section without
