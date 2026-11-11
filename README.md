@@ -51,6 +51,7 @@ Legend: `/name` = invoked only as a slash command (`disable-model-invocation: tr
 | `python-cashews-cache` | Add caching with cashews and a diskcache backend |
 | `python-fastapi-api-key-auth` | Add X-API-Key header authentication to FastAPI apps |
 | `python-fastapi-projects` | Create production-ready FastAPI projects with async SQLAlchemy |
+| `tlc-plan-view` **global** | Turn a `tlc-plan` plan.md into one review page: literals untouched, plain-language explanations, diagrams and a copy-feedback button |
 
 #### `engineering/code-review/` — reviewing code and PRs
 
