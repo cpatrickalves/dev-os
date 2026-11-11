@@ -118,7 +118,6 @@ Third-party assets that are installed, not copied, are declared in two YAML cata
 |--------|-------------|-------|-------------|
 | `github` | official | user | GitHub plugin |
 | `claude-md-management` | official | user | CLAUDE.md management |
-| `skill-creator` | official | user | Skill scaffolding helper |
 | `claude-code-setup` | official | user | Claude Code setup helper |
 | `thermos` | dev-os (this repo, `plugins/`) | user | Thermo-nuclear branch review |
 | `andrej-karpathy-skills` | [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | user | Andrej Karpathy guideline skills |

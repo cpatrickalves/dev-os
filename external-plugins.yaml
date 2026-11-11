@@ -21,11 +21,6 @@ plugins:
     marketplace: claude-plugins-official
     scope: user
 
-  - name: skill-creator
-    description: Skill scaffolding helper (official)
-    marketplace: claude-plugins-official
-    scope: user
-
   - name: claude-code-setup
     description: Claude Code setup helper (official)
     marketplace: claude-plugins-official
