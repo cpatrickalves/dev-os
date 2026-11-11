@@ -24,7 +24,6 @@ Legend: `/name` = invoked only as a slash command (`disable-model-invocation: tr
 | `napkin-runbook` **global** | Read and curate the repo's runbook of reusable rules (`.claude/napkin.md`) |
 | `/skill-audit` | Audit a skill to test, benchmark, optimize, or remove it |
 | `/skill-optimize-description` | Optimize a skill's description to improve triggering accuracy |
-| `skill-reviewer` | Review and improve skills against official best practices |
 
 #### `engineering/agents/` — AI agents and prompts
 
