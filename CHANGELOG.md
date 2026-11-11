@@ -107,6 +107,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `knowledge-distiller` 1.1.0 adds encoding hooks to the document: relations
+  the author states ("Como os conceitos se ligam"), a "Antes de ler" block with
+  priming questions, retrieval questions that point to a section without
+  answering, and up to 20 unordered keywords. It also explains how the document
+  is meant to be read. A new "Ruído e qualidade da transcrição" section drops
+  sponsors, subscribe requests and the channel's own promotions, logging them
+  under "Omitido do input"; it keeps speech-recognition mistakes apart from the
+  author's own errors, fixing only what the input itself settles and listing
+  uncertain names and terms under "Grafia a conferir". It never saves to Notion
+  unless asked.
+
 - `tlc-dev-flow` 1.3.0 sends a fresh Verifier over the checks the author adds
   while closing findings, in Verify Fixes and in Re-verify. Before, no Verifier
   judged those checks and the final gate failed on their missing rows in
