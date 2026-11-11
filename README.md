@@ -90,6 +90,7 @@ Legend: `/name` = invoked only as a slash command (`disable-model-invocation: tr
 | Skill | Description |
 |-------|-------------|
 | `/explainer-graphic` | Create visual infographics using real-world analogies |
+| `add-to-wiki` | Turn a summary or distilled document into a Note in the Notion Wiki, with tags, relations and images |
 | `knowledge-distiller` | Distill transcripts, articles, or notes into a PT-BR knowledge document |
 | `/show-me` **global** | Explain the current topic visually with diagrams, code-shape sketches, and HTML |
 
