@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="__PV_LANG__">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>__PV_TITLE__</title>
+<style>
+  /* Visual identity copied from grill-with-ui ("A Bancada de Placas", Gelo palette, square plates,
+     Outfit plus Martian Mono). This is a copy on purpose: a change there must not break this page. */
+  __PV_FONTS__
+  :root {
+    color-scheme: light dark;
+    --background: light-dark(#e8edf1, #0e1822); --card: light-dark(#f7f9fb, #152230); --foreground: light-dark(#13212f, #f3f3ec);
+    --muted-foreground: light-dark(#4e596c, #9ca6b8); --muted: light-dark(#d9e1e8, #1d2d3f); --border: light-dark(#c5d0da, #26384b);
+    --accent: light-dark(#9edcf1, #a8e4f5); --accent-foreground: light-dark(#13212f, #0e1822); --accent-ink: light-dark(#0b6688, #a8e4f5);
+    --accent-soft: light-dark(color-mix(in oklab, #9edcf1 35%, #f7f9fb), color-mix(in oklab, #a8e4f5 14%, #152230));
+    --shadow: light-dark(rgb(19 33 47 / .85), rgb(243 243 236 / .28));
+    --box-line: light-dark(color-mix(in oklab, #4e596c 70%, #c5d0da), color-mix(in oklab, #9ca6b8 50%, #26384b));
+    --warning: light-dark(#8a4b00, #f2b45a); --danger: light-dark(#b42318, #ff8f85);
+    --sans: Outfit, ui-sans-serif, system-ui, sans-serif;
+    --mono: "Martian Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --ease-out-back: cubic-bezier(.2, .8, .2, 1);
+    accent-color: var(--accent-ink); scrollbar-color: var(--border) transparent; scrollbar-width: thin;
+  }
+  :root[data-theme="light"] { color-scheme: light; }
+  :root[data-theme="dark"] { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  ::selection { background: var(--accent); color: var(--accent-foreground); }
+  html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+  body { margin: 0; font-family: var(--sans); font-size: 16px; line-height: 1.55; font-variant-numeric: tabular-nums; color: var(--foreground); background: var(--background); }
+  a { color: var(--accent-ink); text-underline-offset: 3px; }
+  :focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 3px; }
+  code { font-family: var(--mono); font-size: .8em; background: var(--muted); padding: 1px 5px; overflow-wrap: anywhere; }
+  pre { font-family: var(--mono); font-size: 13px; background: var(--card); border: 1.5px solid var(--border); padding: 12px 14px; overflow-x: auto; margin: 10px 0; }
+  pre code { background: none; padding: 0; font-size: inherit; }
+
+  /* Frame: header, side navigation, reading column. */
+  #pv-header { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 16px; flex-wrap: nowrap; padding: 12px 28px; background: var(--card); border-bottom: 2px solid var(--border); }
+  #pv-header h1 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -.02em; line-height: 1.2;  flex: 0 1 auto; max-width: 62%; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #pv-header .meta { color: var(--muted-foreground); font-size: 13px; min-width: 0; flex: 1 1 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #pv-header .meta code { font-size: 12px; }
+  #pv-all { flex: none; margin-left: auto; } #pv-theme { flex: none; }
+  #pv-layout { display: grid; grid-template-columns: 232px minmax(0, 1fr); gap: 0; }
+  #pv-nav { position: sticky; top: 58px; align-self: start; max-height: calc(100vh - 58px); overflow-y: auto; padding: 24px 12px 24px 20px; font-size: 14px; }
+  #pv-nav a { display: block; padding: 5px 10px; color: var(--muted-foreground); text-decoration: none; border-left: 2px solid transparent; }
+  #pv-nav a:hover, #pv-nav a.on { color: var(--foreground); border-left-color: var(--accent-ink); }
+  main { padding: 28px 44px 80px; max-width: 920px; }
+  #pv-notice { display: none; margin: 0 0 20px; padding: 9px 14px; font-size: 14px; color: var(--warning); border: 1.5px dashed var(--warning); background: var(--card); }
+  @media (max-width: 860px) { #pv-layout { grid-template-columns: 1fr; } #pv-nav { display: none; } main { padding: 20px 18px 60px; } }
+
+  section { margin: 0 0 56px; }
+  h2 { font-size: 28px; font-weight: 600; letter-spacing: -.03em; line-height: 1.15; margin: 0 0 6px; text-wrap: balance; }
+  h3 { font-size: 19px; font-weight: 600; letter-spacing: -.01em; margin: 30px 0 8px; }
+  /* The plan's own heading: a small label on its own line above the title, wherever the agent put it. */
+  h2 .src, h3 .src { display: block; font-family: var(--mono); font-size: 11px; font-weight: 400; letter-spacing: .04em; color: var(--muted-foreground); margin: 0 0 4px; }
+  h2 .src::before, h3 .src::before { content: attr(data-label); }
+  .purpose { color: var(--muted-foreground); font-size: 15px; margin: 0 0 18px; max-width: 70ch; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 10px 0; background: var(--card); }
+  th, td { text-align: left; vertical-align: top; padding: 8px 10px; border: 1.5px solid var(--border); }
+  th { font-weight: 600; background: var(--muted); }
+
+  /* The unit of the page: a literal from the plan, then its explanation. */
+  .item { margin: 0 0 18px; scroll-margin-top: 76px; }
+  .literal { position: relative; background: var(--card); border: 1.5px solid var(--box-line); padding: 26px 16px 12px; }
+  .literal::before { content: attr(data-label); position: absolute; top: 6px; left: 16px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-foreground); }
+  .literal > :first-child { margin-top: 0; } .literal > :last-child { margin-bottom: 0; }
+  .literal ul { margin: 6px 0 0; padding-left: 20px; font-size: 14.5px; }
+  .literal .n { font-family: var(--mono); font-weight: 600; color: var(--accent-ink); margin-right: 6px; }
+  .explain { position: relative; background: var(--accent-soft); border: 1.5px dashed var(--accent-ink); border-top: 0; padding: 26px 16px 12px; font-size: 15px; }
+  .explain::before { content: attr(data-label); position: absolute; top: 6px; left: 16px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent-ink); }
+  .explain p:first-of-type { margin-top: 0; }
+  .explain p { margin: 0 0 8px; max-width: 72ch; }
+  .explain details { margin-top: 6px; }
+  .explain summary { cursor: pointer; color: var(--accent-ink); font-size: 14px; font-weight: 500; }
+  .explain.pv-collapsible { padding-top: 8px; }
+  .explain.pv-collapsible::before { content: none; }
+  .explain > details.pv-x > summary { cursor: pointer; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent-ink); }
+  .explain > details.pv-x[open] > summary { margin-bottom: 6px; }
+  .explain .pv-note-btn { position: absolute; top: 4px; right: 8px; min-height: 24px; padding: 0 8px; font-size: 12px; box-shadow: none; border-width: 1.5px; }
+  .explain textarea { margin-top: 8px; }
+  .explain.standalone { border-top: 1.5px dashed var(--accent-ink); margin: 10px 0 18px; }
+  .inferred { background: color-mix(in oklab, var(--warning) 14%, transparent); border-bottom: 1.5px dotted var(--warning); }
+  dl.terms .inferred { background: none; border-bottom: 0; }
+  .inferred::after { content: attr(data-label); font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--warning); margin-left: 4px; }
+  .xref { display: inline-block; font-family: var(--mono); font-size: 11.5px; line-height: 1.25; padding: 2px 6px; margin: 0 2px; border: 1.5px solid var(--accent-ink); color: var(--accent-ink); text-decoration: none; background: var(--card); }
+  .xref:hover { background: var(--accent); color: var(--accent-foreground); }
+  figure.explain-fig { margin: 14px 0 20px; padding: 26px 16px 12px; position: relative; background: var(--accent-soft); border: 1.5px dashed var(--accent-ink); }
+  figure.explain-fig::before { content: attr(data-label); position: absolute; top: 6px; left: 16px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent-ink); }
+  figure.explain-fig figcaption { font-size: 14px; color: var(--muted-foreground); margin-top: 8px; }
+  figure.explain-fig svg { max-width: 100%; height: auto; }
+  figure.explain-fig figcaption:first-child { margin: 0 0 10px; color: var(--foreground); font-weight: 500; }
+  pre.mermaid { background: var(--card); text-align: center; }
+  pre.mermaid.pv-failed { text-align: left; }
+  pre.mermaid.pv-failed::before { content: attr(data-label); display: block; font-family: var(--sans); font-size: 12px; color: var(--warning); margin-bottom: 6px; }
+
+  /* Summary, terms, attention points, decisions. */
+  .summary { background: var(--card); border: 2px solid var(--foreground); box-shadow: 4px 4px 0 0 var(--shadow); padding: 20px 24px; }
+  .summary h2 { font-size: 24px; }
+  .summary ul { margin: 6px 0; padding-left: 20px; }
+  dl.terms { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 10px 0; font-size: 15px; }
+  dl.terms dt { font-weight: 600; scroll-margin-top: 76px; } dl.terms dd { margin: 0; }
+  #pv-terms-filter { width: min(100%, 320px); font: inherit; font-size: 14.5px; padding: 6px 10px; border: 1.5px solid var(--box-line); background: var(--card); color: var(--foreground); border-radius: 0; }
+  .term { text-decoration: underline dotted var(--accent-ink) 1.5px; text-underline-offset: 3px; cursor: help; }
+  .term:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 1px; }
+  #pv-tip { position: fixed; z-index: 20; display: none; max-width: 340px; padding: 9px 12px; font-size: 13.5px; line-height: 1.45; background: var(--card); color: var(--foreground); border: 2px solid var(--foreground); box-shadow: 3px 3px 0 0 var(--shadow); pointer-events: none; }
+  #pv-tip strong { display: block; margin-bottom: 2px; }
+  .attention { border: 1.5px solid var(--warning); border-left-width: 5px; background: var(--card); padding: 12px 16px; margin: 0 0 14px; scroll-margin-top: 76px; }
+  .attention > strong:first-child { color: var(--warning); }
+  .decision { margin: 0 0 22px; scroll-margin-top: 76px; }
+  .decision > h3 { margin-top: 0; }
+  .pv-choice { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; margin-top: 10px; }
+  .pv-choice label { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1.5px solid var(--box-line); background: var(--card); cursor: pointer; font-size: 14px; font-weight: 500; }
+  .pv-choice label:has(input:checked) { background: var(--accent); border-color: var(--accent-ink); color: var(--accent-foreground); }
+  .pv-choice input { margin: 0; }
+  .pv-choice textarea { flex-basis: 100%; }
+  textarea { width: 100%; min-height: 56px; font: inherit; font-size: 14.5px; padding: 8px 10px; border: 1.5px solid var(--box-line); border-radius: 0; background: var(--card); color: var(--foreground); resize: vertical; }
+  button { display: inline-flex; align-items: center; justify-content: center; font-family: var(--sans); font-weight: 500; font-size: 14px; min-height: 38px; padding: 0 14px; border-radius: 0; border: 2px solid var(--foreground); background: var(--card); color: var(--foreground); box-shadow: 3px 3px 0 0 var(--shadow); cursor: pointer; transition: transform .18s var(--ease-out-back), box-shadow .18s var(--ease-out-back); }
+  button:hover { transform: translate(-1px, -2px); box-shadow: 5px 6px 0 0 var(--shadow); }
+  button:active { transform: translate(3px, 3px); box-shadow: none; transition-duration: .06s; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-foreground); }
+  #pv-feedback ol { padding-left: 20px; }
+  #pv-feedback li.done { color: var(--muted-foreground); }
+  #pv-feedback li .st { font-family: var(--mono); font-size: 12px; margin-left: 6px; }
+  #pv-feedback-out { display: none; margin-top: 12px; min-height: 220px; font-family: var(--mono); font-size: 12.5px; }
+  #pv-copied { margin-left: 10px; font-size: 14px; color: var(--accent-ink); }
+</style>
+</head>
+<body>
+<header id="pv-header">
+  <h1 title="__PV_TITLE__">__PV_TITLE__</h1>
+  <span class="meta" title="__PV_PLAN_PATH__"><span data-i18n="generated"></span> __PV_DATE__ · sha256 <code>__PV_HASH__</code> · <code>__PV_PLAN_PATH__</code></span>
+  <button id="pv-all" type="button"></button>
+  <button id="pv-theme" type="button" data-i18n="theme"></button>
+</header>
+<div id="pv-layout">
+<nav id="pv-nav" aria-label="Sections"></nav>
+<main>
+<p id="pv-notice"></p>
+<!-- PV:BODY:START -->
+__PV_BODY__
+<!-- PV:BODY:END -->
+<section id="pv-feedback" data-nav="feedback">
+  <h2 data-i18n="feedbackTitle"></h2>
+  <p class="purpose" data-i18n="feedbackPurpose"></p>
+  <ol id="pv-checklist"></ol>
+  <button id="pv-copy" class="primary" type="button" data-i18n="copy"></button><span id="pv-copied" role="status"></span>
+  <textarea id="pv-feedback-out" readonly></textarea>
+</section>
+</main>
+</div>
+<script>
+(() => {
+  const PLAN = { title: __PV_TITLE_JSON__, path: __PV_PLAN_PATH_JSON__, hash: "__PV_HASH__" };
+  const T = {
+    pt: { openAll: "Abrir explicações", closeAll: "Fechar explicações", srcHeading: "seção do plano:", filterTerms: "Filtrar termos", generated: "gerado em", theme: "Tema", literal: "do plano", explain: "explicação", inferred: "inferido", figure: "explicação · diagrama novo",
+      note: "nota", agree: "concordo", change: "mudar", changeHint: "O que mudar e por quê", noteHint: "Sua nota sobre este trecho",
+      feedbackTitle: "Checklist e feedback", feedbackPurpose: "Marque cada decisão pendente, deixe notas nos boxes e copie o feedback para colar no chat.",
+      copy: "Copiar feedback", copied: "Copiado. Cole no chat.", copyFail: "Não consegui copiar. Selecione o texto abaixo.",
+      pending: "pendente", decisions: "Decisões", notes: "Notas", none: "nenhuma", mermaidFail: "O diagrama não carregou. Este é o código-fonte.",
+      memory: "As marcações e notas ficam só nesta aba. Recarregar a página apaga tudo." },
+    en: { openAll: "Open explanations", closeAll: "Close explanations", srcHeading: "plan section:", filterTerms: "Filter terms", generated: "generated", theme: "Theme", literal: "from the plan", explain: "explanation", inferred: "inferred", figure: "explanation · new diagram",
+      note: "note", agree: "agree", change: "change", changeHint: "What to change and why", noteHint: "Your note on this passage",
+      feedbackTitle: "Checklist and feedback", feedbackPurpose: "Mark each pending decision, leave notes on the boxes, and copy the feedback to paste in the chat.",
+      copy: "Copy feedback", copied: "Copied. Paste it in the chat.", copyFail: "Could not copy. Select the text below.",
+      pending: "pending", decisions: "Decisions", notes: "Notes", none: "none", mermaidFail: "The diagram did not load. This is its source.",
+      memory: "Marks and notes live only in this tab. Reloading the page clears them." },
+  };
+  const L = T[(document.documentElement.lang || "en").slice(0, 2)] || T.en;
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const esc = (s) => s.replace(/\s+/g, " ").trim();
+
+  $$("[data-i18n]").forEach((el) => { el.textContent = L[el.dataset.i18n]; });
+  document.getElementById("pv-feedback").dataset.nav = L.feedbackTitle;
+  // The plan's heading always sits above the page's title, labelled as such.
+  $$("h2 .src, h3 .src").forEach((el) => { el.dataset.label = L.srcHeading + " "; el.parentElement.prepend(el); });
+  // A literal is labelled with what it is ("Critério 7", from its box's data-ref); the label replaces the plan's number.
+  $$(".literal").forEach((el) => {
+    const ref = el.closest(".item, .decision")?.querySelector(":scope > .explain[data-ref]")?.dataset.ref;
+    el.dataset.label ||= ref || L.literal;
+    const num = ref && el.querySelector(":scope > .n");
+    if (num) num.replaceWith();
+  });
+  $$(".explain").forEach((el) => { el.dataset.label ||= L.explain; });
+  $$(".inferred").forEach((el) => { el.dataset.label ||= L.inferred; });
+  $$("figure.explain-fig").forEach((el) => { el.dataset.label ||= L.figure; });
+  // Glossary: every use of a term in dl.terms gets its definition on hover or focus. A dt may list
+  // other spellings (plural, inflection) in data-alias, separated by "|".
+  const terms = $$("dl.terms dt").map((dt, i) => {
+    dt.id ||= "t-" + i;
+    const dd = dt.nextElementSibling;
+    const names = [dt.textContent, ...(dt.dataset.alias || "").split("|")].map((n) => n.trim()).filter(Boolean);
+    const ok = dd && dd.tagName === "DD";
+    return { id: dt.id, name: dt.textContent.trim(), def: ok ? esc(dd.textContent) : "", inferred: ok && !!dd.querySelector(".inferred"), names };
+  }).filter((t) => t.def);
+  if (terms.length) {
+    const byName = new Map();
+    terms.forEach((t) => t.names.forEach((n) => byName.set(n.toLowerCase(), t)));
+    const rx = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const all = [...byName.keys()].sort((a, b) => b.length - a.length).map(rx).join("|");
+    const re = new RegExp(`(?<![\\p{L}\\p{N}_])(${all})(?![\\p{L}\\p{N}_])`, "giu");
+    const skip = "dl.terms, pre, script, style, textarea, button, a, summary, .term, #pv-feedback, #pv-nav, h1, h2";
+    const walker = document.createTreeWalker(document.querySelector("main"), NodeFilter.SHOW_TEXT, {
+      acceptNode: (n) => (n.parentElement.closest(skip) || !n.nodeValue.trim() ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
+    });
+    const nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
+    // Only the first use of a term in each box is marked, so a long passage does not turn into links.
+    const seen = new WeakMap();
+    nodes.forEach((n) => {
+      const text = n.nodeValue; re.lastIndex = 0;
+      if (!re.test(text)) return;
+      const box = n.parentElement.closest(".literal, .explain, .attention, .summary, figure, table, section");
+      const used = seen.get(box) || new Set(); seen.set(box, used);
+      const frag = document.createDocumentFragment(); let last = 0; re.lastIndex = 0;
+      for (const m of text.matchAll(re)) {
+        const id = byName.get(m[0].toLowerCase()).id;
+        if (used.has(id)) continue;
+        used.add(id);
+        frag.append(text.slice(last, m.index));
+        const s = document.createElement("span"); s.className = "term"; s.tabIndex = 0; s.textContent = m[0];
+        s.dataset.term = id; frag.append(s); last = m.index + m[0].length;
+      }
+      if (!last) return;
+      frag.append(text.slice(last)); n.replaceWith(frag);
+    });
+    const tip = document.createElement("div"); tip.id = "pv-tip"; tip.setAttribute("role", "tooltip"); document.body.append(tip);
+    const byId = new Map(terms.map((t) => [t.id, t]));
+    const show = (el) => {
+      const t = byId.get(el.dataset.term); if (!t) return;
+      tip.innerHTML = "<strong></strong><span></span>"; tip.firstChild.textContent = t.name; tip.lastChild.textContent = t.def + (t.inferred ? ` (${L.inferred})` : "");
+      tip.style.display = "block";
+      const r = el.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
+      tip.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + "px";
+      tip.style.top = (r.bottom + h + 8 < innerHeight ? r.bottom + 6 : r.top - h - 6) + "px";
+    };
+    const hide = () => { tip.style.display = "none"; };
+    document.addEventListener("mouseover", (e) => { const el = e.target.closest?.(".term"); el ? show(el) : hide(); });
+    document.addEventListener("focusin", (e) => { if (e.target.classList?.contains("term")) show(e.target); });
+    document.addEventListener("focusout", hide);
+    addEventListener("scroll", hide, { passive: true });
+    document.addEventListener("click", (e) => { const el = e.target.closest?.(".term"); if (el) location.hash = el.dataset.term; });
+    // Filter for long glossaries.
+    $$("dl.terms").forEach((dl) => {
+      if (dl.querySelectorAll("dt").length < 8) return;
+      const f = document.createElement("input"); f.type = "search"; f.id = "pv-terms-filter"; f.placeholder = L.filterTerms;
+      f.addEventListener("input", () => {
+        const q = f.value.trim().toLowerCase();
+        $$("dt", dl).forEach((dt) => {
+          const dd = dt.nextElementSibling;
+          const hit = !q || (dt.textContent + " " + (dd?.textContent || "")).toLowerCase().includes(q);
+          dt.hidden = !hit; if (dd?.tagName === "DD") dd.hidden = !hit;
+        });
+      });
+      dl.before(f);
+    });
+  }
+
+  const notice = document.getElementById("pv-notice");
+  notice.textContent = L.memory; notice.style.display = "block";
+
+  // Theme: auto -> light -> dark.
+  const root = document.documentElement, order = ["", "light", "dark"];
+  document.getElementById("pv-theme").addEventListener("click", () => {
+    const next = order[(order.indexOf(root.dataset.theme || "") + 1) % order.length];
+    if (next) root.dataset.theme = next; else delete root.dataset.theme;
+  });
+
+  // Side navigation from every section[data-nav].
+  const nav = document.getElementById("pv-nav");
+  const sections = $$("main section[data-nav]");
+  sections.forEach((s, i) => {
+    if (!s.id) s.id = "s-" + i;
+    const a = document.createElement("a"); a.href = "#" + s.id; a.textContent = s.dataset.nav; nav.append(a);
+  });
+  const links = $$("a", nav);
+  const io = new IntersectionObserver((entries) => entries.forEach((e) => {
+    if (e.isIntersecting) links.forEach((a) => a.classList.toggle("on", a.hash === "#" + e.target.id));
+  }), { rootMargin: "-20% 0px -70% 0px" });
+  sections.forEach((s) => io.observe(s));
+
+  // Every explanation box starts closed, like its "mais" block; the header button opens or closes all.
+  const boxes = $$(".explain");
+  boxes.forEach((box) => {
+    const d = document.createElement("details"); d.className = "pv-x";
+    const sm = document.createElement("summary"); sm.textContent = box.dataset.label; d.append(sm, ...box.childNodes);
+    box.append(d); box.classList.add("pv-collapsible");
+  });
+  const allBtn = document.getElementById("pv-all");
+  const allOpen = () => boxes.every((b) => b.firstChild.open);
+  const syncAll = () => { allBtn.textContent = allOpen() ? L.closeAll : L.openAll; };
+  allBtn.addEventListener("click", () => { const open = !allOpen(); boxes.forEach((b) => { b.firstChild.open = open; }); syncAll(); });
+  document.addEventListener("toggle", (e) => { if (e.target.classList?.contains("pv-x")) syncAll(); }, true);
+  if (!boxes.length) allBtn.hidden = true; else syncAll();
+
+  // A note field on every explanation box that names what it explains.
+  $$(".explain[data-ref]").forEach((box) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "pv-note-btn"; b.textContent = "+ " + L.note;
+    const t = document.createElement("textarea"); t.placeholder = L.noteHint; t.hidden = true; t.className = "pv-note";
+    b.addEventListener("click", () => { t.hidden = !t.hidden; if (!t.hidden) t.focus(); });
+    box.append(b, t);
+  });
+
+  // Agree / change on every pending decision, mirrored in the checklist.
+  const list = document.getElementById("pv-checklist");
+  const decisions = $$(".decision[data-id]");
+  decisions.forEach((d) => {
+    const name = "pv-" + d.dataset.id;
+    const wrap = document.createElement("div"); wrap.className = "pv-choice";
+    wrap.innerHTML = `<label><input type="radio" name="${name}" value="agree"> ${L.agree}</label><label><input type="radio" name="${name}" value="change"> ${L.change}</label>`;
+    const t = document.createElement("textarea"); t.placeholder = L.changeHint; t.hidden = true; wrap.append(t);
+    d.append(wrap);
+    const li = document.createElement("li");
+    li.innerHTML = `<a href="#${d.id}"></a><span class="st"></span>`;
+    li.firstChild.textContent = d.dataset.id + " · " + (d.dataset.title || "");
+    list.append(li);
+    const sync = () => {
+      const v = wrap.querySelector("input:checked")?.value;
+      t.hidden = v !== "change";
+      li.classList.toggle("done", !!v);
+      li.lastChild.textContent = v ? L[v] : L.pending;
+    };
+    wrap.addEventListener("change", sync); sync();
+  });
+
+  const feedback = () => {
+    const out = [`# Feedback: ${PLAN.title}`, "", `Plan: \`${PLAN.path}\` (sha256 \`${PLAN.hash}\`)`, "", `## ${L.decisions}`, ""];
+    if (!decisions.length) out.push(`- ${L.none}`);
+    decisions.forEach((d) => {
+      const v = d.querySelector(".pv-choice input:checked")?.value;
+      const why = esc(d.querySelector(".pv-choice textarea").value);
+      out.push(`- **${d.dataset.id}** ${d.dataset.title || ""}: ${v ? L[v] : L.pending}${v === "change" && why ? " — " + why : ""}`);
+    });
+    const notes = $$(".explain[data-ref]").map((b) => [b.dataset.ref, esc(b.querySelector(".pv-note").value)]).filter(([, n]) => n);
+    out.push("", `## ${L.notes}`, "");
+    if (!notes.length) out.push(`- ${L.none}`);
+    notes.forEach(([ref, n]) => out.push(`- **${ref}**: ${n}`));
+    return out.join("\n") + "\n";
+  };
+  const status = document.getElementById("pv-copied"), area = document.getElementById("pv-feedback-out");
+  document.getElementById("pv-copy").addEventListener("click", async () => {
+    const text = feedback(); area.value = text;
+    try { await navigator.clipboard.writeText(text); status.textContent = L.copied; area.style.display = "none"; }
+    catch { status.textContent = L.copyFail; area.style.display = "block"; area.select(); }
+  });
+
+  window.__pvMermaidFail = L.mermaidFail;
+})();
+</script>
+<script type="module">
+  // The one network request this page may make. Without it, each diagram stays as its source.
+  const blocks = [...document.querySelectorAll("pre.mermaid")];
+  const mark = (list) => list.forEach((b) => { if (!b.querySelector("svg")) { b.classList.add("pv-failed"); b.dataset.label = window.__pvMermaidFail; } });
+  if (blocks.length) {
+    try {
+      const { default: mermaid } = await import("https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs");
+      const dark = document.documentElement.dataset.theme === "dark" || (!document.documentElement.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
+      const c = dark
+        ? { bg: "#152230", fg: "#f3f3ec", line: "#a8e4f5", box: "#5b6b80", soft: "#1d2d3f" }
+        : { bg: "#f7f9fb", fg: "#13212f", line: "#0b6688", box: "#7d8899", soft: "#d9e1e8" };
+      mermaid.initialize({ startOnLoad: false, theme: "base", fontFamily: "Outfit, ui-sans-serif, system-ui, sans-serif",
+        themeVariables: { darkMode: dark, background: c.bg, primaryColor: c.bg, primaryTextColor: c.fg, primaryBorderColor: c.box,
+          secondaryColor: c.soft, tertiaryColor: c.soft, lineColor: c.line, textColor: c.fg, edgeLabelBackground: c.bg,
+          actorBkg: c.bg, actorBorder: c.box, signalColor: c.line, signalTextColor: c.fg, noteBkgColor: c.soft, noteTextColor: c.fg,
+          fontSize: "14px" } });
+      // Mermaid cannot measure a hidden block: draw the visible ones now and the others when their box opens.
+      const pending = new Set(blocks);
+      const draw = async () => {
+        const ready = [...pending].filter((b) => b.offsetParent !== null);
+        ready.forEach((b) => pending.delete(b));
+        if (ready.length) { await mermaid.run({ nodes: ready, suppressErrors: true }); mark(ready); }
+      };
+      await draw();
+      document.addEventListener("toggle", () => { draw().catch(() => {}); }, true);
+    } catch { mark(blocks); /* offline or blocked */ }
+  }
+</script>
+</body>
+</html>
