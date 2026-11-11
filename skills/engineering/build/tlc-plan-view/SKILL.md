@@ -2,7 +2,7 @@
 name: tlc-plan-view
 description: 'Turns a plan.md written by tlc-plan into one review page (a Claude artifact, or a local HTML file when artifacts are unavailable) that keeps every criterion, door and assumption literal and puts a plain-language explanation box, cross-links, diagrams and the pending decisions around them, plus a "copy feedback" button. Use when the user says "tlc-plan-view", "show me the plan", "make the plan easier to read", "explain this plan.md", "I do not understand this plan", "página de revisão do plano", "mostre o plano", "me ajude a revisar o plano" or points at a .specs/features/<feature>/plan.md to review. Do NOT use to write or change a plan (that is tlc-plan), to implement one (tlc-implement), for plans in other formats (use html-plan), or for an interactive grilling session (grill-with-ui).'
 metadata:
-  version: "1.2.0"
+  version: "1.2.1"
 ---
 
 # TLC Plan View
