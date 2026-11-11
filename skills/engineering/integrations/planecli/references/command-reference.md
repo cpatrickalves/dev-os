@@ -192,7 +192,7 @@ planecli project create NAME [OPTIONS]
 | Parameter | Description |
 |---|---|
 | `NAME` | Project name (required) |
-| `--identifier` / `-i` | Short identifier (e.g. `API`) |
+| `--identifier` / `-i` | Short identifier (e.g. `API`). Optional. Defaults to the first 5 letters of the name, uppercased. Pass `-i` if that is taken or the name has no usable letters |
 | `--description` / `-d` | Description |
 | `--json` | JSON output |
 
@@ -277,6 +277,8 @@ planecli doc create --title TITLE --content CONTENT -p PROJECT
 planecli doc update TITLE --content CONTENT -p PROJECT
 planecli doc delete TITLE -p PROJECT
 ```
+
+`doc delete` is permanent. Some self-hosted servers answer 405 to `doc update` and `doc delete`. `--content` is plain text: blank lines split paragraphs, newlines become line breaks, URLs become links, and backticks and fences become code.
 
 ## Comments
 
