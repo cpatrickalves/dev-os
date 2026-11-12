@@ -1,19 +1,19 @@
 export const meta = {
   name: 'tlc-dev-flow',
-  version: '1.3.0',
+  version: '1.4.0',
   description: 'Fluxo de desenvolvimento a partir de um plano aprovado da tlc-plan: tlc-implement → Verifier independente → PR → code review com o plano → correções pela tlc-implement → Verifier dos checks novos → auditoria de docs → gate final',
   whenToUse:
     'Quando existir um .specs/features/<feature>/plan.md aprovado pela tlc-plan (linha **Approved**) para executar de ponta a ponta. Sem plano tlc, use dev-flow. Uso: Workflow({name: "tlc-dev-flow", args: "/path/.specs/features/<feature>/plan.md"}) ou args: {plan, issue?, base?}',
   phases: [
-    { title: 'Implement', detail: 'tlc-implement sobre o plano aprovado: checks, build e check_proofs.py verde; só commits locais', model: 'opus' },
+    { title: 'Implement', detail: 'para se a árvore tiver mudança fora de .specs/; tlc-implement sobre o plano aprovado: checks, build e check_proofs.py verde; só commits locais', model: 'opus' },
     { title: 'Verify', detail: 'Verifier (verify.md) e, quando um critério cita uma captura, o sub-agente de telas (verify-screens.md), como agentes novos do workflow', model: 'opus' },
     { title: 'Verify Fixes', detail: 'a tlc-implement fecha os achados com o commit em Closed; round 2 das telas quando o código mudou', model: 'opus' },
-    { title: 'PR', detail: 'confere o gate com validate_verification.py, faz push e abre o PR com as capturas que o repo pede (draft e para aqui se o gate estiver vermelho)', model: 'sonnet' },
+    { title: 'PR', detail: 'confere o gate com validate_verification.py, faz push e abre o PR com as capturas que o repo pede; com o gate vermelho, a tlc-implement repara uma vez e o fluxo só para se o gate continuar vermelho (PR em draft)', model: 'sonnet' },
     { title: 'Code Review', detail: 'roda o code-review-flow sobre o PR, com o plano e a issue' },
     { title: 'PR Fixes', detail: 'a tlc-implement retoma a feature e aplica os achados procedentes do relatório final', model: 'opus' },
     { title: 'Re-verify', detail: 'um Verifier novo julga só os checks que a PR Fixes acrescentou; a tlc-implement fecha o que ele achar', model: 'opus' },
     { title: 'Docs Audit', detail: 'auditoria de documentação da branch com a skill docs-generator', model: 'opus' },
-    { title: 'Gate', detail: 'check_proofs.py e validate_verification.py no HEAD final, resultado comentado no PR', model: 'sonnet' },
+    { title: 'Gate', detail: 'check_proofs.py e validate_verification.py no HEAD final, resultado comentado no PR; com o gate vermelho, a tlc-implement repara uma vez e o gate roda de novo', model: 'sonnet' },
   ],
 }
 
@@ -57,8 +57,8 @@ const IMPLEMENT_SCHEMA = {
   properties: {
     status: {
       type: 'string',
-      enum: ['built', 'proofs_red', 'refused'],
-      description: 'built: o build terminou e check_proofs.py saiu com 0; proofs_red: o build terminou e check_proofs.py não ficou verde; refused: a tlc-implement recusou o plano (sem **Approved**, pergunta blocks em aberto, ou trabalho que precisa voltar para a tlc-plan)',
+      enum: ['built', 'proofs_red', 'refused', 'dirty_tree'],
+      description: 'built: o build terminou e check_proofs.py saiu com 0; proofs_red: o build terminou e check_proofs.py não ficou verde; refused: a tlc-implement recusou o plano (sem **Approved**, pergunta blocks em aberto, ou trabalho que precisa voltar para a tlc-plan); dirty_tree: a árvore tinha mudança fora de .specs/ antes de começar, e nada foi feito',
     },
     feature: { type: 'string', description: 'Nome da pasta em .specs/features/' },
     branch: { type: 'string', description: 'Branch local com os commits da feature' },
@@ -71,8 +71,14 @@ const IMPLEMENT_SCHEMA = {
   required: ['status', 'feature', 'branch', 'base_sha', 'head', 'screens_owed', 'issue', 'summary'],
 }
 
+// Uma mudança do usuário já presente na árvore entra nos commits da feature e suja o
+// proofs.md (validate_verification.py recusa proofs.md gerado sobre mudança sem commit).
+// O fluxo para antes de qualquer commit, em vez de guardar a mudança com git stash: se o
+// run cair no meio, um stash automático esconderia o trabalho do usuário.
 const impl = await agent(
-  `Invoque a skill tlc-implement (via Skill tool) e implemente o plano aprovado em ${planPath}. ` +
+  'Antes de tudo, rode `git status --porcelain` na raiz do repositório. Se alguma linha apontar um arquivo fora de .specs/, ' +
+    'pare sem invocar skill, sem editar e sem commitar: retorne status "dirty_tree", com os arquivos em summary e os demais campos vazios. ' +
+    `Com a árvore limpa fora de .specs/, invoque a skill tlc-implement (via Skill tool) e implemente o plano aprovado em ${planPath}. ` +
     'Siga as fases Checks e Build da skill inteiras, até rodar `check_proofs.py <feature>` no HEAD final do build. ' +
     'A fase Verify não é sua: este workflow manda o Verifier e o sub-agente de telas como etapas próprias, logo depois desta, ' +
     'porque aqui você não tem como criar sub-agentes. Não rode verify.md nem verify-screens.md, não escreva verification.md nem screens.md, ' +
@@ -92,6 +98,9 @@ const impl = await agent(
   { label: 'implement', phase: 'Implement', model: 'opus', schema: IMPLEMENT_SCHEMA },
 )
 if (!impl) throw new Error('A etapa Implement não concluiu (bloqueio ou erro).')
+if (impl.status === 'dirty_tree') {
+  throw new Error(`A árvore de trabalho tem mudanças fora de .specs/: ${impl.summary}. Commite ou guarde com git stash e rode o workflow de novo.`)
+}
 if (impl.status === 'refused') {
   throw new Error(`A tlc-implement recusou o plano: ${impl.summary}. Volte para a tlc-plan.`)
 }
@@ -184,6 +193,8 @@ const verifierPrompt = (range, newChecks) =>
       'Julgue só esses checks: acrescente uma linha de cada um ao `## Checks` e os seus achados ao `## Findings`, ' +
       'sem mudar as linhas que já estão lá, e atualize **Verdict** e **Proofs**. Seus exemplos próprios vão nas regras que esse intervalo tocou. '
     : `Escreva ${featureDir}/verification.md. `) +
+  // validate_verification.py divide a linha da tabela em todo `|`, inclusive no `\|` escapado.
+  'Em célula de tabela do verification.md, escreva comandos sem o caractere `|`; um comando com pipe vai num bloco de código abaixo da tabela. ' +
   naoCorrige
 
 const screensPrompt = round =>
@@ -338,6 +349,43 @@ if (impl.status === 'built') {
   log(`⚠️ check_proofs.py vermelho em ${impl.head}: o Verifier não roda e o PR sai como draft.`)
 }
 
+// ── Reparo do gate ──────────────────────────────────────────────────────────
+// Um gate vermelho costuma vir de registro, não de código: tabela do verification.md que
+// o validador lê errado, proofs.md de outro HEAD ou gerado sobre mudança sem commit,
+// commit faltando em `Closed`. A tlc-implement, como autora, recebe a saída do validador
+// e tenta uma vez. Julgar um check é do Verifier: o reparo não escreve veredito em
+// `## Checks`, e um erro que pede julgamento novo continua vermelho e vai para o usuário.
+const GATE_REPAIR_SCHEMA = {
+  type: 'object',
+  properties: {
+    gate_ok: { type: 'boolean', description: 'true quando validate_verification.py saiu com 0 depois do reparo' },
+    gate_last_line: { type: 'string', description: 'Última linha de validate_verification.py depois do reparo' },
+    head: { type: 'string', description: 'SHA curto do HEAD final' },
+    summary: { type: 'string', description: 'O que causou cada erro e o que foi corrigido, ou por que não deu' },
+  },
+  required: ['gate_ok', 'gate_last_line', 'head', 'summary'],
+}
+
+const repairGate = (etapa, gateOutput, prUrl) =>
+  agent(
+    contextoAutorizado(`${etapa} (reparo do gate)`, prUrl) +
+      scripts +
+      `Invoque a skill tlc-implement (via Skill tool) e retome a feature "${feature}" a partir dos arquivos em ${featureDir}/. ` +
+      `O \`validate_verification.py ${feature}\` saiu vermelho com esta saída:\n\n${gateOutput}\n\n` +
+      'Ache a causa de cada erro antes de corrigir. Um erro de registro se corrige no arquivo que o validador lê: ' +
+      'tabela que o parser lê errado (um `|` dentro de célula parte a linha; reescreva a célula sem ele), ' +
+      'proofs.md de outro HEAD ou gerado sobre mudança sem commit (rode `check_proofs.py` de novo com a árvore limpa fora de .specs/), ' +
+      'commit faltando em `Closed`. Um erro de código se corrige com commit, como a skill manda. ' +
+      'Em `## Checks` do verification.md, mantenha os vereditos como o Verifier os escreveu: um erro que pede um julgamento novo ' +
+      'fica vermelho e vai em summary. ' +
+      `Depois rode \`check_proofs.py ${feature}\` se algum commit mudou o HEAD, e \`validate_verification.py ${feature}\`. ` +
+      `Faça push dos commits para ${impl.branch}. ` +
+      (etapa === 'PR'
+        ? `No corpo do PR ${prUrl}, troque a saída antiga do gate pela última linha nova do validador e, com o gate ainda vermelho, pela saída nova inteira. `
+        : ''),
+    { label: `gate-repair-${etapa.toLowerCase()}`, phase: etapa, model: 'opus', schema: GATE_REPAIR_SCHEMA },
+  )
+
 // ── Etapa 4: PR ─────────────────────────────────────────────────────────────
 // O gate decide o tipo do PR pelo exit code do script, não pelo relato da etapa Implement.
 // validate_verification.py só lê arquivos e já falha quando proofs.md não é do HEAD atual,
@@ -350,6 +398,7 @@ const PR_SCHEMA = {
     pr_url: { type: 'string', description: 'URL do PR criado' },
     gate_ok: { type: 'boolean', description: 'true quando validate_verification.py saiu com 0' },
     gate_last_line: { type: 'string', description: 'Última linha da saída de validate_verification.py' },
+    gate_output: { type: 'string', description: 'Saída inteira de validate_verification.py quando o exit code não foi 0, ou ""' },
     captures: { type: 'string', description: 'Capturas publicadas no corpo, ou por que o PR não leva capturas' },
   },
   required: ['pr_url', 'gate_ok', 'gate_last_line'],
@@ -360,7 +409,9 @@ const pr = await agent(
     scripts +
     `Na raiz do repositório, rode \`validate_verification.py ${feature}\` e guarde a saída e o exit code. ` +
     `Faça push da branch ${impl.branch} e crie um PR dela para ${baseRef}, seguindo as convenções de PR do repositório ` +
-    (issue ? `e referenciando a issue ${issue}. ` : 'sem referenciar issue. ') +
+    (issue
+      ? `e citando a issue ${issue} no título e no corpo, só neles; o PR fica sem vínculo com work items do servidor Git (ex.: sem \`--work-items\` no Azure DevOps). `
+      : 'sem referenciar issue. ') +
     `O corpo do PR é texto para quem revisa: resume a feature (resumo da implementação: ${impl.summary}) e cita o plano ${planPath}. ` +
     'Com o exit code 0, o resultado do gate volta só em gate_last_line; com outro exit code, crie o PR como draft e coloque a saída inteira do script no corpo. ' +
     'Se as convenções de PR do repositório pedem capturas de tela e o diff muda a interface, gere e publique as capturas como elas mandam e ponha-as no corpo. ' +
@@ -373,8 +424,17 @@ if (!pr?.pr_url) throw new Error('A etapa PR não retornou o link do PR.')
 log(`PR criado: ${pr.pr_url}`)
 if (pr.captures) log(`Capturas: ${pr.captures}`)
 if (!pr.gate_ok) {
-  log(`⚠️ Gate vermelho: ${pr.gate_last_line}. PR aberto como draft; o code review não roda sobre trabalho incompleto.`)
-  return { pr_url: pr.pr_url, implement: impl, verified_head: head, unverified, gate: pr }
+  log(`⚠️ Gate vermelho: ${pr.gate_last_line}. A tlc-implement tenta um reparo.`)
+  const repair = await repairGate('PR', pr.gate_output || pr.gate_last_line, pr.pr_url)
+  if (!repair?.gate_ok) {
+    log(
+      `⚠️ Gate ainda vermelho depois do reparo: ${repair?.gate_last_line ?? 'o reparo não concluiu'}. ` +
+        'PR aberto como draft; o code review não roda sobre trabalho incompleto.',
+    )
+    return { pr_url: pr.pr_url, implement: impl, verified_head: head, unverified, gate: pr, gate_repair: repair }
+  }
+  head = repair.head
+  log(`Gate verde depois do reparo em ${repair.head}: ${repair.summary}`)
 }
 
 // ── Etapa 5: Code Review ────────────────────────────────────────────────────
@@ -513,35 +573,48 @@ if (!docsAudit) log('⚠️ Etapa Docs Audit não concluiu (bloqueio ou erro) �
 // quando proofs.md não é do HEAD atual. Só o HEAD final interessa ao merge.
 phase('Gate')
 
-const gate = await agent(
-  contextoAutorizado('Gate', pr.pr_url) +
-    scripts +
-    `Na branch ${impl.branch}, com a árvore limpa fora de .specs/, rode \`check_proofs.py ${feature}\` e depois ` +
-    `\`validate_verification.py ${feature}\`, e guarde a saída e o exit code de cada um. Não altere código, testes nem checks. ` +
-    `Se houver commit local sem push, faça push para ${impl.branch}. ` +
-    'Comente no PR o resultado: o commit verificado, a última linha de cada script e, se algum falhou, a saída dele. ' +
-    'Se a falha vier do sub-agente de telas (código mudou depois do HEAD que ele julgou, e as 2 rodadas já foram usadas), ' +
-    'diga no comentário que a revisão das telas vai para o usuário. ' +
-    (unverified.length
-      ? `Diga também no comentário que o Verifier independente não concluiu para: ${unverified.join('; ')}. `
-      : '') +
-    'Com os dois scripts em 0, transforme cada achado do verification.md numa lição com `lessons.py`, como ' +
-    '<skill-dir>/references/memory.md manda; uma feature sem achado não registra nada.',
-  {
-    label: 'gate',
-    phase: 'Gate',
-    model: 'sonnet',
-    schema: {
-      type: 'object',
-      properties: {
-        head: { type: 'string', description: 'SHA curto do HEAD verificado' },
-        gate_ok: { type: 'boolean', description: 'true quando os dois scripts saíram com 0' },
-        gate_last_line: { type: 'string', description: 'Última linha da saída de validate_verification.py' },
+const runGate = label =>
+  agent(
+    contextoAutorizado('Gate', pr.pr_url) +
+      scripts +
+      `Na branch ${impl.branch}, com a árvore limpa fora de .specs/, rode \`check_proofs.py ${feature}\` e depois ` +
+      `\`validate_verification.py ${feature}\`, e guarde a saída e o exit code de cada um. Não altere código, testes nem checks. ` +
+      `Se houver commit local sem push, faça push para ${impl.branch}. ` +
+      'Comente no PR o resultado: o commit verificado, a última linha de cada script e, se algum falhou, a saída dele. ' +
+      'Se a falha vier do sub-agente de telas (código mudou depois do HEAD que ele julgou, e as 2 rodadas já foram usadas), ' +
+      'diga no comentário que a revisão das telas vai para o usuário. ' +
+      (unverified.length
+        ? `Diga também no comentário que o Verifier independente não concluiu para: ${unverified.join('; ')}. `
+        : '') +
+      'Com os dois scripts em 0, transforme cada achado do verification.md numa lição com `lessons.py`, como ' +
+      '<skill-dir>/references/memory.md manda; uma feature sem achado não registra nada.',
+    {
+      label,
+      phase: 'Gate',
+      model: 'sonnet',
+      schema: {
+        type: 'object',
+        properties: {
+          head: { type: 'string', description: 'SHA curto do HEAD verificado' },
+          gate_ok: { type: 'boolean', description: 'true quando os dois scripts saíram com 0' },
+          gate_last_line: { type: 'string', description: 'Última linha da saída de validate_verification.py' },
+          gate_output: { type: 'string', description: 'Saída inteira do script que falhou (check_proofs.py ou validate_verification.py), ou ""' },
+        },
+        required: ['gate_ok', 'gate_last_line'],
       },
-      required: ['gate_ok', 'gate_last_line'],
     },
-  },
-)
+  )
+
+let gate = await runGate('gate')
+let gateRepair = null
+if (gate && !gate.gate_ok) {
+  log(`⚠️ Gate final vermelho: ${gate.gate_last_line}. A tlc-implement tenta um reparo.`)
+  gateRepair = await repairGate('Gate', gate.gate_output || gate.gate_last_line, pr.pr_url)
+  if (gateRepair?.gate_ok) {
+    log(`Reparo do gate em ${gateRepair.head}: ${gateRepair.summary}. O gate roda de novo e comenta no PR.`)
+    gate = await runGate('gate (depois do reparo)')
+  }
+}
 if (!gate) log('⚠️ Etapa Gate não concluiu — rodar check_proofs.py e validate_verification.py manualmente.')
 else if (!gate.gate_ok) log(`⚠️ Gate final vermelho: ${gate.gate_last_line}`)
 
@@ -554,4 +627,5 @@ return {
   fixes,
   docs_audit: docsAudit,
   gate,
+  gate_repair: gateRepair,
 }
