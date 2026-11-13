@@ -107,6 +107,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `next-steps` and `usage-meter` tests follow Claude Code 2.1.323, where
+  `next(e)` in an `AbovePrompt` hook answers an opaque `{ type: 'engine', ref }`
+  and the engine stacks each mod's band itself. The band order file
+  (`claude-code-mods/bands.json`) no longer moves bands across mods; `bands.ts`
+  is left as upstream has it.
 - `knowledge-distiller` 1.2.0 is a rewrite of the skill's text, about a third
   shorter, meant to keep the document it produces. The "Checklist final" is
   gone: its 16 questions repeated the rules, and step 7 of the process now
@@ -243,6 +248,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `code-review-flow` (and so from `dev-flow`), which now run 3 reviewers.
 - `compound-engineering` plugin from `external-plugins.yaml`, and the
   `ce-code-simplicity-reviewer` agent copied from it.
+- `filetree` mod from `external-mods.yaml` (and its row in the README's mods
+  table): it is no longer installed by `manage-mods.sh`.
 
 ## [1.0.0] - 2026-10-06
 

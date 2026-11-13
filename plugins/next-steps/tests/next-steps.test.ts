@@ -69,14 +69,18 @@ describe('next-steps', () => {
     expect(await ui.find({ type: 'Text', text: /^Open a draft PR$/ })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /^dismiss$/ })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /band below/ })).toBeDefined()
-    // its band is keyed for the band order, above what other mods draw
+    // Claude Code stacks each mod's part itself: next-steps' column, its band keyed
+    // for the band order, then what the mods beneath drew
     const root: any = await ui.drawn()
-    expect(root.props.key).toBe('bands')
-    expect(root.children.map((c: any) => c.props?.key)).toEqual(['band:next-steps', undefined])
+    expect(root.children.map((c: any) => c.part?.plugin)).toEqual(['next-steps', 'test'])
+    expect(root.children[0].props.key).toBe('bands')
+    expect(root.children[0].children.map((c: any) => c.props?.key)).toContain('band:next-steps')
     await ui.unmount()
   })
 
-  test('follows the band order file', async ($, on) => {
+  // Since Claude Code 2.1.323 next(e) answers an opaque { type: 'engine', ref } and the
+  // engine stacks the bands of the mods beneath on its own: the order file moves nothing.
+  test('the band order file no longer moves bands across mods', async ($, on) => {
     // another band mod drew its column beneath
     const beneath = {
       type: 'Box',
@@ -87,7 +91,9 @@ describe('next-steps', () => {
     await finishTurn($)
     const ui = await band($)
     const root: any = await ui.drawn()
-    expect(root.children.map((c: any) => c.props.key)).toEqual(['band:where-am-i', 'band:next-steps'])
+    expect(root.children.map((c: any) => c.part?.plugin)).toEqual(['next-steps', 'test'])
+    expect(root.children[0].children.map((c: any) => c.props?.key)).toContain('band:next-steps')
+    expect(root.children[1].children.map((c: any) => c.props.key)).toEqual(['band:where-am-i'])
     await ui.unmount()
   })
 

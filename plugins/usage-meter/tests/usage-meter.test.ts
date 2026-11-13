@@ -159,8 +159,12 @@ describe('usage-meter in the band (position: above)', () => {
   test('two empty rows above the pills, fewer in a band short of rows', ABOVE, async ($, on) => {
     engine(on, { rateLimits: [{ kind: 'five_hour', percentUsed: 50, resetsAt: at(19 * MIN) }] })
     await start($)
-    // The band's column holds the mod's keyed Box, and that holds the row of pills.
-    const row = async (ui: any) => ((await ui.drawn()) as any).children.find((c: any) => c.props?.key === 'band:usage-meter').children[0]
+    // Claude Code stacks each mod's part: the mod's column holds its keyed Box, and that the row of pills.
+    const row = async (ui: any) => {
+      const root: any = await ui.drawn()
+      const part = root.part?.plugin === 'usage-meter' ? root : root.children.find((c: any) => c.part?.plugin === 'usage-meter')
+      return part.children.find((c: any) => c.props?.key === 'band:usage-meter').children[0]
+    }
 
     for (const [maxRows, gap] of [[10, 2], [3, 2], [2, 1], [1, 0]] as const) {
       const ui = await $.ui.mount({
@@ -395,7 +399,9 @@ describe('usage-meter in the band (position: above)', () => {
     await mid.unmount()
   })
 
-  test('keys its band and follows the band order file', ABOVE, async ($, on) => {
+  // Since Claude Code 2.1.323 next(e) answers an opaque { type: 'engine', ref } and the
+  // engine stacks the bands of the mods beneath on its own: the order file moves nothing.
+  test('keys its band; the band order file no longer moves bands across mods', ABOVE, async ($, on) => {
     // another band mod drew its column beneath
     const beneath = {
       type: 'Box',
@@ -411,9 +417,10 @@ describe('usage-meter in the band (position: above)', () => {
     await start($)
     const ui = await $.ui.mount({ plugin: 'usage-meter', surface: 'terminal', ...band() } as any)
     const root: any = await ui.drawn()
-    expect(root.props.key).toBe('bands')
-    // with no order it would sit above where-am-i; the order file puts it last
-    expect(root.children.map((c: any) => c.props.key)).toEqual(['band:where-am-i', 'band:usage-meter'])
+    expect(root.children.map((c: any) => c.part?.plugin)).toEqual(['usage-meter', 'test'])
+    expect(root.children[0].props.key).toBe('bands')
+    expect(root.children[0].children.map((c: any) => c.props?.key)).toContain('band:usage-meter')
+    expect(root.children[1].children.map((c: any) => c.props.key)).toEqual(['band:where-am-i'])
     expect(await line(ui)).toContain(' Session: 42.0% ')
     await ui.unmount()
     resetBandOrder()
