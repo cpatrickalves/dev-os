@@ -358,7 +358,8 @@ function wrapLines(text: string, width: number): string[] {
 }
 
 async function openPane($: EngineInterface) {
-  await $.ui.open({ id: PANE, title: TITLE })
+  // "transparent" paints nothing under the body, so the host's own background (a Herdr theme, say) shows through.
+  await $.ui.open({ id: PANE, title: TITLE, backgroundColor: 'transparent' })
 }
 
 async function record($: EngineInterface, id: string, hits: Hit[]) {
