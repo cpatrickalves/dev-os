@@ -7,12 +7,11 @@
 // A Dev-OS fork of usage-meter 0.1.1 from https://github.com/hamzafer/claude-code-mods
 // (commit 7e60143, MIT, see ../LICENSE). Upstream draws block bars and the session's cost;
 // this one draws tinted pills in the Tokyo Night colors and leaves the cost out. The readings, the countdown timer, the
-// toasts past 90% and the band order (bands.ts, untouched) are upstream's.
+// toasts past 90% are upstream's.
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, RenderElement, RenderNode, Timer } from 'claude-code'
 
 import type { UsageMeterSnapshot, UsageMeterWindow } from '../types'
-import { bandsFile, parseOrder, stackBands } from './bands'
 
 const TICK_MS = 60_000
 const GAP_ROWS = 2 // in the band: empty rows between the transcript and the pills
@@ -54,18 +53,6 @@ export type Pill = { kind: PillKind; text: string; bg: string; fg: string }
 type Context = { tokens?: number; window: number; percent?: number }
 type Elements = ReturnType<EngineInterface['ui']['resolve']>
 
-let bandOrder: Promise<string[]> | undefined // read once per session: restart to apply
-
-// The band order file, as the claude-code-mods checklist saves it; [] on any error.
-async function readBandOrder($: EngineInterface): Promise<string[]> {
-  const file = bandsFile(await $.env.get('CLAUDE_CONFIG_DIR'), await $.env.get('HOME'))
-  return file && (await $.fs.exists(file)) ? parseOrder(await $.fs.read(file)) : []
-}
-
-// Forgets the cached band order, for tests.
-export function resetBandOrder() {
-  bandOrder = undefined
-}
 
 export const register: Register = (on, options) => {
   const config = (options ?? {}) as Record<string, unknown>
@@ -123,7 +110,7 @@ export const register: Register = (on, options) => {
     )
   })
 
-  // Over the prompt, with `position: above`: one band among the other mods' bands.
+  // Over the prompt, with `position: above`: above what the other mods draw.
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     const rest = await next(e) // what other mods and Claude Code draw here stays
     if (isBelow || e.props.hasSurvey) return rest
@@ -133,9 +120,15 @@ export const register: Register = (on, options) => {
     // Empty rows above, so the pills do not sit against the transcript: as many as a short band has room
     // for. The row between the pills and the prompt is the engine's (its notices draw there), not this tree's.
     const marginTop = Math.max(0, Math.min(GAP_ROWS, e.props.maxRows - 1))
-    const mine = row($.ui.resolve(e), drawn.pills, drawn.hasCaps, { paddingX: 1, marginTop })
-    bandOrder ??= readBandOrder($).catch(() => [])
-    return stackBands(rest, 'usage-meter', mine, 'above', await bandOrder) // above what other mods draw, unless the band order says otherwise
+    const elements = $.ui.resolve(e)
+    const { Box } = elements
+    const mine = row(elements, drawn.pills, drawn.hasCaps, { paddingX: 1, marginTop })
+    return (
+      <Box flexDirection="column">
+        {mine}
+        {rest}
+      </Box>
+    ) // above what other mods and Claude Code draw here, which `rest` carries
   })
 }
 

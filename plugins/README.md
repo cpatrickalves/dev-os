@@ -7,7 +7,7 @@ Dev-OS's own marketplace, `dev-os` (`.claude-plugin/marketplace.json` at the rep
 - `.claude-plugin/plugin.json`: the manifest. `version` goes up with each change, so an installed copy updates.
 - `hooks/hooks.json` names the hooks module, `hooks/register.tsx`.
 - `types/index.d.ts`: the contract of the values the mod keeps in `$.state`.
-- Tests: `hooks/*.test.tsx`. `usage-meter` (a restyled fork) and `next-steps` (an unchanged copy) come from [hamzafer/claude-code-mods](https://github.com/hamzafer/claude-code-mods) and keep upstream's layout: tests in `tests/*.test.ts`, the shared `hooks/bands.ts`, a `tsconfig.json` and the MIT `LICENSE`.
+- Tests: `hooks/*.test.tsx`. `usage-meter` (a restyled fork) and `next-steps` (a copy without the band order file) come from [hamzafer/claude-code-mods](https://github.com/hamzafer/claude-code-mods) and keep upstream's layout: tests in `tests/*.test.ts`, a `tsconfig.json` and the MIT `LICENSE`.
 
 ## Checking a mod
 

@@ -20,14 +20,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `usage-meter` and `next-steps` mods (`plugins/usage-meter`,
   `plugins/next-steps`, in `external-mods.yaml`), both from
   [hamzafer/claude-code-mods](https://github.com/hamzafer/claude-code-mods)
-  at commit `7e60143` (MIT, `LICENSE` kept in each folder). `next-steps` is an
-  unchanged copy of 0.3.0: after each turn, 2 or 3 likely next prompts above
+  at commit `7e60143` (MIT, `LICENSE` kept in each folder). `next-steps` is a
+  copy of 0.3.0 (its `bands.ts` was dropped later, see Changed): after each turn, 2 or 3 likely next prompts above
   the prompt, drafted with `1` to `3` and dismissed with `0`. `usage-meter` is
   a restyled fork of 0.1.1: instead of block bars and the session's cost it
   draws a row of pills in the Tokyo Night colors of `nightgrid`, `Model`, `Ctx Used`, `Session` (the 5-hour
   window, amber from 75% and red from 90%) and `Reset` (its countdown); the 7-day
   window joins only once it runs high. The readings, the toasts past 90% and
-  the band order are upstream's. From 0.3.0 the row sits under the prompt, in
+  the band order (dropped later, see Changed) are upstream's. From 0.3.0 the row sits under the prompt, in
   the footer where a status line would, and `position: above` puts it back in
   the band over the prompt, two empty rows below the transcript. From 0.4.0
   the pills are flat, side by side and tinted, to match herdr's straight
@@ -110,8 +110,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `next-steps` and `usage-meter` tests follow Claude Code 2.1.323, where
   `next(e)` in an `AbovePrompt` hook answers an opaque `{ type: 'engine', ref }`
   and the engine stacks each mod's band itself. The band order file
-  (`claude-code-mods/bands.json`) no longer moves bands across mods; `bands.ts`
-  is left as upstream has it.
+  (`claude-code-mods/bands.json`) no longer moves bands across mods, so both
+  mods drop upstream's `hooks/bands.ts`: each returns its band above `rest`
+  (what the engine draws there). They no longer match upstream's file layout.
 - `knowledge-distiller` 1.2.0 is a rewrite of the skill's text, about a third
   shorter, meant to keep the document it produces. The "Checklist final" is
   gone: its 16 questions repeated the rules, and step 7 of the process now

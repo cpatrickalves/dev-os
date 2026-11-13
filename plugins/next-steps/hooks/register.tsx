@@ -4,7 +4,6 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { NextSteps } from '../types'
-import { bandsFile, parseOrder, stackBands } from './bands'
 
 const MODEL = 'haiku'
 const MAX_ITEMS = 3
@@ -20,7 +19,6 @@ const active = atom({ plugin: 'next-steps', key: 'active' } as const, false)
 let language = ''   // userConfig.language: empty keeps the original English
 let layout = 'auto' // userConfig.layout: 'rows' keeps one suggestion per row
 
-let bandOrder: Promise<string[]> | undefined // read once per session: restart to apply
 
 export const register: Register = (on, options) => {
   language = String((options as Record<string, unknown>)?.language ?? '').trim()
@@ -103,19 +101,14 @@ export const register: Register = (on, options) => {
         </Box>
       )
 
-    return stackBands(rest, 'next-steps', <Box paddingX={1}>{lines}</Box>, 'above', await (bandOrder ??= readBandOrder($).catch(() => []))) // above what other mods draw, unless the band order says otherwise
+    // above what other mods and Claude Code draw here, which `rest` carries
+    return (
+      <Box flexDirection="column">
+        <Box paddingX={1}>{lines}</Box>
+        {rest}
+      </Box>
+    )
   })
-}
-
-// The band order file, as the claude-code-mods checklist saves it; [] on any error.
-async function readBandOrder($: EngineInterface): Promise<string[]> {
-  const file = bandsFile(await $.env.get('CLAUDE_CONFIG_DIR'), await $.env.get('HOME'))
-  return file && (await $.fs.exists(file)) ? parseOrder(await $.fs.read(file)) : []
-}
-
-// Forgets the cached band order, for tests.
-export function resetBandOrder() {
-  bandOrder = undefined
 }
 
 // Writes the list, then whether it shows, for where-am-i.

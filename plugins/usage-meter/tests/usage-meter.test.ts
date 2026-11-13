@@ -1,6 +1,6 @@
 import { describe, expect, mock, test } from 'claude-code/testing'
 
-import { build, countdown, fill, fit, modelName, percent, resetBandOrder, tint, tone } from '../hooks/register'
+import { build, countdown, fill, fit, modelName, percent, tint, tone } from '../hooks/register'
 
 const NOW = Date.parse('2026-10-03T12:00:00Z')
 const at = (ms: number) => new Date(NOW + ms).toISOString()
@@ -159,11 +159,11 @@ describe('usage-meter in the band (position: above)', () => {
   test('two empty rows above the pills, fewer in a band short of rows', ABOVE, async ($, on) => {
     engine(on, { rateLimits: [{ kind: 'five_hour', percentUsed: 50, resetsAt: at(19 * MIN) }] })
     await start($)
-    // Claude Code stacks each mod's part: the mod's column holds its keyed Box, and that the row of pills.
+    // Claude Code stacks each mod's part: the mod's column holds the row of pills, then the engine's own band.
     const row = async (ui: any) => {
       const root: any = await ui.drawn()
       const part = root.part?.plugin === 'usage-meter' ? root : root.children.find((c: any) => c.part?.plugin === 'usage-meter')
-      return part.children.find((c: any) => c.props?.key === 'band:usage-meter').children[0]
+      return part.children[0]
     }
 
     for (const [maxRows, gap] of [[10, 2], [3, 2], [2, 1], [1, 0]] as const) {
@@ -399,31 +399,17 @@ describe('usage-meter in the band (position: above)', () => {
     await mid.unmount()
   })
 
-  // Since Claude Code 2.1.323 next(e) answers an opaque { type: 'engine', ref } and the
-  // engine stacks the bands of the mods beneath on its own: the order file moves nothing.
-  test('keys its band; the band order file no longer moves bands across mods', ABOVE, async ($, on) => {
-    // another band mod drew its column beneath
-    const beneath = {
-      type: 'Box',
-      props: { key: 'bands', flexDirection: 'column' },
-      children: [{ type: 'Box', props: { key: 'band:where-am-i' }, children: [{ type: 'Text', children: ['here'] }] }],
-    }
-    resetBandOrder()
-    const files: Record<string, string> = { '/home/me/.claude/claude-code-mods/bands.json': '{"order":["where-am-i","usage-meter"]}' }
-    on('env.get', (_$: any, e: any) => ({ value: e.name === 'HOME' ? '/home/me' : undefined }))
-    on('fs.exists', (_$: any, e: any) => ({ value: e.path in files }))
-    on('fs.read', (_$: any, e: any) => ({ value: files[e.path] ?? '' }))
+  test('stands above the band the engine draws, and the mods beneath keep theirs', ABOVE, async ($, on) => {
+    // another band mod drew beneath
+    const beneath = { type: 'Box', props: { key: 'where-am-i' }, children: [{ type: 'Text', children: ['here'] }] }
     engine(on, { rateLimits: [{ kind: 'five_hour', percentUsed: 42, resetsAt: at(2 * HOUR) }] }, beneath)
     await start($)
     const ui = await $.ui.mount({ plugin: 'usage-meter', surface: 'terminal', ...band() } as any)
     const root: any = await ui.drawn()
     expect(root.children.map((c: any) => c.part?.plugin)).toEqual(['usage-meter', 'test'])
-    expect(root.children[0].props.key).toBe('bands')
-    expect(root.children[0].children.map((c: any) => c.props?.key)).toContain('band:usage-meter')
-    expect(root.children[1].children.map((c: any) => c.props.key)).toEqual(['band:where-am-i'])
+    expect(root.children[1].props.key).toBe('where-am-i')
     expect(await line(ui)).toContain(' Session: 42.0% ')
     await ui.unmount()
-    resetBandOrder()
   })
 })
 

@@ -70,7 +70,7 @@ mods:
     github: https://github.com/hamzafer/claude-code-mods
 
   - name: next-steps
-    description: 2 or 3 likely next prompts above the prompt after each turn, 1 to 3 drafts one and 0 dismisses (Dev-OS marketplace, copy of hamzafer/claude-code-mods)
+    description: 2 or 3 likely next prompts above the prompt after each turn, 1 to 3 drafts one and 0 dismisses (Dev-OS marketplace, copy of hamzafer/claude-code-mods without its band order file)
     marketplace: dev-os
     marketplace_source: .
     scope: user
