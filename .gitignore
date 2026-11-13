@@ -185,3 +185,7 @@ pyrightconfig.json
 # Mod types the engine writes beside a mod it loads from a dev folder
 plugins/*/.claude-plugin/types/
 .grills/
+
+# Created by `npx skills`
+.agents/
+skills-lock.json
