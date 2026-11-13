@@ -4,7 +4,7 @@ description: Set up or audit a project's deterministic checks (lint, format, typ
 argument-hint: "[optional: audit | python | typescript | hooks | ci | standards]"
 disable-model-invocation: true
 metadata:
-  version: "1.0.0"
+  version: "1.0.1"
   reference: "Matt Pocock, 'Fixing the PR Bottleneck' (AI Engineer Paris 2025): https://ai.engineer/talks/LlgiOCmFG_w-youtube-40c0a903db79223717ca"
 ---
 

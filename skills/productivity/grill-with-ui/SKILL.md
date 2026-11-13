@@ -2,7 +2,7 @@
 name: grill-with-ui
 description: Run a grilling interview on a local browser page instead of the terminal, usually to review one or more plans, technical docs or issues and update them with the decisions. Every question is laid out with its recommendation, answerable in any order, with a per-question discussion thread and one "Send to Agent" button; Finish writes the grill doc, updates the reviewed documents and the glossary, and offers ADRs. Use when the user says "grill with ui", invokes /grill-with-ui with a topic or documents, or says "/grill-with-ui resume".
 metadata:
-  version: "1.3.2"
+  version: "1.3.3"
   last_synced: "2026-10-27"
   local_changes: "Only the runtime files are copied (upstream docs/, design/, test/, README.md and CI config are left out). Start takes one or more source documents (files, issues, PRs), loads domain-modeling and reads GLOSSARY.md; the doc defaults to .grills/<slug>-grill.md; Interview method asks the whole frontier per round, reviews the sources, challenges glossary terms, writes settled terms to GLOSSARY.md right away, probes edge-case scenarios, cross-checks claims against the code, and sends fact lookups to background subagents (new optional facts key); Finish applies the decisions back to the sources (asking before rewriting issues or PRs) and writes the ADRs the user picks. Description rewritten for these triggers. page.html is restyled with the cpatrickalves.com identity (Gelo palette, square plates without shadows, one accent), so its CSS will conflict on upstream merges: keep the local look. The working indicator (.spin) is three square bars rising in turn instead of the upstream rotating ring. Outfit and Martian Mono ship in fonts/ (SIL OFL), served by a small /fonts/ route in server.mjs. serve picks its port from a fixed range (GRILL_PORTS, default 4700-4704) before falling back to an ephemeral one, so a remote machine needs one SSH forward set up once."
   source: "https://github.com/jasonku09/grill-with-ui/tree/main"
@@ -112,7 +112,7 @@ GRILL_PATCH
    technical docs, specs) and issue or PR links or ids. Read every one in full before round 1;
    fetch remote items with the tracker's CLI (`gh`, `planecli`, `az boards`). When no
    document is named, the grill has no sources and works from the topic alone. Load the
-   `domain-modeling` skill with the Skill tool (`mattpocock-skills:domain-modeling`): it
+   `domain-modeling` skill with the Skill tool (`domain-modeling`, from `mattpocock-skills` in `external-skills.yaml`): it
    gives the glossary and ADR layout and formats this grill writes in. Then read the
    project's `GLOSSARY.md` (or, when `GLOSSARY-MAP.md` exists, the glossary of each
    context the topic touches) when there is one: its terms are the grill's starting

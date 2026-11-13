@@ -32,3 +32,9 @@ skills:
     source: tech-leads-club/agent-skills
     skills: playwright-skill
     scope: project
+
+  - name: mattpocock-skills
+    description: Matt Pocock skills for domain modeling, design, debugging, planning, grilling and handoff (code-review is copied as matt-code-review)
+    source: mattpocock/skills
+    skills: domain-modeling, diagnosing-bugs, codebase-design, setup-ts-deep-modules, wayfinder, setup-matt-pocock-skills, retro, grill-me, grilling, grill-with-docs, handoff, writing-for-agents
+    scope: global

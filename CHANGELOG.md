@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `matt-code-review` (`skills/engineering/code-review/`, global): third-party
+  copy of Matt Pocock's `code-review`, renamed so it does not clash with the
+  built-in `/code-review`. `code-review-flow` (1.0.1) runs it as the
+  `matt-code-review` reviewer.
+
 - `herdr/hccr.zsh` and `herdr/setup-hccr.sh`: the `hccr <name>` zsh
   function (Claude Code with `--remote-control --name <name>` in a herdr-core
   terminal) now also names the Herdr tab `<name>`, through its helper
@@ -106,6 +111,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the manual rendered inside the application.
 
 ### Changed
+
+- Matt Pocock's skills are installed through `npx skills` instead of the
+  `mattpocock-skills` plugin, which always installs every skill: the
+  `mattpocock-skills` entry moved from `external-plugins.yaml` to
+  `external-skills.yaml` (global) with twelve chosen skills. `grill-with-ui`
+  (1.3.3) and `setup-automated-checks` (1.0.1) name `domain-modeling` and
+  `/setup-ts-deep-modules` without the plugin prefix.
 
 - `next-steps` and `usage-meter` tests follow Claude Code 2.1.323, where
   `next(e)` in an `AbovePrompt` hook answers an opaque `{ type: 'engine', ref }`

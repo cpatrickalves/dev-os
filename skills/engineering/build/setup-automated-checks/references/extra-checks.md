@@ -27,7 +27,7 @@ Checks cost CPU, so the default set is a floor. Each entry says what lie or defe
 | Generated API types (`openapi-typescript`) | regenerate and `git diff --exit-code` | frontend types stale against the API | CI step in `web` after `api` exports the schema; Makefile `types` target |
 | OpenAPI schema versioned | export and `git diff --exit-code` | schema file stale against the routes | CI step in `api` |
 | Layered Python package (`rules.py` pure, `service.py` orchestrates) | `import-linter` with `[tool.importlinter]` contracts (`type = "forbidden"`: `app.*.rules` may not import `sqlalchemy`, `fastapi`, `app.*.service`) | the functional core importing the shell | `uv run lint-imports` in `make lint` |
-| TypeScript packages with entry points | `dependency-cruiser` | imports that reach into a package's internals instead of its entry points | `/mattpocock-skills:setup-ts-deep-modules` installs the rules and proves they bite |
+| TypeScript packages with entry points | `dependency-cruiser` | imports that reach into a package's internals instead of its entry points | `/setup-ts-deep-modules` installs the rules and proves they bite |
 | SPA with lazy areas | bundle budget | critical chunk growing past the budget | `size-limit` or a `check-bundle-size.mjs` reading `dist/` after `vite build`; CI step in `web` |
 | Library package | `publint` + `@arethetypeswrong/cli` | broken `exports` map, missing types for a module system | CI step after `pnpm build` |
 | Tests with heavy mocking (the audit shows `unittest.mock` / `vi.mock` everywhere) | mutation testing: `mutmut` / `@stryker-mutator/core` | tests that never fail when the code changes, the tautological test by definition | weekly scheduled workflow, never per PR (slow) |

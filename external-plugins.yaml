@@ -38,11 +38,6 @@ plugins:
     marketplace_source: multica-ai/andrej-karpathy-skills
     scope: user
 
-  - name: mattpocock-skills
-    description: Matt Pocock skills (official)
-    marketplace: claude-plugins-official
-    scope: user
-
   - name: pyright-lsp
     description: Python Pyright LSP (official)
     marketplace: claude-plugins-official

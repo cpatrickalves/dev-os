@@ -59,6 +59,7 @@ Legend: `/name` = invoked only as a slash command (`disable-model-invocation: tr
 |-------|-------------|
 | `/pr-review-to-subtasks` **global** | Create work-item subtasks from a review file |
 | `pr-description` **global** | Write a PR title and description |
+| `matt-code-review` **global** | Review a diff on two axes, the repo's standards and the spec (Matt Pocock's `code-review`, renamed) |
 
 #### `engineering/documentation/` — docs, specs, and changelogs
 
@@ -121,7 +122,6 @@ Third-party assets that are installed, not copied, are declared in two YAML cata
 | `claude-code-setup` | official | user | Claude Code setup helper |
 | `thermos` | dev-os (this repo, `plugins/`) | user | Thermo-nuclear branch review |
 | `andrej-karpathy-skills` | [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | user | Andrej Karpathy guideline skills |
-| `mattpocock-skills` | official | user | Matt Pocock skills |
 | `pyright-lsp` | official | project | Python type checking |
 | `typescript-lsp` | official | project | TypeScript type checking |
 | `frontend-slides` | [zarazhangrui/frontend-slides](https://github.com/zarazhangrui/frontend-slides) | project | Frontend slides |
@@ -147,6 +147,7 @@ Third-party assets that are installed, not copied, are declared in two YAML cata
 | `langchain-skills` | [langchain-ai/langchain-skills](https://github.com/langchain-ai/langchain-skills) | project | LangChain, LangGraph and Deep Agents skills |
 | `shadcn-ui` | [shadcn/ui](https://ui.shadcn.com/docs/skills) | project | shadcn/ui skills |
 | `tlc-skills` | [tech-leads-club/agent-skills](https://github.com/tech-leads-club/agent-skills) | global | Tech Leads Club skills: `tlc-plan`, `tlc-implement`, `tlc-discover`, `technical-design-doc-creator`, `security-threat-model`, `the-fool`, `the-judge`, `demo` |
+| `mattpocock-skills` | [mattpocock/skills](https://github.com/mattpocock/skills) | global | Matt Pocock skills: `domain-modeling`, `diagnosing-bugs`, `codebase-design`, `setup-ts-deep-modules`, `wayfinder`, `setup-matt-pocock-skills`, `retro`, `grill-me`, `grilling`, `grill-with-docs`, `handoff`, `writing-for-agents` |
 | `tlc-playwright` | [tech-leads-club/agent-skills](https://github.com/tech-leads-club/agent-skills) | project | Tech Leads Club skill: `playwright-skill` (browser automation and testing) |
 
 Third-party skills copied into `skills/` (such as `unslop`, `show-me` and `grill-with-ui`) record their upstream in frontmatter: `metadata.source` (a GitHub `tree/<ref>/<dir>` URL of the skill directory, or a gist URL with a `#file-<name>` anchor), `metadata.last_synced` (the date of the last copy from upstream, which is what marks a skill as third-party) and `metadata.local_changes` (what was adapted locally, or `"None."`). Own skills that are only inspired by external material cite it in `metadata.reference` instead.
@@ -175,7 +176,7 @@ Each script carries `version: 'X.Y.Z'` in its `meta`, raised by every commit tha
 
 `dev-flow` and `tlc-dev-flow` run `code-review-flow` as a sub-workflow (`workflow()`), so the review logic lives in one script. Nesting goes one level deep, so `code-review-flow` cannot call another workflow.
 
-All of them rely on the `thermos` and `mattpocock-skills` plugins and on the `the-judge` skill (`tlc-skills` in `external-skills.yaml`).
+All of them rely on the `thermos` plugin, the `matt-code-review` skill (import it with `import-skills.sh`) and the `the-judge` skill (`tlc-skills` in `external-skills.yaml`).
 
 ### Output Styles
 
