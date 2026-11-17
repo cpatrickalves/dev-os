@@ -1,6 +1,6 @@
 export const meta = {
   name: 'tlc-dev-flow',
-  version: '1.4.0',
+  version: '1.4.1',
   description: 'Fluxo de desenvolvimento a partir de um plano aprovado da tlc-plan: tlc-implement → Verifier independente → PR → code review com o plano → correções pela tlc-implement → Verifier dos checks novos → auditoria de docs → gate final',
   whenToUse:
     'Quando existir um .specs/features/<feature>/plan.md aprovado pela tlc-plan (linha **Approved**) para executar de ponta a ponta. Sem plano tlc, use dev-flow. Uso: Workflow({name: "tlc-dev-flow", args: "/path/.specs/features/<feature>/plan.md"}) ou args: {plan, issue?, base?}',
@@ -65,10 +65,15 @@ const IMPLEMENT_SCHEMA = {
     base_sha: { type: 'string', description: 'SHA do commit de onde a feature partiu (git merge-base da branch com a base)' },
     head: { type: 'string', description: 'SHA curto do HEAD em que check_proofs.py rodou' },
     screens_owed: { type: 'boolean', description: 'true quando algum critério do plano cita uma captura (o sub-agente de telas é devido)' },
+    red_only_screens: {
+      type: 'boolean',
+      description:
+        'true quando check_proofs.py saiu vermelho e toda linha vermelha é um check de tela que espera o screens.md (ex.: "not judged (screens.md)"); false em qualquer outro caso, inclusive com check_proofs.py verde',
+    },
     issue: { type: 'string', description: 'ID da issue (do args ou do plano), ou "" quando não há' },
     summary: { type: 'string', description: 'Resumo curto do que foi implementado, ou o motivo da recusa' },
   },
-  required: ['status', 'feature', 'branch', 'base_sha', 'head', 'screens_owed', 'issue', 'summary'],
+  required: ['status', 'feature', 'branch', 'base_sha', 'head', 'screens_owed', 'red_only_screens', 'issue', 'summary'],
 }
 
 // Uma mudança do usuário já presente na árvore entra nos commits da feature e suja o
@@ -330,8 +335,12 @@ const verifyRound = async ({ phaseTitle, fixPhase, labelPrefix, range, newChecks
 
 // ── Etapas 2 e 3: Verify e Verify Fixes ────────────────────────────────────────────────────
 // Sem proofs verdes o Verifier não tem o que julgar: verify.md manda o autor corrigir antes.
-// O PR sai como draft com a saída do gate.
-if (impl.status === 'built') {
+// O PR sai como draft com a saída do gate. A exceção é o check de tela: ele só fica verde
+// depois que o sub-agente de telas escreve o screens.md, e esse sub-agente roda aqui. Sem a
+// exceção, todo plano com captura cairia em proofs_red e pularia o Verifier.
+const readyToVerify =
+  impl.status === 'built' || (impl.status === 'proofs_red' && impl.screens_owed && impl.red_only_screens)
+if (readyToVerify) {
   phase('Verify')
   head = await verifyRound({
     phaseTitle: 'Verify',
