@@ -1,19 +1,20 @@
 export const meta = {
   name: 'tlc-dev-flow',
-  version: '1.4.1',
-  description: 'Fluxo de desenvolvimento a partir de um plano aprovado da tlc-plan: tlc-implement → Verifier independente → PR → code review com o plano → correções pela tlc-implement → Verifier dos checks novos → auditoria de docs → gate final',
+  version: '1.5.0',
+  description: 'Fluxo de desenvolvimento a partir de um plano aprovado da tlc-plan: tlc-implement → Verifier independente → PR → code review com o plano → correções pela tlc-implement → Verifier dos checks novos → auditoria de docs → gate final → logbook',
   whenToUse:
     'Quando existir um .specs/features/<feature>/plan.md aprovado pela tlc-plan (linha **Approved**) para executar de ponta a ponta. Sem plano tlc, use dev-flow. Uso: Workflow({name: "tlc-dev-flow", args: "/path/.specs/features/<feature>/plan.md"}) ou args: {plan, issue?, base?}',
   phases: [
     { title: 'Implement', detail: 'para se a árvore tiver mudança fora de .specs/; tlc-implement sobre o plano aprovado: checks, build e check_proofs.py verde; só commits locais', model: 'opus' },
     { title: 'Verify', detail: 'Verifier (verify.md) e, quando um critério cita uma captura, o sub-agente de telas (verify-screens.md), como agentes novos do workflow', model: 'opus' },
     { title: 'Verify Fixes', detail: 'a tlc-implement fecha os achados com o commit em Closed; round 2 das telas quando o código mudou', model: 'opus' },
-    { title: 'PR', detail: 'confere o gate com validate_verification.py, faz push e abre o PR com as capturas que o repo pede; com o gate vermelho, a tlc-implement repara uma vez e o fluxo só para se o gate continuar vermelho (PR em draft)', model: 'sonnet' },
+    { title: 'PR', detail: 'confere o gate com validate_verification.py, faz push e abre o PR com as capturas que o repo pede, comenta o link do PR na issue; com o gate vermelho, a tlc-implement repara uma vez e o fluxo só para se o gate continuar vermelho (PR em draft)', model: 'sonnet' },
     { title: 'Code Review', detail: 'roda o code-review-flow sobre o PR, com o plano e a issue' },
     { title: 'PR Fixes', detail: 'a tlc-implement retoma a feature e aplica os achados procedentes do relatório final', model: 'opus' },
     { title: 'Re-verify', detail: 'um Verifier novo julga só os checks que a PR Fixes acrescentou; a tlc-implement fecha o que ele achar', model: 'opus' },
     { title: 'Docs Audit', detail: 'auditoria de documentação da branch com a skill docs-generator', model: 'opus' },
     { title: 'Gate', detail: 'check_proofs.py e validate_verification.py no HEAD final, resultado comentado no PR; com o gate vermelho, a tlc-implement repara uma vez e o gate roda de novo', model: 'sonnet' },
+    { title: 'Logbook', detail: 'sempre, em qualquer saída do fluxo: registra o run com a skill logbook', model: 'sonnet' },
   ],
 }
 
@@ -40,6 +41,43 @@ const baseRef = base
 const scripts =
   'Os scripts citados são os da skill tlc-implement: rode `python3 <skill-dir>/scripts/<nome>.py`, ' +
   'onde <skill-dir> é o diretório do SKILL.md da tlc-implement instalada. '
+
+// ── Etapa final: Logbook ────────────────────────────────────────────────────
+// Roda em toda saída do fluxo depois da etapa Implement, inclusive nas que param cedo.
+// O agente não tem a conversa, então o resumo do run faz o papel dela.
+const writeLogbook = async outcome => {
+  phase('Logbook')
+  const entry = await agent(
+    'Invoque a skill logbook (via Skill tool) e registre este run do workflow tlc-dev-flow. ' +
+      `Você não tem a conversa: use o resumo do run abaixo e o git log do dia. Plano: ${planPath}.\n\n` +
+      `${JSON.stringify(outcome, null, 2)}\n\n` +
+      'Não commite o logbook. Devolva em block o bloco do dia.',
+    {
+      label: 'logbook',
+      phase: 'Logbook',
+      model: 'sonnet',
+      schema: {
+        type: 'object',
+        properties: {
+          path: { type: 'string', description: 'Path do logbook.md escrito, ou ""' },
+          block: { type: 'string', description: 'O bloco do dia (do `## YYYY-MM-DD` até o fim), ou ""' },
+          summary: { type: 'string', description: 'O que foi registrado, ou por que nada foi' },
+        },
+        required: ['path', 'block', 'summary'],
+      },
+    },
+  )
+  if (!entry) log('⚠️ A etapa Logbook não concluiu — rodar /logbook manualmente.')
+  else log(entry.path ? `Logbook atualizado em ${entry.path}` : `⚠️ Logbook não atualizado: ${entry.summary}`)
+  return entry
+}
+
+// Toda saída do fluxo passa por aqui: o logbook roda antes do return ou do throw.
+const finish = async result => ({ ...result, logbook: await writeLogbook(result) })
+const fail = async (message, context = {}) => {
+  await writeLogbook({ ...context, stopped: message })
+  throw new Error(message)
+}
 
 // ── Etapa 1: Implement ──────────────────────────────────────────────────────
 // A tlc-implement roda sem exceção à regra 8: o plano aprovado autoriza só
@@ -102,12 +140,15 @@ const impl = await agent(
     scripts,
   { label: 'implement', phase: 'Implement', model: 'opus', schema: IMPLEMENT_SCHEMA },
 )
-if (!impl) throw new Error('A etapa Implement não concluiu (bloqueio ou erro).')
+if (!impl) await fail('A etapa Implement não concluiu (bloqueio ou erro).')
 if (impl.status === 'dirty_tree') {
-  throw new Error(`A árvore de trabalho tem mudanças fora de .specs/: ${impl.summary}. Commite ou guarde com git stash e rode o workflow de novo.`)
+  await fail(
+    `A árvore de trabalho tem mudanças fora de .specs/: ${impl.summary}. Commite ou guarde com git stash e rode o workflow de novo.`,
+    { implement: impl },
+  )
 }
 if (impl.status === 'refused') {
-  throw new Error(`A tlc-implement recusou o plano: ${impl.summary}. Volte para a tlc-plan.`)
+  await fail(`A tlc-implement recusou o plano: ${impl.summary}. Volte para a tlc-plan.`, { implement: impl })
 }
 const issue = issueArg || impl.issue || ''
 const feature = impl.feature
@@ -409,6 +450,7 @@ const PR_SCHEMA = {
     gate_last_line: { type: 'string', description: 'Última linha da saída de validate_verification.py' },
     gate_output: { type: 'string', description: 'Saída inteira de validate_verification.py quando o exit code não foi 0, ou ""' },
     captures: { type: 'string', description: 'Capturas publicadas no corpo, ou por que o PR não leva capturas' },
+    issue_comment: { type: 'string', description: 'URL do comentário com o link do PR na issue, ou por que não foi comentado ("" sem issue)' },
   },
   required: ['pr_url', 'gate_ok', 'gate_last_line'],
 }
@@ -426,12 +468,21 @@ const pr = await agent(
     'Se as convenções de PR do repositório pedem capturas de tela e o diff muda a interface, gere e publique as capturas como elas mandam e ponha-as no corpo. ' +
     (unverified.length
       ? `Diga no corpo que o Verifier independente não concluiu (${unverified.join('; ')}) e que por isso o gate está vermelho. `
+      : '') +
+    // O comentário na issue faz parte do escopo autorizado desta etapa, além do que contextoAutorizado lista.
+    (issue
+      ? `Com o PR criado, comente na issue ${issue}, no tracker do projeto, com o link do PR (e "draft" quando ele saiu como draft); ` +
+        'esse comentário também é escopo autorizado pelo usuário. Descubra o tracker pelo formato do ID e pelos sinais do projeto ' +
+        '(CLAUDE.md, AGENTS.md, .mcp.json, o remote do git e as ferramentas MCP disponíveis: procure com ToolSearch por "linear", "plane", "jira" e "github"); ' +
+        '"#45" num repositório GitHub é GitHub Issues (`gh issue comment 45`). Não mude status, responsável nem outro campo da issue. ' +
+        'Sem acesso ao tracker, não comente e explique em issue_comment. '
       : ''),
   { label: 'pr', phase: 'PR', model: 'sonnet', schema: PR_SCHEMA },
 )
-if (!pr?.pr_url) throw new Error('A etapa PR não retornou o link do PR.')
+if (!pr?.pr_url) await fail('A etapa PR não retornou o link do PR.', { implement: impl, verified_head: head, unverified })
 log(`PR criado: ${pr.pr_url}`)
 if (pr.captures) log(`Capturas: ${pr.captures}`)
+if (pr.issue_comment) log(`Issue ${issue}: ${pr.issue_comment}`)
 if (!pr.gate_ok) {
   log(`⚠️ Gate vermelho: ${pr.gate_last_line}. A tlc-implement tenta um reparo.`)
   const repair = await repairGate('PR', pr.gate_output || pr.gate_last_line, pr.pr_url)
@@ -440,7 +491,7 @@ if (!pr.gate_ok) {
       `⚠️ Gate ainda vermelho depois do reparo: ${repair?.gate_last_line ?? 'o reparo não concluiu'}. ` +
         'PR aberto como draft; o code review não roda sobre trabalho incompleto.',
     )
-    return { pr_url: pr.pr_url, implement: impl, verified_head: head, unverified, gate: pr, gate_repair: repair }
+    return await finish({ pr_url: pr.pr_url, implement: impl, verified_head: head, unverified, gate: pr, gate_repair: repair })
   }
   head = repair.head
   log(`Gate verde depois do reparo em ${repair.head}: ${repair.summary}`)
@@ -450,12 +501,23 @@ if (!pr.gate_ok) {
 // O plano vai direto para o code-review-flow, sem a busca "auto": o path já é conhecido.
 phase('Code Review')
 
-const review = await workflow('code-review-flow', {
-  pr: pr.pr_url,
-  issue,
-  plan: planPath,
-  called_by: 'tlc-dev-flow',
-})
+let review
+try {
+  review = await workflow('code-review-flow', {
+    pr: pr.pr_url,
+    issue,
+    plan: planPath,
+    called_by: 'tlc-dev-flow',
+  })
+} catch (err) {
+  await fail(`O code-review-flow falhou: ${err?.message ?? err}. Rode-o de novo sobre ${pr.pr_url}.`, {
+    pr_url: pr.pr_url,
+    implement: impl,
+    verified_head: head,
+    unverified,
+    gate: pr,
+  })
+}
 const finalReport = review.final_review?.markdown_path
 
 // ── Etapa 6: PR Fixes ───────────────────────────────────────────────────────
@@ -627,7 +689,7 @@ if (gate && !gate.gate_ok) {
 if (!gate) log('⚠️ Etapa Gate não concluiu — rodar check_proofs.py e validate_verification.py manualmente.')
 else if (!gate.gate_ok) log(`⚠️ Gate final vermelho: ${gate.gate_last_line}`)
 
-return {
+return await finish({
   pr_url: pr.pr_url,
   implement: impl,
   verified_head: head,
@@ -637,4 +699,4 @@ return {
   docs_audit: docsAudit,
   gate,
   gate_repair: gateRepair,
-}
+})
