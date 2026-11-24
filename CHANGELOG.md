@@ -281,6 +281,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `filetree` mod from `external-mods.yaml` (and its row in the README's mods
   table): it is no longer installed by `manage-mods.sh`.
 
+### Fixed
+
+- `tlc-dev-flow` 1.6.1: the Gate stage and the gate repair wait for
+  `check_proofs.py` in the same turn, with a foreground
+  `until grep -q '^EXIT=' <file>` loop, instead of waiting for the
+  background job's notice. A subagent that ends its turn kills its
+  background job, so a Gate agent that only armed a Monitor returned red with
+  an empty log and cost an extra repair agent and a second gate.
+
 ## [1.0.0] - 2026-10-06
 
 First versioned release. Dev-OS started as a fork of Agent OS and has since

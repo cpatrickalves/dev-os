@@ -1,6 +1,6 @@
 export const meta = {
   name: 'tlc-dev-flow',
-  version: '1.6.0',
+  version: '1.6.1',
   description: 'Fluxo de desenvolvimento a partir de um plano aprovado da tlc-plan: tlc-implement → Verifier independente → PR → code review com o plano → correções pela tlc-implement → Verifier dos checks novos → auditoria de docs → gate final → logbook',
   whenToUse:
     'Quando existir um .specs/features/<feature>/plan.md aprovado pela tlc-plan (linha **Approved**) para executar de ponta a ponta. Sem plano tlc, use dev-flow. Uso: Workflow({name: "tlc-dev-flow", args: "/path/.specs/features/<feature>/plan.md"}) ou args: {plan, issue?, base?}',
@@ -448,9 +448,14 @@ const GATE_REPAIR_SCHEMA = {
 
 // check_proofs.py roda o check inteiro do repo e o e2e, e passa do limite de 10 minutos de um
 // comando em primeiro plano: morto no meio, o validador nem roda e o gate sai vermelho sem motivo.
+// O processo em segundo plano morre quando o subagente encerra o turno, então a espera fica no mesmo
+// turno, num laço em primeiro plano. Um agente que só armou o Monitor encerrou antes do fim.
 const PROOFS_EM_SEGUNDO_PLANO =
   '`check_proofs.py` pode levar até 20 minutos: rode-o em segundo plano (Bash com `run_in_background: true`), ' +
-  'com a saída e o exit code gravados num arquivo, e espere o aviso de que terminou antes do passo seguinte. ' +
+  'com a saída e o exit code gravados num arquivo que termina com a linha `EXIT=<código>`. ' +
+  'Depois espere no mesmo turno: rode em primeiro plano `until grep -q \'^EXIT=\' <arquivo>; do sleep 10; done` ' +
+  'com `timeout: 600000`, e repita até a linha `EXIT=` aparecer ou até completar 20 minutos. ' +
+  'O passo seguinte e o resultado só vêm depois dessa linha. ' +
   'Só trate como falha por tempo o que passar de 20 minutos, e diga isso no resultado. '
 
 const repairGate = (etapa, gateOutput, prUrl) =>
