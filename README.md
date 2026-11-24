@@ -92,6 +92,7 @@ Legend: `/name` = invoked only as a slash command (`disable-model-invocation: tr
 |-------|-------------|
 | `/explainer-graphic` | Create visual infographics using real-world analogies |
 | `knowledge-distiller` | Distill transcripts, articles, or notes into a PT-BR knowledge document |
+| `/talk-digest` | Turn an automatic talk transcript into a short, critical PT-BR record for later reference |
 | `/show-me` **global** | Explain the current topic visually with diagrams, code-shape sketches, and HTML |
 
 #### `productivity/` — writing, diagrams, and everyday tools

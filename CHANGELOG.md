@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `talk-digest` (`skills/learning/talk-digest/`, user-invoked): turns an
+  automatic talk transcript into a short PT-BR record for later reference.
+  It labels each argument as fact, opinion or bet, lists the gaps (claims
+  without evidence, unfinished reasoning, unintelligible passages) and
+  highlights what serves the reader's stated goal. Transcript correction and
+  fidelity rules follow `knowledge-distiller`.
+
 - `matt-code-review` (`skills/engineering/code-review/`, global): third-party
   copy of Matt Pocock's `code-review`, renamed so it does not clash with the
   built-in `/code-review`. `code-review-flow` (1.0.1) runs it as the
