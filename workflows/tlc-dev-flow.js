@@ -1,19 +1,19 @@
 export const meta = {
   name: 'tlc-dev-flow',
-  version: '1.5.0',
+  version: '1.6.0',
   description: 'Fluxo de desenvolvimento a partir de um plano aprovado da tlc-plan: tlc-implement → Verifier independente → PR → code review com o plano → correções pela tlc-implement → Verifier dos checks novos → auditoria de docs → gate final → logbook',
   whenToUse:
     'Quando existir um .specs/features/<feature>/plan.md aprovado pela tlc-plan (linha **Approved**) para executar de ponta a ponta. Sem plano tlc, use dev-flow. Uso: Workflow({name: "tlc-dev-flow", args: "/path/.specs/features/<feature>/plan.md"}) ou args: {plan, issue?, base?}',
   phases: [
     { title: 'Implement', detail: 'para se a árvore tiver mudança fora de .specs/; tlc-implement sobre o plano aprovado: checks, build e check_proofs.py verde; só commits locais', model: 'opus' },
     { title: 'Verify', detail: 'Verifier (verify.md) e, quando um critério cita uma captura, o sub-agente de telas (verify-screens.md), como agentes novos do workflow', model: 'opus' },
-    { title: 'Verify Fixes', detail: 'a tlc-implement fecha os achados com o commit em Closed; round 2 das telas quando o código mudou', model: 'opus' },
+    { title: 'Verify Fixes', detail: 'a tlc-implement fecha os achados com o commit em Closed; um Verifier novo julga o check acrescentado e rejulga o check reprovado que foi corrigido; round 2 das telas quando o código mudou', model: 'opus' },
     { title: 'PR', detail: 'confere o gate com validate_verification.py, faz push e abre o PR com as capturas que o repo pede, comenta o link do PR na issue; com o gate vermelho, a tlc-implement repara uma vez e o fluxo só para se o gate continuar vermelho (PR em draft)', model: 'sonnet' },
     { title: 'Code Review', detail: 'roda o code-review-flow sobre o PR, com o plano e a issue' },
     { title: 'PR Fixes', detail: 'a tlc-implement retoma a feature e aplica os achados procedentes do relatório final', model: 'opus' },
     { title: 'Re-verify', detail: 'um Verifier novo julga só os checks que a PR Fixes acrescentou; a tlc-implement fecha o que ele achar', model: 'opus' },
     { title: 'Docs Audit', detail: 'auditoria de documentação da branch com a skill docs-generator', model: 'opus' },
-    { title: 'Gate', detail: 'check_proofs.py e validate_verification.py no HEAD final, resultado comentado no PR; com o gate vermelho, a tlc-implement repara uma vez e o gate roda de novo', model: 'sonnet' },
+    { title: 'Gate', detail: 'check_proofs.py (em segundo plano, até 20 minutos) e validate_verification.py no HEAD final, resultado comentado no PR; com o gate vermelho, a tlc-implement repara uma vez e o gate roda de novo', model: 'sonnet' },
     { title: 'Logbook', detail: 'sempre, em qualquer saída do fluxo: registra o run com a skill logbook', model: 'sonnet' },
   ],
 }
@@ -209,16 +209,20 @@ const FIX_SCHEMA = {
   properties: {
     closed: { type: 'array', items: { type: 'string' }, description: 'Cada achado fechado, com o commit e o check que agora o prova' },
     checks_added: { type: 'array', items: { type: 'string' }, description: 'Só os IDs dos checks acrescentados em checks.md nesta passada (ex.: "C42"), ou vazio' },
+    checks_refixed: { type: 'array', items: { type: 'string' }, description: 'Só os IDs dos checks que já existiam, que o Verifier reprovou e que esta passada corrigiu no teste ou no código (ex.: "C44"), ou vazio' },
     code_changed: { type: 'boolean', description: 'true quando algum commit desta etapa mudou código fora de .specs/' },
     proofs_green: { type: 'boolean', description: 'true quando check_proofs.py saiu com 0 no HEAD final' },
     head: { type: 'string', description: 'SHA curto do HEAD final' },
     summary: { type: 'string' },
   },
-  required: ['closed', 'checks_added', 'code_changed', 'proofs_green', 'head', 'summary'],
+  required: ['closed', 'checks_added', 'checks_refixed', 'code_changed', 'proofs_green', 'head', 'summary'],
 }
 
 // Um check que o autor acrescenta ao fechar um achado ainda não tem linha em `## Checks`,
 // e o gate a exige. Um Verifier novo julga esses checks, e o autor fecha o que ele achar.
+// O check que já existia e foi reprovado também volta a um Verifier novo depois da correção:
+// quando o achado é "o teste não prova o que o check afirma", o teste estava verde antes e
+// continua verde depois, e a prova verde não diz se a correção bastou.
 // O limite corta o ciclo em que cada correção cria um check que o Verifier seguinte recusa.
 const MAX_EXTRA_VERIFIER_ROUNDS = 2
 
@@ -228,16 +232,24 @@ const naoCorrige =
   'Você não corrige nada, não commita e não faz push. Exemplos descartáveis que você criar ficam fora do git e são apagados ' +
   'antes de você terminar: a árvore fica como estava, fora de .specs/. '
 
-const verifierPrompt = (range, newChecks) =>
+const verifierPrompt = (range, newChecks, rejudge) =>
   'Você é o Verifier da skill tlc-implement: um agente novo, que não escreveu este código. ' +
   scripts +
   `Leia <skill-dir>/references/verify.md e faça o que as seções "What the Verifier does" e "Report" mandam, para a feature "${feature}". ` +
   `Arquivos: ${featureDir}/plan.md, ${featureDir}/checks.md (sem ler o \`## Handoff\`) e ${featureDir}/proofs.md. ` +
   `Intervalo do diff: ${range}. ` +
-  (newChecks
-    ? `Os checks ${newChecks.join(', ')} entraram depois que outro Verifier julgou os demais em ${featureDir}/verification.md. ` +
-      'Julgue só esses checks: acrescente uma linha de cada um ao `## Checks` e os seus achados ao `## Findings`, ' +
-      'sem mudar as linhas que já estão lá, e atualize **Verdict** e **Proofs**. Seus exemplos próprios vão nas regras que esse intervalo tocou. '
+  (newChecks?.length || rejudge?.length
+    ? `Outro Verifier já julgou os demais checks em ${featureDir}/verification.md. Julgue só os checks nomeados a seguir. ` +
+      (newChecks?.length
+        ? `${newChecks.join(', ')} entraram depois daquele julgamento: acrescente uma linha de cada um ao \`## Checks\`. `
+        : '') +
+      (rejudge?.length
+        ? `${rejudge.join(', ')} foram reprovados e o autor os corrigiu neste intervalo: rejulgue cada um contra o critério, ` +
+          'lendo o teste como está agora, e reescreva a linha dele em `## Checks` com o veredito novo. ' +
+          'O achado antigo fica em `## Findings` com o `Closed` que o autor escreveu; se a correção não basta, escreva um achado novo. '
+        : '') +
+      'Acrescente os seus achados ao `## Findings`, sem mudar as outras linhas, e atualize **Verdict** e **Proofs**. ' +
+      'Seus exemplos próprios vão nas regras que esse intervalo tocou. '
     : `Escreva ${featureDir}/verification.md. `) +
   // validate_verification.py divide a linha da tabela em todo `|`, inclusive no `\|` escapado.
   'Em célula de tabela do verification.md, escreva comandos sem o caractere `|`; um comando com pipe vai num bloco de código abaixo da tabela. ' +
@@ -272,6 +284,8 @@ const fixFindings = (contexto, phaseTitle, label, verifier, screens) =>
       'Um achado que mostra uma obrigação que nenhum check cobre ganha um check com teste (regra 4). ' +
       'Rode `check_proofs.py <feature>` até ficar verde e escreva em `Closed` de cada achado do verification.md o commit que o fecha e o check que agora o prova. ' +
       'Devolva em checks_added os IDs dos checks que você acrescentou ao checks.md, sem julgá-los: um Verifier novo do workflow faz isso. ' +
+      'Devolva em checks_refixed os IDs dos checks que já existiam, que o Verifier reprovou e que você corrigiu no teste ou no código; ' +
+      'a linha deles em `## Checks` fica como o Verifier escreveu, porque um Verifier novo do workflow os rejulga. ' +
       'Quando a correção mudou código e a feature tem telas, salve de novo cada `<capture>.running.png` no HEAD novo; ' +
       'não julgue as telas você mesmo: o workflow manda o round 2. ' +
       'Não rode validate_verification.py: o gate é de uma etapa seguinte. ' +
@@ -285,15 +299,15 @@ const unverified = []
 
 // Uma rodada de verificação: Verifier e/ou telas em paralelo no mesmo HEAD, depois o autor
 // fecha o que eles acharam, depois o round 2 das telas se o código mudou e ainda há round.
-// Quando o autor acrescenta checks, a função chama a si mesma para um Verifier novo julgá-los,
-// até MAX_EXTRA_VERIFIER_ROUNDS vezes.
+// Quando o autor acrescenta checks ou corrige um check reprovado, a função chama a si mesma para
+// um Verifier novo julgá-los, até MAX_EXTRA_VERIFIER_ROUNDS vezes.
 // Devolve o HEAD final; `fixContext` é o prefixo do prompt do autor (autorização de push ou não).
-const verifyRound = async ({ phaseTitle, fixPhase, labelPrefix, range, newChecks, withVerifier, withScreens, fixContext, extraRound = 0 }) => {
+const verifyRound = async ({ phaseTitle, fixPhase, labelPrefix, range, newChecks, rejudge, withVerifier, withScreens, fixContext, extraRound = 0 }) => {
   const wantScreens = withScreens && impl.screens_owed && screensRound < 2
   const [verifier, screens] = await parallel([
     () =>
       withVerifier
-        ? fresh(verifierPrompt(range, newChecks), {
+        ? fresh(verifierPrompt(range, newChecks, rejudge), {
             label: `${labelPrefix}verifier`,
             phase: phaseTitle,
             model: 'opus',
@@ -311,7 +325,9 @@ const verifyRound = async ({ phaseTitle, fixPhase, labelPrefix, range, newChecks
         : Promise.resolve(null),
   ])
   if (withVerifier && !verifier) {
-    unverified.push(newChecks ? newChecks.join(', ') : 'todos os checks')
+    // O check rejulgado já tem linha em `## Checks`: sem o Verifier, o gate não o acusa.
+    if (newChecks?.length || !rejudge?.length) unverified.push(newChecks?.length ? newChecks.join(', ') : 'todos os checks')
+    if (rejudge?.length) log(`⚠️ ${rejudge.join(', ')} corrigido(s) sem rejulgamento: o veredito antigo fica no verification.md e a decisão fica com o usuário.`)
     log(`⚠️ O Verifier não concluiu em duas tentativas (${range}); o gate vai acusar e o PR fica draft.`)
   } else if (verifier) {
     log(`Verifier: ${verifier.verdict}, ${verifier.findings.length} achado(s) em ${verifier.head}`)
@@ -354,19 +370,33 @@ const verifyRound = async ({ phaseTitle, fixPhase, labelPrefix, range, newChecks
   }
 
   const added = fix.checks_added ?? []
-  if (!added.length) return fix.head
+  const refixed = (fix.checks_refixed ?? []).filter(id => !added.includes(id))
+  if (!added.length && !refixed.length) return fix.head
   if (extraRound >= MAX_EXTRA_VERIFIER_ROUNDS) {
-    unverified.push(`${added.join(', ')} (o limite de ${MAX_EXTRA_VERIFIER_ROUNDS} rounds extras do Verifier acabou)`)
-    log(`⚠️ O autor acrescentou ${added.join(', ')} depois do último round extra do Verifier; o gate vai acusar e a decisão fica com o usuário.`)
+    if (added.length) {
+      unverified.push(`${added.join(', ')} (o limite de ${MAX_EXTRA_VERIFIER_ROUNDS} rounds extras do Verifier acabou)`)
+      log(`⚠️ O autor acrescentou ${added.join(', ')} depois do último round extra do Verifier; o gate vai acusar e a decisão fica com o usuário.`)
+    }
+    if (refixed.length) {
+      log(`⚠️ O autor corrigiu ${refixed.join(', ')} depois do último round extra do Verifier: o veredito antigo fica no verification.md e a decisão fica com o usuário.`)
+    }
     return fix.head
   }
-  log(`O autor acrescentou ${added.join(', ')}: um Verifier novo julga esses checks (round extra ${extraRound + 1} de ${MAX_EXTRA_VERIFIER_ROUNDS}).`)
+  log(
+    `Um Verifier novo julga ${[
+      added.length ? `${added.join(', ')} (acrescentado(s) pelo autor)` : '',
+      refixed.length ? `${refixed.join(', ')} (reprovado(s) e corrigido(s))` : '',
+    ]
+      .filter(Boolean)
+      .join(' e ')} (round extra ${extraRound + 1} de ${MAX_EXTRA_VERIFIER_ROUNDS}).`,
+  )
   return verifyRound({
     phaseTitle: fixPhase,
     fixPhase,
     labelPrefix: `${labelPrefix}x${extraRound + 1}-`,
     range: `${headBeforeFix}..HEAD`,
     newChecks: added,
+    rejudge: refixed,
     withVerifier: true,
     withScreens: false,
     fixContext,
@@ -416,6 +446,13 @@ const GATE_REPAIR_SCHEMA = {
   required: ['gate_ok', 'gate_last_line', 'head', 'summary'],
 }
 
+// check_proofs.py roda o check inteiro do repo e o e2e, e passa do limite de 10 minutos de um
+// comando em primeiro plano: morto no meio, o validador nem roda e o gate sai vermelho sem motivo.
+const PROOFS_EM_SEGUNDO_PLANO =
+  '`check_proofs.py` pode levar até 20 minutos: rode-o em segundo plano (Bash com `run_in_background: true`), ' +
+  'com a saída e o exit code gravados num arquivo, e espere o aviso de que terminou antes do passo seguinte. ' +
+  'Só trate como falha por tempo o que passar de 20 minutos, e diga isso no resultado. '
+
 const repairGate = (etapa, gateOutput, prUrl) =>
   agent(
     contextoAutorizado(`${etapa} (reparo do gate)`, prUrl) +
@@ -429,6 +466,7 @@ const repairGate = (etapa, gateOutput, prUrl) =>
       'Em `## Checks` do verification.md, mantenha os vereditos como o Verifier os escreveu: um erro que pede um julgamento novo ' +
       'fica vermelho e vai em summary. ' +
       `Depois rode \`check_proofs.py ${feature}\` se algum commit mudou o HEAD, e \`validate_verification.py ${feature}\`. ` +
+      PROOFS_EM_SEGUNDO_PLANO +
       `Faça push dos commits para ${impl.branch}. ` +
       (etapa === 'PR'
         ? `No corpo do PR ${prUrl}, troque a saída antiga do gate pela última linha nova do validador e, com o gate ainda vermelho, pela saída nova inteira. `
@@ -650,6 +688,7 @@ const runGate = label =>
       scripts +
       `Na branch ${impl.branch}, com a árvore limpa fora de .specs/, rode \`check_proofs.py ${feature}\` e depois ` +
       `\`validate_verification.py ${feature}\`, e guarde a saída e o exit code de cada um. Não altere código, testes nem checks. ` +
+      PROOFS_EM_SEGUNDO_PLANO +
       `Se houver commit local sem push, faça push para ${impl.branch}. ` +
       'Comente no PR o resultado: o commit verificado, a última linha de cada script e, se algum falhou, a saída dele. ' +
       'Se a falha vier do sub-agente de telas (código mudou depois do HEAD que ele julgou, e as 2 rodadas já foram usadas), ' +

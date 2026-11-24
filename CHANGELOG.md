@@ -112,6 +112,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `tlc-dev-flow` 1.6.0 sends a fresh Verifier back over a check that a
+  Verifier failed and the author then fixed, in Verify Fixes and in Re-verify.
+  Before, the fix was accepted on the author's word: the row in `## Checks`
+  kept its "no" and the gate passed on the commit in `Closed`. The author
+  returns those checks in `checks_refixed`, the Verifier rewrites their rows,
+  and the rounds share the limit of 2 extra rounds with `checks_added`; past
+  it, the old verdict stays and the log says so. The Gate stage and the gate
+  repair now run `check_proofs.py` in the background and allow it 20 minutes,
+  since a foreground command dies at 10 and left the gate red with no cause.
+
 - Matt Pocock's skills are installed through `npx skills` instead of the
   `mattpocock-skills` plugin, which always installs every skill: the
   `mattpocock-skills` entry moved from `external-plugins.yaml` to
