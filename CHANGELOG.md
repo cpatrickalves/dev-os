@@ -119,6 +119,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `tlc-dev-flow` 1.7.0 writes the PR title and body with the `pr-description`
+  skill, under the repository's PR conventions where the two differ. A diff
+  that creates or changes a screen puts captures in the body, using the
+  `<capture>.running.png` files already saved at the verified HEAD; where to
+  publish them comes from the repository's conventions, or else from the
+  skill's screenshots section. Before, the PR stage added captures only when
+  the repository asked for them, so a feature with 21 captures on disk opened
+  its PR with none and nobody was told. A PR without captures now says why in
+  the body, the log warns when the feature has screens, and the result carries
+  `captures` right after `pr_url`. PR Fixes republishes captures the same way.
+
 - `tlc-dev-flow` 1.6.0 sends a fresh Verifier back over a check that a
   Verifier failed and the author then fixed, in Verify Fixes and in Re-verify.
   Before, the fix was accepted on the author's word: the row in `## Checks`

@@ -1,6 +1,6 @@
 export const meta = {
   name: 'tlc-dev-flow',
-  version: '1.6.1',
+  version: '1.7.0',
   description: 'Fluxo de desenvolvimento a partir de um plano aprovado da tlc-plan: tlc-implement → Verifier independente → PR → code review com o plano → correções pela tlc-implement → Verifier dos checks novos → auditoria de docs → gate final → logbook',
   whenToUse:
     'Quando existir um .specs/features/<feature>/plan.md aprovado pela tlc-plan (linha **Approved**) para executar de ponta a ponta. Sem plano tlc, use dev-flow. Uso: Workflow({name: "tlc-dev-flow", args: "/path/.specs/features/<feature>/plan.md"}) ou args: {plan, issue?, base?}',
@@ -493,6 +493,7 @@ const PR_SCHEMA = {
     gate_last_line: { type: 'string', description: 'Última linha da saída de validate_verification.py' },
     gate_output: { type: 'string', description: 'Saída inteira de validate_verification.py quando o exit code não foi 0, ou ""' },
     captures: { type: 'string', description: 'Capturas publicadas no corpo, ou por que o PR não leva capturas' },
+    captures_published: { type: 'boolean', description: 'true quando o corpo do PR leva pelo menos uma captura de tela' },
     issue_comment: { type: 'string', description: 'URL do comentário com o link do PR na issue, ou por que não foi comentado ("" sem issue)' },
   },
   required: ['pr_url', 'gate_ok', 'gate_last_line'],
@@ -508,7 +509,10 @@ const pr = await agent(
       : 'sem referenciar issue. ') +
     `O corpo do PR é texto para quem revisa: resume a feature (resumo da implementação: ${impl.summary}) e cita o plano ${planPath}. ` +
     'Com o exit code 0, o resultado do gate volta só em gate_last_line; com outro exit code, crie o PR como draft e coloque a saída inteira do script no corpo. ' +
-    'Se as convenções de PR do repositório pedem capturas de tela e o diff muda a interface, gere e publique as capturas como elas mandam e ponha-as no corpo. ' +
+    'Escreva o título e o corpo com a skill `pr-description` (carregue-a com a ferramenta Skill); onde ela e as convenções de PR do repositório divergem, valem as convenções. ' +
+    'Se o diff cria ou muda uma tela, ponha capturas no corpo. As convenções do repositório dizem onde publicá-las; quando não dizem, siga a seção de screenshots da `pr-description`. ' +
+    `As telas que o plano cita já têm captura: use cada \`<capture>.running.png\` de ${featureDir}/captures/, salvo no HEAD verificado. ` +
+    'Sem capturas no corpo, diga no corpo e em captures por que o PR saiu sem elas. ' +
     (unverified.length
       ? `Diga no corpo que o Verifier independente não concluiu (${unverified.join('; ')}) e que por isso o gate está vermelho. `
       : '') +
@@ -525,6 +529,8 @@ const pr = await agent(
 if (!pr?.pr_url) await fail('A etapa PR não retornou o link do PR.', { implement: impl, verified_head: head, unverified })
 log(`PR criado: ${pr.pr_url}`)
 if (pr.captures) log(`Capturas: ${pr.captures}`)
+// O PR sem capturas numa feature com telas é decisão do usuário, não do agente: o aviso precisa chegar a ele.
+if (impl.screens_owed && !pr.captures_published) log(`⚠️ PR sem capturas de tela, embora a feature tenha telas: ${pr.captures || 'sem motivo informado'}`)
 if (pr.issue_comment) log(`Issue ${issue}: ${pr.issue_comment}`)
 if (!pr.gate_ok) {
   log(`⚠️ Gate vermelho: ${pr.gate_last_line}. A tlc-implement tenta um reparo.`)
@@ -591,7 +597,7 @@ const fixes = await agent(
     'Na dúvida entre correção e decisão de produto, não aplique. ' +
     `Commite cada correção, rode \`check_proofs.py ${feature}\` até ficar verde, faça push para a branch ${impl.branch} ` +
     'e comente no PR listando somente as correções aplicadas e suas justificativas. ' +
-    'Se uma correção muda uma tela que aparece nas capturas do corpo do PR, publique capturas novas como as convenções de PR do repositório mandam e atualize o corpo. ' +
+    'Se uma correção muda uma tela que aparece nas capturas do corpo do PR, publique capturas novas como a etapa PR publicou (convenções do repositório; sem elas, a seção de screenshots da `pr-description`) e atualize o corpo. ' +
     'Quando uma correção muda código e a feature tem telas, salve de novo cada `<capture>.running.png` no HEAD novo, sem julgá-las. ' +
     'Não escreva no verification.md nem no screens.md, e não julgue os checks novos: uma etapa seguinte manda um Verifier novo para eles. ' +
     scripts,
@@ -735,6 +741,8 @@ else if (!gate.gate_ok) log(`⚠️ Gate final vermelho: ${gate.gate_last_line}`
 
 return await finish({
   pr_url: pr.pr_url,
+  // Logo depois do link: a notificação corta o fim de um resultado longo.
+  captures: { published: !!pr.captures_published, detail: pr.captures || '' },
   implement: impl,
   verified_head: head,
   unverified,
