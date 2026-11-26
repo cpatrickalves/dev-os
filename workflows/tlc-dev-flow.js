@@ -1,6 +1,6 @@
 export const meta = {
   name: 'tlc-dev-flow',
-  version: '1.7.0',
+  version: '2.0.0',
   description: 'Fluxo de desenvolvimento a partir de um plano aprovado da tlc-plan: tlc-implement → Verifier independente → PR → code review com o plano → correções pela tlc-implement → Verifier dos checks novos → auditoria de docs → gate final → logbook',
   whenToUse:
     'Quando existir um .specs/features/<feature>/plan.md aprovado pela tlc-plan (linha **Approved**) para executar de ponta a ponta. Sem plano tlc, use dev-flow. Uso: Workflow({name: "tlc-dev-flow", args: "/path/.specs/features/<feature>/plan.md"}) ou args: {plan, issue?, base?}',
@@ -14,7 +14,7 @@ export const meta = {
     { title: 'Re-verify', detail: 'um Verifier novo julga só os checks que a PR Fixes acrescentou; a tlc-implement fecha o que ele achar', model: 'opus' },
     { title: 'Docs Audit', detail: 'auditoria de documentação da branch com a skill docs-generator', model: 'opus' },
     { title: 'Gate', detail: 'check_proofs.py (em segundo plano, até 20 minutos) e validate_verification.py no HEAD final, resultado comentado no PR; com o gate vermelho, a tlc-implement repara uma vez e o gate roda de novo', model: 'sonnet' },
-    { title: 'Logbook', detail: 'sempre, em qualquer saída do fluxo: registra o run com a skill logbook', model: 'sonnet' },
+    { title: 'Logbook', detail: 'sempre, em qualquer saída do fluxo: grava o relatório do run em .claude/runs/ e registra o run com a skill logbook', model: 'sonnet' },
   ],
 }
 
@@ -42,16 +42,194 @@ const scripts =
   'Os scripts citados são os da skill tlc-implement: rode `python3 <skill-dir>/scripts/<nome>.py`, ' +
   'onde <skill-dir> é o diretório do SKILL.md da tlc-implement instalada. '
 
+// ── O que depende do usuário ────────────────────────────────────────────────
+// Toda pendência que só o usuário resolve entra aqui, na hora em que o script a descobre, e sai
+// em user_actions, o primeiro campo do resultado. Um workflow não pergunta nada no meio do run,
+// e o texto de log() não chega ao orquestrador depois que o run termina.
+// kind: decision (pergunta de produto ou do plano), judgement (um julgamento que os agentes não
+// podem mais fazer, como as telas depois do round 2) ou action (algo a executar à mão).
+const userActions = []
+const needUser = (kind, source, what, { scenario = '', recommendation = '' } = {}) => {
+  userActions.push({ kind, what, scenario, recommendation, source })
+}
+// Os itens que um agente devolveu. A documentação não diz se minLength é validado no schema,
+// então o caso concreto é conferido aqui.
+const needUserItems = (kind, source, items) => {
+  for (const item of items ?? []) {
+    const from = item.finding_id ? `${source}, ${item.finding_id}` : source
+    if (!String(item.scenario ?? '').trim()) log(`⚠️ Pendência do usuário sem caso concreto (${from}): ${item.what}`)
+    needUser(kind, from, item.what, item)
+  }
+}
+const USER_ITEMS_SCHEMA = {
+  type: 'array',
+  description: 'O que só o usuário pode decidir ou julgar; vazio quando não há',
+  items: {
+    type: 'object',
+    properties: {
+      finding_id: { type: 'string', description: 'ID do achado de origem (ex.: "F03"), ou ""' },
+      what: { type: 'string', minLength: 10, description: 'Uma linha: o que o usuário precisa decidir ou julgar' },
+      scenario: {
+        type: 'string',
+        minLength: 40,
+        description: 'Um caso concreto, com valores de entrada, e o resultado de cada opção (ex.: "formulário aberto às 23:50 do dia 25 e salvo às 00:10 do dia 26: com a opção A a venda fica no dia 25; com a B, no dia 26")',
+      },
+      recommendation: { type: 'string', minLength: 10, description: 'A opção que você escolheria e o motivo, em uma frase' },
+    },
+    required: ['what', 'scenario', 'recommendation'],
+  },
+}
+
+// ── Relatório do run ────────────────────────────────────────────────────────
+// O resultado inteiro não cabe na notificação que o orquestrador recebe (ela corta por volta de
+// 13 mil caracteres), e o arquivo de saída da tarefa fica num diretório temporário. O detalhe de
+// cada fase vai para um markdown no repositório, e o resultado leva só o que o orquestrador
+// repassa. O script não escreve arquivo: ele monta o texto, e um agente o grava como está.
+const runsDir = '.claude/runs'
+const featureFromPlan = planPath.split('/').filter(Boolean).slice(-2, -1)[0] || 'run'
+const bullets = (items, empty) => (items?.length ? items.map(item => `- ${item}`) : [`- ${empty}`])
+const fenced = text => ['```', String(text).replace(/```/g, "'''"), '```']
+const KIND_LABEL = { decision: 'Decisão', judgement: 'Julgamento', action: 'Ação' }
+
+const buildReport = (result, d) => {
+  const impl = d.implement
+  const review = d.code_review
+  const verdicts = review?.final_review?.verdicts ?? []
+  const count = verdict => verdicts.filter(v => v.verdict === verdict).length
+  const failedGate = [d.gate, d.pr].find(g => g && !g.gate_ok && g.gate_output)
+  const actions = result.user_actions.flatMap((a, i) => [
+    `### ${i + 1}. ${KIND_LABEL[a.kind] ?? a.kind}: ${a.what}`,
+    '',
+    ...(a.scenario ? [`- **Caso:** ${a.scenario}`] : []),
+    ...(a.recommendation ? [`- **Recomendação:** ${a.recommendation}`] : []),
+    `- **Origem:** ${a.source}`,
+    '',
+  ])
+  return [
+    `# tlc-dev-flow: ${impl?.feature || featureFromPlan}`,
+    '',
+    `- **Plano:** ${planPath}`,
+    `- **Estado:** ${result.stopped ? `parou: ${result.stopped}` : 'o fluxo foi até o fim'}`,
+    `- **PR:** ${result.pr_url || 'não foi aberto'}`,
+    `- **Gate:** ${result.gate ? `${result.gate.ok ? 'verde' : 'vermelho'} em ${result.gate.head || 'HEAD não informado'}: ${result.gate.last_line}` : 'não rodou'}`,
+    '',
+    '## O que depende de você',
+    '',
+    ...(actions.length ? actions : ['Nada pendente.', '']),
+    '## Implement',
+    '',
+    ...(impl
+      ? [`- Status: ${impl.status}`, `- Branch: ${impl.branch || 'n/d'}, HEAD ${impl.head || 'n/d'}`, `- Issue: ${impl.issue || 'nenhuma'}`, '', impl.summary]
+      : ['Não concluiu.']),
+    '',
+    '## Verify',
+    '',
+    `- HEAD verificado: ${d.verified_head || 'n/d'}`,
+    `- Checks sem Verifier independente: ${d.unverified?.length ? d.unverified.join('; ') : 'nenhum'}`,
+    '',
+    '## PR',
+    '',
+    ...(d.pr
+      ? [
+          `- Link: ${d.pr.pr_url}`,
+          `- Gate na abertura: ${d.pr.gate_ok ? 'verde' : 'vermelho'} (${d.pr.gate_last_line})`,
+          `- Capturas: ${d.pr.captures || 'n/d'}`,
+          `- Comentário na issue: ${d.pr.issue_comment || 'n/d'}`,
+          ...(d.pr_repair ? [`- Reparo do gate: ${d.pr_repair.gate_ok ? 'verde' : 'vermelho'} em ${d.pr_repair.head}. ${d.pr_repair.summary}`] : []),
+        ]
+      : ['Não rodou.']),
+    '',
+    '## Code Review',
+    '',
+    ...(review
+      ? [
+          `- Relatório final: ${review.final_review?.markdown_path || 'a Final Review não concluiu'}`,
+          `- HTML: ${review.final_review?.html_path || 'n/d'}`,
+          `- Relatório consolidado: ${review.consolidated_report || 'n/d'}`,
+          `- Avaliação dos revisores: ${review.reviewers_evaluation || 'n/d'}`,
+          `- Vereditos: ${count('procedente')} procedente(s), ${count('improcedente')} improcedente(s), ${count('nao_verificavel')} não verificável(is)`,
+          '',
+          review.final_review?.summary || '',
+        ]
+      : ['Não rodou.']),
+    '',
+    '## PR Fixes',
+    '',
+    ...(d.fixes
+      ? [
+          'Aplicadas:',
+          ...bullets(d.fixes.applied, 'nenhuma'),
+          '',
+          'Não aplicadas:',
+          ...bullets(d.fixes.rejected, 'nenhuma'),
+          '',
+          `Checks acrescentados: ${d.fixes.checks_added?.length ? d.fixes.checks_added.join(', ') : 'nenhum'}. HEAD ${d.fixes.head || 'n/d'}.`,
+          '',
+          d.fixes.summary,
+        ]
+      : ['Não rodou ou não concluiu.']),
+    '',
+    '## Docs Audit',
+    '',
+    ...(d.docs_audit
+      ? [
+          'Documentos criados ou atualizados:',
+          ...bullets([...(d.docs_audit.docs_updated ?? []), ...(d.docs_audit.adrs_created ?? [])], 'nenhum'),
+          '',
+          d.docs_audit.summary,
+        ]
+      : ['Não rodou ou não concluiu.']),
+    '',
+    '## Gate',
+    '',
+    ...(d.gate
+      ? [`- ${d.gate.gate_ok ? 'Verde' : 'Vermelho'} em ${d.gate.head || 'n/d'}: ${d.gate.gate_last_line}`]
+      : ['- O gate final não rodou ou não concluiu.']),
+    ...(d.gate_repair ? [`- Reparo: ${d.gate_repair.gate_ok ? 'verde' : 'vermelho'} em ${d.gate_repair.head}. ${d.gate_repair.summary}`] : []),
+    ...(failedGate ? ['', 'Saída do script que falhou:', '', ...fenced(failedGate.gate_output)] : []),
+    '',
+    '## Rodar o gate de novo',
+    '',
+    ...(result.gate_commands.length
+      ? ['Na raiz do repositório. O argumento é o nome da feature, não um path:', '', ...fenced(result.gate_commands.join('\n'))]
+      : ['A feature não chegou a ser criada.']),
+    '',
+  ].join('\n')
+}
+
+const writeReport = (result, detail) => {
+  const head = detail.gate?.head || detail.verified_head || detail.implement?.head || ''
+  const path = `${runsDir}/${detail.implement?.feature || featureFromPlan}${head ? `-${head}` : ''}.md`
+  return agent(
+    `Grave o arquivo "${path}", a partir da raiz do repositório, com o conteúdo markdown abaixo, exatamente como está ` +
+      '(sem reformatar, resumir ou completar), criando a pasta se faltar e substituindo o arquivo se ele existir. ' +
+      `Se o git não ignora "${runsDir}/" (git check-ignore -q ${runsDir}/x falha), acrescente a linha "${runsDir}/" ao arquivo indicado por ` +
+      'git rev-parse --git-path info/exclude, que vale só neste clone. Não commite. Retorne o path absoluto do arquivo.\n\n' +
+      buildReport(result, detail),
+    {
+      label: 'run-report',
+      phase: 'Logbook',
+      model: 'sonnet',
+      effort: 'low',
+      schema: {
+        type: 'object',
+        properties: { report_path: { type: 'string', description: 'Path absoluto do relatório gravado' } },
+        required: ['report_path'],
+      },
+    },
+  )
+}
+
 // ── Etapa final: Logbook ────────────────────────────────────────────────────
-// Roda em toda saída do fluxo depois da etapa Implement, inclusive nas que param cedo.
+// Roda em toda saída do fluxo, inclusive nas que param cedo.
 // O agente não tem a conversa, então o resumo do run faz o papel dela.
 const writeLogbook = async outcome => {
-  phase('Logbook')
   const entry = await agent(
     'Invoque a skill logbook (via Skill tool) e registre este run do workflow tlc-dev-flow. ' +
-      `Você não tem a conversa: use o resumo do run abaixo e o git log do dia. Plano: ${planPath}.\n\n` +
+      `Você não tem a conversa: use o resumo do run abaixo, o git log do dia e, para o detalhe de cada fase, ` +
+      `${outcome.report_path ? `o relatório do run em ${outcome.report_path}` : 'só o resumo (o relatório do run não foi gravado)'}. Plano: ${planPath}.\n\n` +
       `${JSON.stringify(outcome, null, 2)}\n\n` +
-      'Não commite o logbook. Devolva em block o bloco do dia.',
+      'Não commite o logbook.',
     {
       label: 'logbook',
       phase: 'Logbook',
@@ -60,10 +238,9 @@ const writeLogbook = async outcome => {
         type: 'object',
         properties: {
           path: { type: 'string', description: 'Path do logbook.md escrito, ou ""' },
-          block: { type: 'string', description: 'O bloco do dia (do `## YYYY-MM-DD` até o fim), ou ""' },
-          summary: { type: 'string', description: 'O que foi registrado, ou por que nada foi' },
+          summary: { type: 'string', description: 'Em uma frase: o que foi registrado, ou por que nada foi' },
         },
-        required: ['path', 'block', 'summary'],
+        required: ['path', 'summary'],
       },
     },
   )
@@ -72,11 +249,61 @@ const writeLogbook = async outcome => {
   return entry
 }
 
-// Toda saída do fluxo passa por aqui: o logbook roda antes do return ou do throw.
-const finish = async result => ({ ...result, logbook: await writeLogbook(result) })
-const fail = async (message, context = {}) => {
-  await writeLogbook({ ...context, stopped: message })
-  throw new Error(message)
+// Toda saída do fluxo passa por aqui e devolve a mesma forma: o que depende do usuário primeiro,
+// depois o link do PR, o gate, o path do relatório e os comandos do gate. `detail` leva o
+// resultado de cada fase e só vai para o relatório.
+const finish = async (detail, stopped = '') => {
+  phase('Logbook')
+  const impl = detail.implement
+  const lastGate =
+    detail.gate ??
+    (detail.pr_repair ? { gate_ok: detail.pr_repair.gate_ok, gate_last_line: detail.pr_repair.gate_last_line, head: detail.pr_repair.head } : detail.pr)
+  const skillDir = impl?.skill_dir || '<diretório do SKILL.md da tlc-implement>'
+  const review = detail.code_review
+  const result = {
+    user_actions: userActions,
+    status: stopped ? 'stopped' : 'completed',
+    ...(stopped ? { stopped } : {}),
+    pr_url: detail.pr?.pr_url ?? '',
+    gate: lastGate
+      ? { ok: !!lastGate.gate_ok, last_line: lastGate.gate_last_line ?? '', head: lastGate.head || detail.verified_head || '' }
+      : null,
+    report_path: '',
+    // As linhas exatas: o argumento é o nome da feature. Com um path, check_proofs.py procura
+    // .specs/features/.specs/features/<feature>; sem argumento, validate_verification.py valida
+    // todas as features concluídas do repositório.
+    gate_commands: impl?.feature
+      ? [`python3 ${skillDir}/scripts/check_proofs.py ${impl.feature}`, `python3 ${skillDir}/scripts/validate_verification.py ${impl.feature}`]
+      : [],
+    review_reports: review
+      ? {
+          final: review.final_review?.markdown_path ?? '',
+          html: review.final_review?.html_path ?? '',
+          consolidated: review.consolidated_report ?? '',
+          reviewers_evaluation: review.reviewers_evaluation ?? '',
+        }
+      : null,
+    captures: detail.pr ? { published: !!detail.pr.captures_published, detail: detail.pr.captures || '' } : null,
+    unverified: detail.unverified ?? [],
+  }
+  const report = await writeReport(result, detail)
+  if (report?.report_path) {
+    result.report_path = report.report_path
+    log(`Relatório do run: ${report.report_path}`)
+  } else {
+    log('⚠️ O relatório do run não foi gravado.')
+    needUser('action', 'Relatório', 'O relatório do run não foi gravado: o detalhe de cada fase está só no journal.jsonl do run, na pasta da sessão em ~/.claude/projects/.')
+  }
+  const entry = await writeLogbook(result)
+  if (!entry?.path) needUser('action', 'Logbook', `Rodar /logbook: o run não foi registrado${entry?.summary ? ` (${entry.summary})` : ''}.`)
+  result.logbook = entry ? { path: entry.path, summary: entry.summary } : null
+  return result
+}
+// Uma parada antecipada devolve o mesmo resultado, com status "stopped": um throw só carrega a
+// mensagem, e user_actions se perderia. Quem chama usa `return await fail(...)`.
+const fail = (message, detail = {}) => {
+  log(`⛔ ${message}`)
+  return finish(detail, message)
 }
 
 // ── Etapa 1: Implement ──────────────────────────────────────────────────────
@@ -109,9 +336,10 @@ const IMPLEMENT_SCHEMA = {
         'true quando check_proofs.py saiu vermelho e toda linha vermelha é um check de tela que espera o screens.md (ex.: "not judged (screens.md)"); false em qualquer outro caso, inclusive com check_proofs.py verde',
     },
     issue: { type: 'string', description: 'ID da issue (do args ou do plano), ou "" quando não há' },
-    summary: { type: 'string', description: 'Resumo curto do que foi implementado, ou o motivo da recusa' },
+    skill_dir: { type: 'string', description: 'Path absoluto do diretório do SKILL.md da tlc-implement instalada (o <skill-dir> dos scripts), ou "" se a skill não foi carregada' },
+    summary: { type: 'string', description: 'Resumo curto do que foi implementado. Na recusa: o critério ou a regra que impede o build e o que precisa mudar no plano' },
   },
-  required: ['status', 'feature', 'branch', 'base_sha', 'head', 'screens_owed', 'red_only_screens', 'issue', 'summary'],
+  required: ['status', 'feature', 'branch', 'base_sha', 'head', 'screens_owed', 'red_only_screens', 'issue', 'skill_dir', 'summary'],
 }
 
 // Uma mudança do usuário já presente na árvore entra nos commits da feature e suja o
@@ -137,18 +365,27 @@ const impl = await agent(
     'Faça só commits locais: não faça push nem crie PR, porque uma etapa seguinte do workflow faz isso depois de conferir o gate. ' +
     (issueArg ? `A issue é ${issueArg}. ` : 'Se o plano citar o ID de uma issue, retorne-o; senão retorne "". ') +
     'Se a skill recusar o plano, pare e retorne status "refused" com o motivo em summary. ' +
+    'Retorne em skill_dir o path absoluto do <skill-dir>. ' +
     scripts,
   { label: 'implement', phase: 'Implement', model: 'opus', schema: IMPLEMENT_SCHEMA },
 )
-if (!impl) await fail('A etapa Implement não concluiu (bloqueio ou erro).')
+if (!impl) {
+  needUser('action', 'Implement', `Rodar o tlc-dev-flow de novo sobre ${planPath}: a etapa Implement não concluiu (bloqueio ou erro) e nada foi entregue.`)
+  return await fail('A etapa Implement não concluiu (bloqueio ou erro).')
+}
 if (impl.status === 'dirty_tree') {
-  await fail(
+  needUser('action', 'Implement', `Commitar ou guardar com git stash as mudanças fora de .specs/ e rodar o workflow de novo: ${impl.summary}`)
+  return await fail(
     `A árvore de trabalho tem mudanças fora de .specs/: ${impl.summary}. Commite ou guarde com git stash e rode o workflow de novo.`,
     { implement: impl },
   )
 }
 if (impl.status === 'refused') {
-  await fail(`A tlc-implement recusou o plano: ${impl.summary}. Volte para a tlc-plan.`, { implement: impl })
+  needUser('decision', 'Implement', `Mudar o plano ${planPath} na tlc-plan: a tlc-implement o recusou.`, {
+    scenario: impl.summary,
+    recommendation: 'Levar o motivo da recusa para a tlc-plan, aprovar o plano corrigido e rodar o workflow de novo.',
+  })
+  return await fail(`A tlc-implement recusou o plano: ${impl.summary}. Volte para a tlc-plan.`, { implement: impl })
 }
 const issue = issueArg || impl.issue || ''
 const feature = impl.feature
@@ -294,6 +531,11 @@ const fixFindings = (contexto, phaseTitle, label, verifier, screens) =>
   )
 
 let screensRound = 0
+// As telas têm no máximo dois rounds. Código que muda depois do último fica sem julgamento de tela.
+const telasSemRound = (source, motivo) =>
+  needUser('judgement', source, `Rever as telas da feature: o código mudou depois do último julgamento das telas e ${motivo}.`, {
+    recommendation: `Comparar cada captura de ${featureDir}/captures/ com o .running.png ao lado dela, salvo no HEAD novo.`,
+  })
 let head = impl.head
 const unverified = []
 
@@ -329,6 +571,12 @@ const verifyRound = async ({ phaseTitle, fixPhase, labelPrefix, range, newChecks
     if (newChecks?.length || !rejudge?.length) unverified.push(newChecks?.length ? newChecks.join(', ') : 'todos os checks')
     if (rejudge?.length) log(`⚠️ ${rejudge.join(', ')} corrigido(s) sem rejulgamento: o veredito antigo fica no verification.md e a decisão fica com o usuário.`)
     log(`⚠️ O Verifier não concluiu em duas tentativas (${range}); o gate vai acusar e o PR fica draft.`)
+    needUser(
+      'judgement',
+      phaseTitle,
+      `O Verifier independente não concluiu em duas tentativas (${range}): ${[...(newChecks ?? []), ...(rejudge ?? [])].join(', ') || 'todos os checks'} ficaram sem julgamento.`,
+      { recommendation: `Rodar um Verifier novo (verify.md da tlc-implement) sobre a feature "${feature}" antes do merge.` },
+    )
   } else if (verifier) {
     log(`Verifier: ${verifier.verdict}, ${verifier.findings.length} achado(s) em ${verifier.head}`)
   }
@@ -337,6 +585,9 @@ const verifyRound = async ({ phaseTitle, fixPhase, labelPrefix, range, newChecks
     log(`Telas, round ${screens.round}: ${screens.diverges ? `${screens.differs.length} linha(s) differs` : 'matches'}`)
   } else if (wantScreens) {
     log('⚠️ O sub-agente de telas não concluiu em duas tentativas; o gate vai acusar falta de screens.md.')
+    needUser('judgement', phaseTitle, `As telas não foram julgadas: o sub-agente de telas não concluiu em duas tentativas e ${featureDir}/screens.md está faltando ou desatualizado.`, {
+      recommendation: `Comparar cada captura de ${featureDir}/captures/ com o .running.png ao lado dela.`,
+    })
   }
 
   const open = (verifier?.findings?.length ?? 0) + (screens?.differs?.length ?? 0)
@@ -347,6 +598,7 @@ const verifyRound = async ({ phaseTitle, fixPhase, labelPrefix, range, newChecks
   const fix = await fixFindings(fixContext, fixPhase, `${labelPrefix}fix`, verifier, screens)
   if (!fix) {
     log(`⚠️ O fechamento dos achados não concluiu: ${open} item(ns) abertos em ${featureDir}/.`)
+    needUser('action', fixPhase, `Fechar ${open} achado(s) do Verifier e das telas que ficaram abertos em ${featureDir}/ (verification.md e screens.md): a correção não concluiu.`)
     return head
   }
   log(`Achados fechados: ${fix.closed.length}, check_proofs.py ${fix.proofs_green ? 'verde' : 'vermelho'} em ${fix.head}`)
@@ -361,12 +613,20 @@ const verifyRound = async ({ phaseTitle, fixPhase, labelPrefix, range, newChecks
     })
     if (r2) {
       screensRound = 2
-      if (r2.diverges) log(`⚠️ Telas, round 2 (o último): ${r2.differs.length} linha(s) ainda differs; a revisão vai para o usuário.`)
+      if (r2.diverges) {
+        log(`⚠️ Telas, round 2 (o último): ${r2.differs.length} linha(s) ainda differs; a revisão vai para o usuário.`)
+        needUser('judgement', fixPhase, `Julgar ${r2.differs.length} tela(s) que ainda divergem da captura do plano depois do round 2, o último.`, {
+          scenario: r2.differs.join(' | '),
+          recommendation: `Abrir cada captura de ${featureDir}/captures/ ao lado do .running.png dela e aceitar a diferença ou pedir a correção.`,
+        })
+      }
     } else {
       log('⚠️ O round 2 das telas não concluiu; o gate vai acusar que o código mudou depois do HEAD julgado.')
+      telasSemRound(fixPhase, 'o round 2 das telas não concluiu')
     }
   } else if (fix.code_changed && screensRound === 2 && impl.screens_owed) {
     log('⚠️ O código mudou depois do round 2 das telas: não há round 3, a revisão das telas vai para o usuário.')
+    telasSemRound(fixPhase, 'não há round 3')
   }
 
   const added = fix.checks_added ?? []
@@ -380,6 +640,12 @@ const verifyRound = async ({ phaseTitle, fixPhase, labelPrefix, range, newChecks
     if (refixed.length) {
       log(`⚠️ O autor corrigiu ${refixed.join(', ')} depois do último round extra do Verifier: o veredito antigo fica no verification.md e a decisão fica com o usuário.`)
     }
+    needUser(
+      'judgement',
+      fixPhase,
+      `Julgar ${[...added, ...refixed].join(', ')}: o autor os acrescentou ou corrigiu depois do último dos ${MAX_EXTRA_VERIFIER_ROUNDS} rounds extras do Verifier, e nenhum agente independente os julgou.`,
+      { recommendation: `Ler cada check em ${featureDir}/checks.md contra o critério do plano e o teste, ou rodar um Verifier novo só para eles.` },
+    )
     return fix.head
   }
   log(
@@ -427,6 +693,7 @@ if (readyToVerify) {
   })
 } else {
   log(`⚠️ check_proofs.py vermelho em ${impl.head}: o Verifier não roda e o PR sai como draft.`)
+  needUser('action', 'Verify', `Deixar check_proofs.py verde: ele saiu vermelho em ${impl.head}, o Verifier não rodou e o PR sai como draft.`)
 }
 
 // ── Reparo do gate ──────────────────────────────────────────────────────────
@@ -441,9 +708,10 @@ const GATE_REPAIR_SCHEMA = {
     gate_ok: { type: 'boolean', description: 'true quando validate_verification.py saiu com 0 depois do reparo' },
     gate_last_line: { type: 'string', description: 'Última linha de validate_verification.py depois do reparo' },
     head: { type: 'string', description: 'SHA curto do HEAD final' },
-    summary: { type: 'string', description: 'O que causou cada erro e o que foi corrigido, ou por que não deu' },
+    summary: { type: 'string', description: 'Curto: o que causou cada erro e o que foi corrigido, ou por que não deu' },
+    needs_user: USER_ITEMS_SCHEMA,
   },
-  required: ['gate_ok', 'gate_last_line', 'head', 'summary'],
+  required: ['gate_ok', 'gate_last_line', 'head', 'summary', 'needs_user'],
 }
 
 // check_proofs.py roda o check inteiro do repo e o e2e, e passa do limite de 10 minutos de um
@@ -469,7 +737,8 @@ const repairGate = (etapa, gateOutput, prUrl) =>
       'proofs.md de outro HEAD ou gerado sobre mudança sem commit (rode `check_proofs.py` de novo com a árvore limpa fora de .specs/), ' +
       'commit faltando em `Closed`. Um erro de código se corrige com commit, como a skill manda. ' +
       'Em `## Checks` do verification.md, mantenha os vereditos como o Verifier os escreveu: um erro que pede um julgamento novo ' +
-      'fica vermelho e vai em summary. ' +
+      'fica vermelho e vai em needs_user: o que o usuário precisa julgar, o caso concreto (o check ou a imagem, o que o validador acusa e o que cada escolha muda) ' +
+      'e o que você recomenda. Sem nada para o usuário, needs_user fica vazio. ' +
       `Depois rode \`check_proofs.py ${feature}\` se algum commit mudou o HEAD, e \`validate_verification.py ${feature}\`. ` +
       PROOFS_EM_SEGUNDO_PLANO +
       `Faça push dos commits para ${impl.branch}. ` +
@@ -526,23 +795,38 @@ const pr = await agent(
       : ''),
   { label: 'pr', phase: 'PR', model: 'sonnet', schema: PR_SCHEMA },
 )
-if (!pr?.pr_url) await fail('A etapa PR não retornou o link do PR.', { implement: impl, verified_head: head, unverified })
+if (!pr?.pr_url) {
+  needUser('action', 'PR', `Abrir o PR da branch ${impl.branch}: a etapa PR não devolveu o link. Os commits da feature estão na branch local.`)
+  return await fail('A etapa PR não retornou o link do PR.', { implement: impl, verified_head: head, unverified })
+}
 log(`PR criado: ${pr.pr_url}`)
 if (pr.captures) log(`Capturas: ${pr.captures}`)
 // O PR sem capturas numa feature com telas é decisão do usuário, não do agente: o aviso precisa chegar a ele.
-if (impl.screens_owed && !pr.captures_published) log(`⚠️ PR sem capturas de tela, embora a feature tenha telas: ${pr.captures || 'sem motivo informado'}`)
+if (impl.screens_owed && !pr.captures_published) {
+  log(`⚠️ PR sem capturas de tela, embora a feature tenha telas: ${pr.captures || 'sem motivo informado'}`)
+  needUser('action', 'PR', `Publicar as capturas de tela no corpo do PR ou aceitar o PR sem elas: ${pr.captures || 'a etapa PR não informou o motivo'}.`)
+}
 if (pr.issue_comment) log(`Issue ${issue}: ${pr.issue_comment}`)
+let prRepair = null
 if (!pr.gate_ok) {
   log(`⚠️ Gate vermelho: ${pr.gate_last_line}. A tlc-implement tenta um reparo.`)
   const repair = await repairGate('PR', pr.gate_output || pr.gate_last_line, pr.pr_url)
+  needUserItems('judgement', 'PR (reparo do gate)', repair?.needs_user)
   if (!repair?.gate_ok) {
     log(
       `⚠️ Gate ainda vermelho depois do reparo: ${repair?.gate_last_line ?? 'o reparo não concluiu'}. ` +
         'PR aberto como draft; o code review não roda sobre trabalho incompleto.',
     )
-    return await finish({ pr_url: pr.pr_url, implement: impl, verified_head: head, unverified, gate: pr, gate_repair: repair })
+    needUser(
+      'action',
+      'PR',
+      `Deixar o gate verde: ele continua vermelho depois do reparo (${repair?.gate_last_line ?? 'o reparo não concluiu'}). O PR está em draft e o code review não rodou.`,
+      { recommendation: 'Corrigir o que o validador acusa, rodar as linhas de gate_commands e rodar o workflow code-review-flow sobre o PR.' },
+    )
+    return await fail('Gate vermelho depois do reparo: PR em draft, sem code review.', { implement: impl, verified_head: head, unverified, pr, pr_repair: repair })
   }
   head = repair.head
+  prRepair = repair
   log(`Gate verde depois do reparo em ${repair.head}: ${repair.summary}`)
 }
 
@@ -559,15 +843,18 @@ try {
     called_by: 'tlc-dev-flow',
   })
 } catch (err) {
-  await fail(`O code-review-flow falhou: ${err?.message ?? err}. Rode-o de novo sobre ${pr.pr_url}.`, {
-    pr_url: pr.pr_url,
+  needUser('action', 'Code Review', `Rodar o workflow code-review-flow sobre ${pr.pr_url}: ele falhou (${err?.message ?? err}), e as etapas PR Fixes, Docs Audit e Gate não rodaram.`)
+  return await fail(`O code-review-flow falhou: ${err?.message ?? err}. Rode-o de novo sobre ${pr.pr_url}.`, {
     implement: impl,
     verified_head: head,
     unverified,
-    gate: pr,
+    pr,
+    pr_repair: prRepair,
   })
 }
 const finalReport = review.final_review?.markdown_path
+const reviewQuestions = review.user_questions ?? []
+needUserItems('decision', 'Code Review (Final Review)', reviewQuestions)
 
 // ── Etapa 6: PR Fixes ───────────────────────────────────────────────────────
 // A tlc-implement retoma a mesma feature: o ciclo dela para achados do Verifier serve para
@@ -595,6 +882,13 @@ const fixes = await agent(
     'a etapa Docs Audit confere a documentação depois. ' +
     'Um achado que contradiz uma decisão do plano, ou que pede uma decisão de produto, não é aplicado: registre-o entre os rejeitados. ' +
     'Na dúvida entre correção e decisão de produto, não aplique. ' +
+    'Cada item que você deixou de aplicar porque depende de uma decisão do usuário vai também em user_decisions: o que decidir em uma linha, ' +
+    'um caso concreto com valores de entrada e o resultado de cada opção, e a opção que você escolheria com o motivo. ' +
+    'Quem lê a pergunta não viu o código nem o relatório. ' +
+    (reviewQuestions.length
+      ? `A Final Review já levantou as perguntas de ${reviewQuestions.map(q => q.finding_id).join(', ')}: não as repita em user_decisions. `
+      : '') +
+    'Sem decisão para o usuário, user_decisions fica vazio. ' +
     `Commite cada correção, rode \`check_proofs.py ${feature}\` até ficar verde, faça push para a branch ${impl.branch} ` +
     'e comente no PR listando somente as correções aplicadas e suas justificativas. ' +
     'Se uma correção muda uma tela que aparece nas capturas do corpo do PR, publique capturas novas como a etapa PR publicou (convenções do repositório; sem elas, a seção de screenshots da `pr-description`) e atualize o corpo. ' +
@@ -611,15 +905,21 @@ const fixes = await agent(
         applied: { type: 'array', items: { type: 'string' }, description: 'Correções aplicadas' },
         checks_added: { type: 'array', items: { type: 'string' }, description: 'Só os IDs dos checks acrescentados em checks.md (ex.: "C42"), ou vazio' },
         rejected: { type: 'array', items: { type: 'string' }, description: 'Itens não aplicados e o motivo' },
+        user_decisions: USER_ITEMS_SCHEMA,
         code_changed: { type: 'boolean', description: 'true quando algum commit desta etapa mudou código fora de .specs/' },
         head: { type: 'string', description: 'SHA curto do HEAD final' },
-        summary: { type: 'string', description: 'Resumo do ciclo de correção' },
+        summary: { type: 'string', description: 'Resumo curto do ciclo de correção' },
       },
-      required: ['checks_added', 'code_changed', 'head', 'summary'],
+      required: ['checks_added', 'user_decisions', 'code_changed', 'head', 'summary'],
     },
   },
 )
-if (!fixes) log(`⚠️ Etapa PR Fixes não concluiu (bloqueio ou erro) — aplicar manualmente as correções de ${finalReport ?? review.consolidated_report}.`)
+if (!fixes) {
+  log(`⚠️ Etapa PR Fixes não concluiu (bloqueio ou erro) — aplicar manualmente as correções de ${finalReport ?? review.consolidated_report}.`)
+  needUser('action', 'PR Fixes', `Aplicar as correções de ${finalReport ?? review.consolidated_report} no PR: a etapa PR Fixes não concluiu.`)
+} else {
+  needUserItems('decision', 'PR Fixes', fixes.user_decisions)
+}
 
 // ── Etapa 7: Re-verify ──────────────────────────────────────────────────────
 // Um Verifier novo julga só os checks que a PR Fixes acrescentou, no intervalo que ela
@@ -642,6 +942,7 @@ if (fixes) {
     })
   } else if (impl.screens_owed && fixes.code_changed && screensRound === 2) {
     log('⚠️ A PR Fixes mudou código depois do round 2 das telas: não há round 3, a revisão das telas vai para o usuário.')
+    telasSemRound('PR Fixes', 'não há round 3')
   }
 }
 
@@ -686,7 +987,10 @@ const docsAudit = await agent(
     },
   },
 )
-if (!docsAudit) log('⚠️ Etapa Docs Audit não concluiu (bloqueio ou erro) — rodar docs-generator manualmente sobre a branch.')
+if (!docsAudit) {
+  log('⚠️ Etapa Docs Audit não concluiu (bloqueio ou erro) — rodar docs-generator manualmente sobre a branch.')
+  needUser('action', 'Docs Audit', `Rodar a skill docs-generator sobre a branch ${impl.branch}: a auditoria de documentação não concluiu.`)
+}
 
 // ── Etapa 9: Gate ───────────────────────────────────────────────────────────
 // Os commits do PR Fixes e do Docs Audit mudam o HEAD, e validate_verification.py falha
@@ -731,21 +1035,26 @@ let gateRepair = null
 if (gate && !gate.gate_ok) {
   log(`⚠️ Gate final vermelho: ${gate.gate_last_line}. A tlc-implement tenta um reparo.`)
   gateRepair = await repairGate('Gate', gate.gate_output || gate.gate_last_line, pr.pr_url)
+  needUserItems('judgement', 'Gate (reparo)', gateRepair?.needs_user)
   if (gateRepair?.gate_ok) {
     log(`Reparo do gate em ${gateRepair.head}: ${gateRepair.summary}. O gate roda de novo e comenta no PR.`)
     gate = await runGate('gate (depois do reparo)')
   }
 }
-if (!gate) log('⚠️ Etapa Gate não concluiu — rodar check_proofs.py e validate_verification.py manualmente.')
-else if (!gate.gate_ok) log(`⚠️ Gate final vermelho: ${gate.gate_last_line}`)
+if (!gate) {
+  log('⚠️ Etapa Gate não concluiu — rodar check_proofs.py e validate_verification.py manualmente.')
+  needUser('action', 'Gate', 'Rodar o gate à mão com as linhas de gate_commands: a etapa Gate não concluiu, e o HEAD final não foi verificado.')
+} else if (!gate.gate_ok) {
+  log(`⚠️ Gate final vermelho: ${gate.gate_last_line}`)
+  needUser('action', 'Gate', `Deixar o gate verde antes do merge: ele terminou vermelho em ${gate.head || 'HEAD'} (${gate.gate_last_line}). A saída inteira está no relatório do run e no comentário do PR.`)
+}
 
 return await finish({
-  pr_url: pr.pr_url,
-  // Logo depois do link: a notificação corta o fim de um resultado longo.
-  captures: { published: !!pr.captures_published, detail: pr.captures || '' },
   implement: impl,
   verified_head: head,
   unverified,
+  pr,
+  pr_repair: prRepair,
   code_review: review,
   fixes,
   docs_audit: docsAudit,

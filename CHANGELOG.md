@@ -119,6 +119,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `tlc-dev-flow` 2.0.0 returns a short result that opens with `user_actions`:
+  every decision, judgement or manual action only the user can take, each with
+  `kind`, `what`, `scenario`, `recommendation` and `source`. The script fills
+  the list itself where it already knew the pending item (screens that still
+  differ after round 2, checks no Verifier judged, a PR without captures, a red
+  gate, a stage that did not finish), and the Final Review, PR Fixes and the
+  gate repair return their own items in their schemas. The detail of each
+  phase moves to a markdown report in `.claude/runs/<feature>-<head>.md`,
+  which opens with "O que depende de você"; the result keeps the PR link, the
+  gate state, `report_path`, the report paths of the review and
+  `gate_commands`, the exact lines to re-run the gate. An early stop now
+  returns the same shape with `status: "stopped"` instead of throwing. Before,
+  the result passed the size the task notification delivers, so the pending
+  decisions were cut or buried in per-phase summaries.
+- `code-review-flow` 1.1.0: the Final Review returns `user_questions`, the
+  questions only the user can answer, each with a concrete scenario and a
+  recommendation, and the result carries them right after `pr`.
+
 - `tlc-dev-flow` 1.7.0 writes the PR title and body with the `pr-description`
   skill, under the repository's PR conventions where the two differ. A diff
   that creates or changes a screen puts captures in the body, using the

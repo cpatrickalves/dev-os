@@ -1,6 +1,6 @@
 export const meta = {
   name: 'code-review-flow',
-  version: '1.0.1',
+  version: '1.1.0',
   description: 'Code review com 4 revisores (thermos + matt-code-review + /code-review + the-judge, todos Opus) de um PR, com a issue do PR (e o plano da feature, se houver) como contexto, e consolidação dos relatórios',
   whenToUse:
     'Quando quiser revisar um PR existente sem implementar nada. A issue do PR e o tracker são descobertos sozinhos; para fixar a issue ou passar o plano: args: {pr, issue, plan}. Sem plan, o plano da feature é procurado em .specs/features/*/plan.md; passe plan com o path do plan.md para fixá-lo, ou plan: "none" para revisar sem plano. Uso: Workflow({name: "code-review-flow", args: "<PR url ou número>"})',
@@ -400,6 +400,29 @@ const VERDICTS_SCHEMA = {
   },
 }
 
+// Uma pergunta que só o usuário responde sai num array próprio, com um caso concreto e uma
+// recomendação: dentro de summary ou do motivo de um veredito ela se perde, e sem o caso o
+// usuário não consegue responder. A documentação não diz se minLength é validado, então o
+// script confere os campos depois.
+const USER_QUESTIONS_SCHEMA = {
+  type: 'array',
+  description: 'Perguntas que só o usuário responde (decisão de produto ou do plano); vazio quando não há',
+  items: {
+    type: 'object',
+    properties: {
+      finding_id: { type: 'string', minLength: 1, description: 'ID do achado que levantou a pergunta (F01, ...)' },
+      what: { type: 'string', minLength: 10, description: 'Uma linha: o que o usuário precisa decidir' },
+      scenario: {
+        type: 'string',
+        minLength: 40,
+        description: 'Um caso concreto, com valores de entrada, e o resultado de cada opção (ex.: "formulário aberto às 23:50 do dia 25 e salvo às 00:10 do dia 26: com a opção A a venda fica no dia 25; com a B, no dia 26")',
+      },
+      recommendation: { type: 'string', minLength: 10, description: 'A opção que você escolheria e o motivo, em uma frase' },
+    },
+    required: ['finding_id', 'what', 'scenario', 'recommendation'],
+  },
+}
+
 const finalReview = await agent(
   `Você executa a etapa "Final Review" do workflow ${workflowName}, que o usuário pediu para ` +
     `rodar sobre o PR ${prRef}. ${REVIEWERS.length} revisores independentes produziram o relatório consolidado ` +
@@ -440,6 +463,10 @@ const finalReview = await agent(
     'Este workflow não altera o PR: nenhum commit, push ou comentário — apenas os dois arquivos de relatório. ' +
     'Cada achado do relatório consolidado tem um ID (F01, F02, ...): retorne em "verdicts" o veredito de TODOS eles ' +
     '(procedente, improcedente ou nao_verificavel) com um motivo curto — esses vereditos alimentam a avaliação de eficácia dos revisores. ' +
+    'Quando um achado depende de uma decisão que só o usuário pode tomar (o critério não define o caso, uma decisão do plano a rever, uma escolha de produto), ' +
+    'retorne-o também em "user_questions": o que decidir em uma linha, um caso concreto com valores de entrada e o resultado de cada opção, ' +
+    'e a opção que você escolheria com o motivo. Quem lê a pergunta não viu o código nem o relatório: sem o caso concreto ela não tem como ser respondida. ' +
+    'Sem pergunta para o usuário, retorne "user_questions" vazio. ' +
     'ultrathink.',
   {
     label: 'final-review',
@@ -453,8 +480,9 @@ const finalReview = await agent(
         summary: { type: 'string', description: 'Resumo do julgamento dos achados (procedentes vs. descartados)' },
         judged_sha: { type: 'string', description: 'SHA completo do commit contra o qual os achados foram julgados' },
         verdicts: VERDICTS_SCHEMA,
+        user_questions: USER_QUESTIONS_SCHEMA,
       },
-      required: ['markdown_path', 'verdicts'],
+      required: ['markdown_path', 'verdicts', 'user_questions'],
     },
   },
 )
@@ -464,6 +492,14 @@ if (!finalReview?.markdown_path) {
 } else {
   log(`Relatório final: ${finalReview.markdown_path}${finalReview.html_path ? ` | HTML: ${finalReview.html_path}` : ''}`)
 }
+
+const userQuestions = finalReview?.user_questions ?? []
+for (const q of userQuestions) {
+  if (!String(q.scenario ?? '').trim() || !String(q.recommendation ?? '').trim()) {
+    log(`⚠️ Pergunta ao usuário sem caso concreto ou sem recomendação (${q.finding_id}): ${q.what}`)
+  }
+}
+if (userQuestions.length) log(`Perguntas para o usuário: ${userQuestions.map((q) => `${q.finding_id}: ${q.what}`).join(' | ')}`)
 
 // ── Review Eval ──────────────────────────────────────────────────────────────
 // Cruza os achados (e quem os apontou) com os vereditos da Final Review. As contas
@@ -551,6 +587,8 @@ if (!evalReport?.report_path) {
 
 return {
   pr: prRef,
+  // Logo no começo: a notificação corta o fim de um resultado longo.
+  user_questions: userQuestions,
   pr_snapshot: {
     base_branch: pr.base_branch,
     head_branch: pr.head_branch,
